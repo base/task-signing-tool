@@ -1,6 +1,6 @@
 import { ExtractedData, ScriptRunnerOptions, SimulationLink } from './types/index';
 
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import fs from 'fs';
 
 /**
@@ -21,48 +21,55 @@ export async function runAndExtract(options: ScriptRunnerOptions): Promise<Extra
   console.log('🔧 Foundry Script Runner & Data Extractor\n');
 
   let scriptOutput: string;
-  const originalCwd = process.cwd();
 
   if (extractOnly && saveOutput && fs.existsSync(saveOutput)) {
     console.log(`📁 Reading existing output from: ${saveOutput}`);
     scriptOutput = fs.readFileSync(saveOutput, 'utf8');
   } else {
     // Build and run the forge command
-    const forgeCommand = buildForgeCommand({ rpcUrl, scriptName, signature, args, sender });
+    const forgeArgs = buildForgeArgs({ rpcUrl, scriptName, signature, args, sender });
 
     console.log(`📍 Working directory: ${scriptPath}`);
-    console.log(`🚀 Running: ${forgeCommand}\n`);
+    console.log(`🚀 Running: ${formatCommandForDisplay('forge', forgeArgs)}\n`);
 
-    try {
-      if (!fs.existsSync(scriptPath)) {
-        throw new Error(`Script directory does not exist: ${scriptPath}`);
-      }
+    if (!fs.existsSync(scriptPath)) {
+      throw new Error(`Script directory does not exist: ${scriptPath}`);
+    }
 
-      process.chdir(scriptPath);
-      scriptOutput = execSync(forgeCommand, {
-        encoding: 'utf8',
-        stdio: 'pipe',
-        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-      });
-      process.chdir(originalCwd);
+    const result = spawnSync('forge', forgeArgs, {
+      cwd: scriptPath,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+    });
 
-      console.log('✅ Script executed successfully!\n');
-
-      // Optionally save output to file
-      if (saveOutput) {
-        fs.writeFileSync(saveOutput, scriptOutput);
-        console.log(`💾 Output saved to: ${saveOutput}\n`);
-      }
-    } catch (error: any) {
-      process.chdir(originalCwd);
+    if (result.error) {
       console.error('❌ Script execution failed:');
-      if (error.stdout) console.error('STDOUT:', error.stdout.toString());
-      if (error.stderr) console.error('STDERR:', error.stderr.toString());
-      console.error('Error:', error.message);
+      if (result.stdout) console.error('STDOUT:', result.stdout.toString());
+      if (result.stderr) console.error('STDERR:', result.stderr.toString());
+      console.error('Error:', result.error.message);
+      throw new Error(`Script execution failed: ${result.error.message}`);
+    }
 
-      // Throw error instead of exiting the process
-      const errorMessage = error.stderr ? error.stderr.toString() : error.message;
-      throw new Error(`Script execution failed: ${errorMessage}`);
+    if (typeof result.status === 'number' && result.status !== 0) {
+      console.error('❌ Script execution failed:');
+      if (result.stdout) console.error('STDOUT:', result.stdout.toString());
+      if (result.stderr) console.error('STDERR:', result.stderr.toString());
+      throw new Error(
+        `Script execution failed: ${
+          result.stderr ? result.stderr.toString() : `Exit code ${result.status}`
+        }`
+      );
+    }
+
+    scriptOutput = (result.stdout as string) || '';
+
+    console.log('✅ Script executed successfully!\n');
+
+    // Optionally save output to file
+    if (saveOutput) {
+      fs.writeFileSync(saveOutput, scriptOutput);
+      console.log(`💾 Output saved to: ${saveOutput}\n`);
     }
   }
 
@@ -179,29 +186,38 @@ function parseSimulationUrl(url: string, separateRawInput?: string): SimulationL
 }
 
 /**
- * Build the forge script command
+ * Build the forge script arguments
  */
-function buildForgeCommand(options: {
+function buildForgeArgs(options: {
   rpcUrl: string;
   scriptName: string;
   signature?: string;
   args?: string[];
   sender?: string;
-}): string {
+}): string[] {
   const { rpcUrl, scriptName, signature, args = [], sender } = options;
 
-  let command = `forge script --rpc-url ${rpcUrl} ${scriptName}`;
+  const forgeArgs: string[] = ['script', '--rpc-url', rpcUrl, scriptName];
 
   if (signature) {
-    const argsString = args.length > 0 ? ` ${args.join(' ')}` : '';
-    command += ` --sig "${signature}"${argsString}`;
+    forgeArgs.push('--sig', signature);
+    for (const arg of args) {
+      forgeArgs.push(arg);
+    }
   }
 
   if (sender) {
-    command += ` --sender ${sender}`;
+    forgeArgs.push('--sender', sender);
   }
 
-  return command;
+  return forgeArgs;
+}
+
+/**
+ * Format a command and argv for display/logging only
+ */
+function formatCommandForDisplay(command: string, argv: string[]): string {
+  return [command, ...argv].join(' ');
 }
 
 /**
