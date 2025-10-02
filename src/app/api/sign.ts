@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { LedgerSigner, LedgerSigningOptions } from '../../utils/ledger-signing';
+import { LedgerSigner, LedgerSigningOptions } from '@/lib/ledger-signing';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {

@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { ConfigParser } from '../utils/parser';
+import { ConfigParser } from '../src/lib/parser';
 import { parse as yamlParse } from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);

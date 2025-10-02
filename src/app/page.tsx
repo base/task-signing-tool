@@ -1,3 +1,5 @@
+'use client';
+
 import Head from 'next/head';
 import { useState } from 'react';
 import {
@@ -12,7 +14,7 @@ import {
   UpgradeSelection,
   UserSelection,
   ValidationResults,
-} from '../components';
+} from '@/components';
 
 type UserType = string | null; // Changed to string to handle dynamic user types
 type NetworkType = 'Sepolia' | 'Mainnet' | 'Test' | null;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StringDiff } from '../utils/types/index';
+import { StringDiff } from '@/lib/types/index';
 
 interface HighlightedTextProps {
   diffs: StringDiff[];

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
 import path from 'path';
-import { ConfigParser } from '../../utils/parser';
+import { ConfigParser } from '@/lib/parser';
 
 interface ConfigOption {
   fileName: string;

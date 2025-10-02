@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getUpgradeOptions, type DeploymentInfo } from '../../utils/deployments';
+import { getUpgradeOptions, type DeploymentInfo } from '@/lib/deployments';
 
 export default function handler(
   req: NextApiRequest,

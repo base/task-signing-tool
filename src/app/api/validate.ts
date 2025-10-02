@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { ValidationService } from '../../utils/validation-service';
+import { ValidationService } from '@/lib/validation-service';
 import fs from 'fs';
 import path from 'path';
 

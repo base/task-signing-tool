@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { DiffComparator } from '../utils/comparator';
-import { StringDiff } from '../utils/types/index';
-import { ValidationData } from '../utils/validation-service';
+import { DiffComparator } from '@/lib/comparator';
+import { StringDiff } from '@/lib/types/index';
+import { ValidationData } from '@/lib/validation-service';
 import { ComparisonCard } from './index';
 
 interface ValidationResultsProps {
