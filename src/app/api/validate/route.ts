@@ -1,24 +1,20 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { ValidationService } from '@/lib/validation-service';
+import { NextRequest, NextResponse } from 'next/server';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const { upgradeId, network, userType, simulationMethod, userLedgerAddress } = req.body;
+    const json = await req.json();
+    const { upgradeId, network, userType, simulationMethod, userLedgerAddress } = json.body;
 
     if (!upgradeId || !network || !userType) {
-      return res.status(400).json({
-        message: 'Missing required parameters: upgradeId, network, and userType are required',
-      });
+      return NextResponse.json(
+        { message: 'Missing required parameters: upgradeId, network, and userType are required' },
+        { status: 400 }
+      );
     }
 
     if (!userLedgerAddress) {
-      return res.status(400).json({
-        message: 'Missing userLedgerAddress parameter',
-      });
+      return NextResponse.json({ message: 'Missing userLedgerAddress parameter' }, { status: 400 });
     }
 
     const actualNetwork = network.toLowerCase();
@@ -45,16 +41,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       network: actualNetwork,
     });
 
-    res.status(200).json({
-      success: true,
-      data: validationResult,
-    });
+    return NextResponse.json({ success: true, data: validationResult }, { status: 200 });
   } catch (error) {
     console.error('Validation failed:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Validation failed',
-    });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Validation failed' },
+      { status: 500 }
+    );
   }
 }
 

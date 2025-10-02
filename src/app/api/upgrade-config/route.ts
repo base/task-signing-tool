@@ -1,7 +1,7 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
 import path from 'path';
 import { ConfigParser } from '@/lib/parser';
+import { NextRequest, NextResponse } from 'next/server';
 
 interface ConfigOption {
   fileName: string;
@@ -10,24 +10,17 @@ interface ConfigOption {
   ledgerId: number;
 }
 
-interface UpgradeConfigResponse {
-  configOptions: ConfigOption[];
-  error?: string;
-}
-
-export default function handler(req: NextApiRequest, res: NextApiResponse<UpgradeConfigResponse>) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ configOptions: [], error: 'Method not allowed' });
-  }
-
+export async function GET(req: NextRequest) {
   try {
-    const { network, upgradeId } = req.query;
+    const url = new URL(req.url);
+    const network = url.searchParams.get('network');
+    const upgradeId = url.searchParams.get('upgradeId');
 
     if (!network || !upgradeId) {
-      return res.status(400).json({
-        configOptions: [],
-        error: 'Missing required parameters: network and upgradeId are required',
-      });
+      return NextResponse.json(
+        { error: 'Missing required parameters: network and upgradeId are required' },
+        { status: 400 }
+      );
     }
 
     const contractDeploymentsPath = path.join(process.cwd(), '..');
@@ -42,7 +35,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<Upgrad
 
     if (!fs.existsSync(validationsPath)) {
       console.warn(`Validations path does not exist: ${validationsPath}`);
-      return res.json({ configOptions: [] });
+      return NextResponse.json({ configOptions: [] }, { status: 200 });
     }
 
     const configOptions: ConfigOption[] = [];
@@ -85,12 +78,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<Upgrad
       configOptions.map(c => c.displayName)
     );
 
-    res.json({ configOptions });
+    return NextResponse.json({ configOptions }, { status: 200 });
   } catch (error) {
     console.error('Error fetching upgrade config:', error);
-    res.status(500).json({
-      configOptions: [],
-      error: 'Failed to fetch upgrade configuration',
-    });
+    return NextResponse.json({ error: 'Failed to fetch upgrade configuration' }, { status: 500 });
   }
 }
