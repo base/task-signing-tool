@@ -39,8 +39,8 @@ const StateChangeSchema = z.object({
 const TaskConfigSchema = z.object({
   task_name: z.string().min(1),
   script_name: z.string().min(1),
-  signature: z.string().min(1),
-  args: z.string(), // Allow empty string for scripts with no arguments
+  signature: z.string().regex(/^[xX0-9a-zA-Z\[\](),]+$/, 'Invalid signature format'),
+  args: z.string().regex(/^[xX0-9a-zA-Z\[\](),]*$/, 'Invalid args format'), // Allow empty string for scripts with no arguments
   'ledger-id': z.number().int().nonnegative(), // Required ledger account index
   rpc_url: z.string().url().min(1), // The actual RPC URL to use
   expected_domain_and_message_hashes: ExpectedHashesSchema,
