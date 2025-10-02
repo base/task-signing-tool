@@ -1,23 +1,22 @@
 import { exec } from 'child_process';
 import fs from 'fs';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const { network, upgradeId } = req.body;
+    const url = new URL(req.url);
+    const network = url.searchParams.get('network');
+    const upgradeId = url.searchParams.get('upgradeId');
 
     if (!network || !upgradeId) {
-      return res.status(400).json({
-        error: 'Missing required parameters: network and upgradeId are required',
-      });
+      return NextResponse.json(
+        { error: 'Missing required parameters: network and upgradeId are required' },
+        { status: 400 }
+      );
     }
 
     const actualNetwork = network.toLowerCase();
@@ -34,9 +33,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Check if the upgrade folder exists
     if (!fs.existsSync(upgradePath)) {
-      return res.status(404).json({
-        error: `Upgrade folder not found: ${network}/${upgradeId}`,
-      });
+      return NextResponse.json(
+        { error: `Upgrade folder not found: ${network}/${upgradeId}` },
+        { status: 404 }
+      );
     }
 
     // Check if the lib folder already exists
@@ -44,12 +44,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (libExists) {
       console.log(`✅ Lib folder already exists for ${actualNetwork}/${upgradeId}`);
-      return res.status(200).json({
-        success: true,
-        message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
-        libExists: true,
-        depsInstalled: false, // No installation was needed
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
+          libExists: true,
+          depsInstalled: false, // No installation was needed
+        },
+        { status: 200 }
+      );
     }
 
     console.log(
@@ -86,14 +89,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.warn(`⚠️ Warning: lib folder still doesn't exist after running make deps`);
     }
 
-    res.status(200).json({
-      success: true,
-      message: `Dependencies installed successfully for ${actualNetwork}/${upgradeId}`,
-      libExists: libExistsAfterInstall,
-      depsInstalled: true,
-      stdout: stdout || '',
-      stderr: stderr || '',
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: `Dependencies installed successfully for ${actualNetwork}/${upgradeId}`,
+        libExists: libExistsAfterInstall,
+        depsInstalled: true,
+        stdout: stdout || '',
+        stderr: stderr || '',
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error(`❌ Error installing dependencies:`, error);
 
@@ -113,10 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    res.status(500).json({
-      success: false,
-      error: errorMessage,
-    });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
