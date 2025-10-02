@@ -382,7 +382,7 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
                           color: '#6B7280',
                         }}
                       >
-                        HD Path: m/44'/60'/{ledgerAccount}'/0/0
+                        HD Path: m/44&apos;/60&apos;/{ledgerAccount}&apos;/0/0
                       </span>
                     </div>
                     <div

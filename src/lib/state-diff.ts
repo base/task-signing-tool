@@ -179,13 +179,13 @@ export class StateDiffClient {
    */
   async checkAvailability(): Promise<boolean> {
     try {
-      const { stderr } = await execAsync('go version', {
+      await execAsync('go version', {
         cwd: this.binaryPath,
         timeout: 5000,
       });
       return true;
-    } catch (error) {
-      console.warn('⚠️ Go not available or state-diff binary path incorrect');
+    } catch (e) {
+      console.warn('⚠️ Go not available or state-diff binary path incorrect', e);
       return false;
     }
   }

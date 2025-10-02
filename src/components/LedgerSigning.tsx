@@ -37,12 +37,6 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
     }
   }, [domainHash, messageHash]);
 
-  const steps = [
-    { key: 'connect', title: 'Connect Ledger', description: 'Ensure your device is ready' },
-    { key: 'sign', title: 'Sign Transaction', description: 'Review and sign on your Ledger' },
-    { key: 'complete', title: 'Complete', description: 'Signature captured successfully' },
-  ];
-
   const combinedData = `0x1901${domainHash.slice(2)}${messageHash.slice(2)}`;
 
   const handleConnect = () => {
@@ -218,7 +212,7 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                     color: '#6B7280',
                   }}
                 >
-                  HD Path: m/44'/60'/{ledgerAccount}'/0/0
+                  HD Path: m/44&apos;/60&apos;/{ledgerAccount}&apos;/0/0
                 </p>
               </div>
             </div>

@@ -1,12 +1,34 @@
 import {
   Change,
   ExtractedData,
+  Override,
   SimulationLink,
   StateChange,
   StateOverride,
+  TenderlyStateObject,
   TenderlySimulationRequest,
   TenderlySimulationResponse,
 } from './types/index.js';
+
+// Internal helper types for parsed state overrides and alternative Tenderly shapes
+type ParsedStateOverride = {
+  contractAddress: string;
+  storage?: Array<{ key: string; value: string }>;
+};
+
+type AlternateTransaction = {
+  transaction_info?: {
+    call_trace?: {
+      state_diff?: NonNullable<
+        NonNullable<
+          NonNullable<
+            NonNullable<TenderlySimulationResponse['transaction']>['transaction-info']
+          >['call_trace']
+        >['state_diff']
+      >;
+    };
+  };
+};
 
 export class TenderlyClient {
   private apiKey: string;
@@ -71,12 +93,12 @@ export class TenderlyClient {
     // Parse and add state objects if available
     if (simulationLink.stateOverrides) {
       try {
-        const stateOverrides = JSON.parse(simulationLink.stateOverrides);
-        const stateObjects: { [contractAddress: string]: any } = {};
+        const stateOverrides: ParsedStateOverride[] = JSON.parse(simulationLink.stateOverrides);
+        const stateObjects: Record<string, TenderlyStateObject> = {};
 
-        stateOverrides.forEach((override: any) => {
-          const storage: any = {};
-          override.storage?.forEach((storageItem: any) => {
+        stateOverrides.forEach((override: ParsedStateOverride) => {
+          const storage: Record<string, string> = {};
+          override.storage?.forEach((storageItem: { key: string; value: string }) => {
             // Ensure storage key is properly formatted (32 bytes)
             const key = storageItem.key.startsWith('0x') ? storageItem.key : `0x${storageItem.key}`;
             const value = storageItem.value.startsWith('0x')
@@ -85,9 +107,9 @@ export class TenderlyClient {
             storage[key] = value;
           });
 
-          // Use the storage format directly as shown in the example
+          // Map collected storage overrides into Tenderly's expected stateDiff shape
           stateObjects[override.contractAddress.toLowerCase()] = {
-            storage,
+            stateDiff: storage,
           };
         });
 
@@ -152,7 +174,8 @@ export class TenderlyClient {
     // Try both possible property names (dashes and underscores)
     const stateDiff =
       simulationResponse?.transaction?.['transaction-info']?.call_trace?.state_diff ||
-      (simulationResponse?.transaction as any)?.transaction_info?.call_trace?.state_diff;
+      (simulationResponse?.transaction as unknown as AlternateTransaction)?.transaction_info
+        ?.call_trace?.state_diff;
 
     if (!stateDiff?.length) {
       console.log('⚠️  No state changes found');
@@ -227,9 +250,9 @@ export class TenderlyClient {
 
       console.log(`📊 Processing ${overrides.length} state override contracts...`);
 
-      const result = overrides.map((override: any) => {
+      const result = overrides.map((override: ParsedStateOverride) => {
         const overrideItems =
-          override.storage?.map((storage: any) => {
+          override.storage?.map((storage: { key: string; value: string }) => {
             return {
               key: storage.key,
               value: storage.value,
@@ -253,7 +276,7 @@ export class TenderlyClient {
         console.log(`   address: "${stateOverride.address}"`);
         console.log(`   overrides: [`);
 
-        stateOverride.overrides.forEach((override: any, overrideIndex: number) => {
+        stateOverride.overrides.forEach((override: Override, overrideIndex: number) => {
           console.log(`     {`);
           console.log(`       key: "${override.key}"`);
           console.log(`       value: "${override.value}"`);

@@ -61,7 +61,7 @@ export class ConfigParser {
    * @param jsonData - Raw JSON object containing multisig configuration
    * @returns ParsedConfig object with config and validation results
    */
-  static parseConfig(jsonData: any): ParsedConfig {
+  static parseConfig(jsonData: unknown): ParsedConfig {
     try {
       // Parse and validate using Zod
       const config = TaskConfigSchema.parse(jsonData);

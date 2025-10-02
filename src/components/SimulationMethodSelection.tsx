@@ -94,7 +94,7 @@ export const SimulationMethodSelection: React.FC<SimulationMethodSelectionProps>
                 opacity: selectedSimulationMethod === 'state-diff' ? 0.9 : 0.7,
               }}
             >
-              Base's Go-based simulation with native EVM execution
+              Base&apos;s Go-based simulation with native EVM execution
             </p>
           </button>
 

@@ -15,6 +15,7 @@ import {
   UserSelection,
   ValidationResults,
 } from '@/components';
+import { ValidationData } from '@/lib/types';
 
 type UserType = string | null; // Changed to string to handle dynamic user types
 type NetworkType = 'Sepolia' | 'Mainnet' | 'Test' | null;
@@ -22,80 +23,12 @@ type UpgradeType = string | null;
 type SimulationMethod = 'tenderly' | 'state-diff';
 type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing'; // Added 'simulation' step
 
-interface StateChange {
-  key: string;
-  before: string;
-  after: string;
-  description: string;
-}
-
-interface Contract {
-  name: string;
-  address: string;
-  changes: StateChange[];
-}
-
-interface ValidationData {
-  state_changes: Contract[];
-}
-
 interface SigningData {
   signature: string;
   signerAddress: string;
   domainHash: string;
   messageHash: string;
 }
-
-// Mock upgrade data
-const upgradeOptions = [
-  {
-    id: 1,
-    name: 'Smart Wallet v2.1.0',
-    description: 'Enhanced security features and gas optimization',
-  },
-  { id: 2, name: 'Bridge Contract v1.5.2', description: 'Cross-chain functionality improvements' },
-  {
-    id: 3,
-    name: 'Governance Module v3.0.0',
-    description: 'New voting mechanisms and proposal system',
-  },
-  { id: 4, name: 'Token Contract v2.3.1', description: 'ERC-20 compliance updates and bug fixes' },
-];
-
-// Mock validation data
-const mockExpectedData: ValidationData = {
-  state_changes: [
-    {
-      name: 'System Config',
-      address: '0x73a79Fab69143498Ed3712e519A88a918e1f4072',
-      changes: [
-        {
-          key: '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc',
-          before: '0x000000000000000000000000340f923e5c7cbb2171146f64169ec9d5a9ffe647',
-          after: '0x00000000000000000000000078ffe9209dff6fe1c9b6f3efdf996bee60346d0e',
-          description: 'Updates the System Config implementation address',
-        },
-      ],
-    },
-  ],
-};
-
-const mockActualData: ValidationData = {
-  state_changes: [
-    {
-      name: 'System Config',
-      address: '0x73a79Fab69143498Ed3712e519A88a918e1f4072',
-      changes: [
-        {
-          key: '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc',
-          before: '0x000000000000000000000000340f923e5c7cbb2171146f64169ec9d5a9ffe647',
-          after: '0x00000000000000000000000078ffe9209dff6fe1c9b6f3efdf996bee60346d0e',
-          description: 'Updates the System Config implementation address',
-        },
-      ],
-    },
-  ],
-};
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('network'); // Start with network instead of user
@@ -105,8 +38,7 @@ export default function Home() {
   const [selectedSimulationMethod, setSelectedSimulationMethod] = useState<SimulationMethod | null>(
     null
   );
-  const [currentChangeIndex, setCurrentChangeIndex] = useState(0);
-  const [validationData, setValidationData] = useState<any>(null);
+  const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<SigningData | null>(null);
   const [userLedgerAddress, setUserLedgerAddress] = useState<string>('');
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
@@ -146,10 +78,9 @@ export default function Home() {
     setSelectedSimulationMethod(null);
     setValidationData(null);
     setSigningData(null);
-    setCurrentChangeIndex(0);
   };
 
-  const handleProceedToLedgerSigning = (validationResult: any) => {
+  const handleProceedToLedgerSigning = (validationResult: ValidationData) => {
     setValidationData(validationResult);
     setCurrentStep('ledger');
   };
@@ -208,23 +139,6 @@ export default function Home() {
     setUserLedgerAddress('');
     setUserLedgerAccount(0);
   };
-
-  const handleGoToSimulationSelection = () => {
-    setCurrentStep('simulation');
-    setSelectedSimulationMethod(null);
-    setValidationData(null);
-    setSigningData(null);
-  };
-
-  const handleNextChange = () => {
-    setCurrentChangeIndex(prev => prev + 1);
-  };
-
-  const handlePrevChange = () => {
-    setCurrentChangeIndex(prev => prev - 1);
-  };
-
-  const totalChanges = 2; // Based on mock data
 
   return (
     <>
