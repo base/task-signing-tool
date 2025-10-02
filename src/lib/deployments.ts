@@ -194,6 +194,22 @@ export function getUpgradeOptions(network: 'mainnet' | 'sepolia'): DeploymentInf
           const name = formatUpgradeName(folderName);
           const description = extractDescription(readmePath);
 
+          // Extract date from folder name (e.g., "2025-06-04-upgrade-system-config" -> "2025-06-04")
+          const dateMatch = folderName.match(/^(\d{4}-\d{2}-\d{2})/);
+          const date = dateMatch ? dateMatch[1] : folderName.substring(0, 10);
+
+          if (!fs.existsSync(readmePath)) {
+            return {
+              id: folderName,
+              name,
+              description,
+              date,
+              network,
+              status: undefined,
+              executionLinks: undefined,
+            };
+          }
+
           // Add error handling and timeout for parsing
           let status, executionLinks;
           try {
@@ -206,10 +222,6 @@ export function getUpgradeOptions(network: 'mainnet' | 'sepolia'): DeploymentInf
             status = undefined;
             executionLinks = undefined;
           }
-
-          // Extract date from folder name (e.g., "2025-06-04-upgrade-system-config" -> "2025-06-04")
-          const dateMatch = folderName.match(/^(\d{4}-\d{2}-\d{2})/);
-          const date = dateMatch ? dateMatch[1] : folderName.substring(0, 10);
 
           return {
             id: folderName,
