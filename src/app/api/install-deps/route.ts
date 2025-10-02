@@ -8,9 +8,8 @@ const execAsync = promisify(exec);
 
 export async function POST(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const network = url.searchParams.get('network');
-    const upgradeId = url.searchParams.get('upgradeId');
+    const json = await req.json();
+    const { network, upgradeId } = json;
 
     if (!network || !upgradeId) {
       return NextResponse.json(
