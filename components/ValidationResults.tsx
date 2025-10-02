@@ -294,8 +294,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     }
   };
 
-
-
   const allValidationItems = getAllValidationItems();
   const currentValidationItem = allValidationItems[currentChangeIndex];
   const totalValidationItems = allValidationItems.length;
@@ -303,20 +301,21 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   // Check if there are any blocking validation errors
   const hasBlockingErrors = () => {
     if (!validationResult) return false;
-    
+
     return allValidationItems.some(item => {
       // Missing actual data is a blocking error
       if (!item.actual) {
         return true;
       }
-      
+
       // Check for mismatch that is NOT an expected difference
       if (item.type === 'signing-data') {
         return item.expected.dataToSign !== item.actual.dataToSign;
       } else if (item.type === 'override') {
-        const match = item.expected.key === item.actual.key && item.expected.value === item.actual.value;
-        const isExpectedDifference = 
-          item.expected.description && 
+        const match =
+          item.expected.key === item.actual.key && item.expected.value === item.actual.value;
+        const isExpectedDifference =
+          item.expected.description &&
           item.expected.description.toLowerCase().includes('difference is expected');
         return !match && !isExpectedDifference;
       } else if (item.type === 'change') {
@@ -527,8 +526,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           <h3 style={{ margin: '0 0 8px 0' }}>❌ Validation Failed</h3>
           <p style={{ margin: 0 }}>{error}</p>
         </div>
-
-
 
         <button
           onClick={() => handleRunValidation()}
@@ -985,8 +982,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         </details>
       )}
 
-
-
       {/* Proceed to Signing Button */}
       {currentChangeIndex === totalValidationItems - 1 && (
         <div
@@ -998,7 +993,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           {/* Status Summary */}
           <div
             style={{
-              background: blockingErrorsExist 
+              background: blockingErrorsExist
                 ? 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)'
                 : 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)',
               border: `2px solid ${blockingErrorsExist ? '#FECACA' : '#86EFAC'}`,
@@ -1040,7 +1035,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                   lineHeight: '1.4',
                 }}
               >
-                Found <strong>Missing</strong> or <strong>Different</strong> instances. Contact developers before continuing.
+                Found <strong>Missing</strong> or <strong>Different</strong> instances. Contact
+                developers before continuing.
               </p>
             )}
           </div>
@@ -1050,38 +1046,39 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             validationResult?.expected?.domainAndMessageHashes &&
             validationResult?.expected?.domainAndMessageHashes?.domain_hash &&
             validationResult?.expected?.domainAndMessageHashes?.message_hash && (
-                <button
-                  onClick={() => onProceedToLedgerSigning(validationResult)}
-                  style={{
-                    background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-                    color: 'white',
-                    padding: '16px 48px',
-                    borderRadius: '12px',
-                    fontWeight: '600',
-                    fontSize: '18px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow =
-                      '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow =
-                      '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                  }}
-                >
-                  <span style={{ fontSize: '20px' }}>🔐</span>
-                  Sign with Ledger →
-                </button>
+              <button
+                onClick={() => onProceedToLedgerSigning(validationResult)}
+                style={{
+                  background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+                  color: 'white',
+                  padding: '16px 48px',
+                  borderRadius: '12px',
+                  fontWeight: '600',
+                  fontSize: '18px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s ease',
+                  boxShadow:
+                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow =
+                    '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow =
+                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                }}
+              >
+                <span style={{ fontSize: '20px' }}>🔐</span>
+                Sign with Ledger →
+              </button>
             )}
 
           {/* Show message if signing is not available */}

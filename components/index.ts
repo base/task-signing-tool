@@ -11,4 +11,3 @@ export { StepIndicator } from './StepIndicator';
 export { UpgradeSelection } from './UpgradeSelection';
 export { UserSelection } from './UserSelection';
 export { ValidationResults } from './ValidationResults';
-

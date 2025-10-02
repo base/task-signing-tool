@@ -1,4 +1,12 @@
-import { Change, ExtractedData, SimulationLink, StateChange, StateOverride, TenderlySimulationRequest, TenderlySimulationResponse } from './types/index.js';
+import {
+  Change,
+  ExtractedData,
+  SimulationLink,
+  StateChange,
+  StateOverride,
+  TenderlySimulationRequest,
+  TenderlySimulationResponse,
+} from './types/index.js';
 
 export class TenderlyClient {
   private apiKey: string;
@@ -12,14 +20,18 @@ export class TenderlyClient {
     this.projectSlug = projectSlug;
 
     if (!this.apiKey) {
-      throw new Error('Tenderly API key is required. Set TENDERLY_ACCESS in .env file or pass it directly.');
+      throw new Error(
+        'Tenderly API key is required. Set TENDERLY_ACCESS in .env file or pass it directly.'
+      );
     }
   }
 
   /**
    * Send simulation request to Tenderly API using extracted data
    */
-  async simulateFromExtractedData(extractedData: ExtractedData): Promise<TenderlySimulationResponse> {
+  async simulateFromExtractedData(
+    extractedData: ExtractedData
+  ): Promise<TenderlySimulationResponse> {
     const simulationLink = extractedData.simulationLink;
 
     if (!simulationLink) {
@@ -53,7 +65,7 @@ export class TenderlyClient {
       value: '0',
       save: true,
       save_if_fails: true,
-      simulation_type: 'quick'
+      simulation_type: 'quick',
     };
 
     // Parse and add state objects if available
@@ -62,18 +74,20 @@ export class TenderlyClient {
         const stateOverrides = JSON.parse(simulationLink.stateOverrides);
         const stateObjects: { [contractAddress: string]: any } = {};
 
-                stateOverrides.forEach((override: any) => {
+        stateOverrides.forEach((override: any) => {
           const storage: any = {};
           override.storage?.forEach((storageItem: any) => {
             // Ensure storage key is properly formatted (32 bytes)
             const key = storageItem.key.startsWith('0x') ? storageItem.key : `0x${storageItem.key}`;
-            const value = storageItem.value.startsWith('0x') ? storageItem.value : `0x${storageItem.value}`;
+            const value = storageItem.value.startsWith('0x')
+              ? storageItem.value
+              : `0x${storageItem.value}`;
             storage[key] = value;
           });
 
           // Use the storage format directly as shown in the example
           stateObjects[override.contractAddress.toLowerCase()] = {
-            storage
+            storage,
           };
         });
 
@@ -89,7 +103,10 @@ export class TenderlyClient {
   /**
    * Send simulation request to Tenderly API
    */
-  private async sendSimulationRequest(request: TenderlySimulationRequest, timeout: number = 30000): Promise<TenderlySimulationResponse> {
+  private async sendSimulationRequest(
+    request: TenderlySimulationRequest,
+    timeout: number = 30000
+  ): Promise<TenderlySimulationResponse> {
     const url = `${this.baseUrl}/account/${this.accountSlug}/project/${this.projectSlug}/simulate`;
 
     // Setup timeout using AbortController
@@ -101,12 +118,12 @@ export class TenderlyClient {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Access-Key': this.apiKey,
         },
         body: JSON.stringify(request),
-        signal
+        signal,
       });
 
       clearTimeout(timeoutId);
@@ -133,8 +150,9 @@ export class TenderlyClient {
    */
   parseStateChanges(simulationResponse: TenderlySimulationResponse): StateChange[] {
     // Try both possible property names (dashes and underscores)
-    const stateDiff = simulationResponse?.transaction?.['transaction-info']?.call_trace?.state_diff ||
-                     (simulationResponse?.transaction as any)?.transaction_info?.call_trace?.state_diff;
+    const stateDiff =
+      simulationResponse?.transaction?.['transaction-info']?.call_trace?.state_diff ||
+      (simulationResponse?.transaction as any)?.transaction_info?.call_trace?.state_diff;
 
     if (!stateDiff?.length) {
       console.log('⚠️  No state changes found');
@@ -154,7 +172,7 @@ export class TenderlyClient {
         after: change.dirty || change.raw?.[0]?.dirty || '0x0',
         description: change.soltype?.name
           ? `${change.soltype.name} (${change.soltype.type}) changed`
-          : 'Storage slot changed'
+          : 'Storage slot changed',
       };
 
       if (!changesByAddress.has(address)) {
@@ -169,7 +187,7 @@ export class TenderlyClient {
       .map(([address, changes]) => ({
         name: '',
         address,
-        changes: changes.sort((a, b) => (a.key || '').localeCompare(b.key || ''))
+        changes: changes.sort((a, b) => (a.key || '').localeCompare(b.key || '')),
       }));
 
     console.log(`✅ Parsed ${result.length} contracts with state changes`);
@@ -210,18 +228,19 @@ export class TenderlyClient {
       console.log(`📊 Processing ${overrides.length} state override contracts...`);
 
       const result = overrides.map((override: any) => {
-        const overrideItems = override.storage?.map((storage: any) => {
-          return {
-            key: storage.key,
-            value: storage.value,
-            description: `Storage override for slot ${storage.key}`
-          };
-        }) || [];
+        const overrideItems =
+          override.storage?.map((storage: any) => {
+            return {
+              key: storage.key,
+              value: storage.value,
+              description: `Storage override for slot ${storage.key}`,
+            };
+          }) || [];
 
         return {
           name: '',
           address: override.contractAddress,
-          overrides: overrideItems
+          overrides: overrideItems,
         };
       });
 

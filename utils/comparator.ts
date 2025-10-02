@@ -1,4 +1,12 @@
-import { ComparisonResult, DiffType, FieldDiff, ObjectDiff, StateChange, StateOverride, StringDiff } from './types/index';
+import {
+  ComparisonResult,
+  DiffType,
+  FieldDiff,
+  ObjectDiff,
+  StateChange,
+  StateOverride,
+  StringDiff,
+} from './types/index';
 
 export class DiffComparator {
   /**
@@ -12,11 +20,18 @@ export class DiffComparator {
     // Compare basic properties
     const nameDiff = this.createFieldDiff('name', 'name', expected.name, actual.name);
     fieldDiffs.push(nameDiff);
-    if (nameDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
+    if (nameDiff.type === 'unchanged') matchingFields++;
+    else mismatchedFields++;
 
-    const addressDiff = this.createFieldDiff('address', 'address', expected.address, actual.address);
+    const addressDiff = this.createFieldDiff(
+      'address',
+      'address',
+      expected.address,
+      actual.address
+    );
     fieldDiffs.push(addressDiff);
-    if (addressDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
+    if (addressDiff.type === 'unchanged') matchingFields++;
+    else mismatchedFields++;
 
     // Compare overrides
     const maxLength = Math.max(expected.overrides.length, actual.overrides.length);
@@ -27,26 +42,56 @@ export class DiffComparator {
       if (!expectedOverride && actualOverride) {
         // Added override
         fieldDiffs.push(this.createFieldDiff('key', `overrides[${i}].key`, '', actualOverride.key));
-        fieldDiffs.push(this.createFieldDiff('value', `overrides[${i}].value`, '', actualOverride.value));
-        fieldDiffs.push(this.createFieldDiff('description', `overrides[${i}].description`, '', actualOverride.description));
+        fieldDiffs.push(
+          this.createFieldDiff('value', `overrides[${i}].value`, '', actualOverride.value)
+        );
+        fieldDiffs.push(
+          this.createFieldDiff(
+            'description',
+            `overrides[${i}].description`,
+            '',
+            actualOverride.description
+          )
+        );
         mismatchedFields += 3;
       } else if (expectedOverride && !actualOverride) {
         // Removed override
-        fieldDiffs.push(this.createFieldDiff('key', `overrides[${i}].key`, expectedOverride.key, ''));
-        fieldDiffs.push(this.createFieldDiff('value', `overrides[${i}].value`, expectedOverride.value, ''));
-        fieldDiffs.push(this.createFieldDiff('description', `overrides[${i}].description`, expectedOverride.description, ''));
+        fieldDiffs.push(
+          this.createFieldDiff('key', `overrides[${i}].key`, expectedOverride.key, '')
+        );
+        fieldDiffs.push(
+          this.createFieldDiff('value', `overrides[${i}].value`, expectedOverride.value, '')
+        );
+        fieldDiffs.push(
+          this.createFieldDiff(
+            'description',
+            `overrides[${i}].description`,
+            expectedOverride.description,
+            ''
+          )
+        );
         mismatchedFields += 3;
       } else if (expectedOverride && actualOverride) {
         // Compare existing overrides
-        const keyDiff = this.createFieldDiff('key', `overrides[${i}].key`, expectedOverride.key, actualOverride.key);
+        const keyDiff = this.createFieldDiff(
+          'key',
+          `overrides[${i}].key`,
+          expectedOverride.key,
+          actualOverride.key
+        );
         fieldDiffs.push(keyDiff);
-        if (keyDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
+        if (keyDiff.type === 'unchanged') matchingFields++;
+        else mismatchedFields++;
 
-        const valueDiff = this.createFieldDiff('value', `overrides[${i}].value`, expectedOverride.value, actualOverride.value);
+        const valueDiff = this.createFieldDiff(
+          'value',
+          `overrides[${i}].value`,
+          expectedOverride.value,
+          actualOverride.value
+        );
         fieldDiffs.push(valueDiff);
-        if (valueDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
-
-        // Note: Description excluded from comparison as requested
+        if (valueDiff.type === 'unchanged') matchingFields++;
+        else mismatchedFields++;
       }
     }
 
@@ -56,12 +101,13 @@ export class DiffComparator {
     const objectDiff: ObjectDiff = {
       type: 'StateOverride',
       fieldDiffs,
-      status: status === 'match' ? 'match' : 'mismatch'
+      status: status === 'match' ? 'match' : 'mismatch',
     };
 
-    const summary = status === 'match'
-      ? '✅ StateOverride objects match perfectly'
-      : `❌ StateOverride differences found: ${mismatchedFields}/${totalFields} fields differ`;
+    const summary =
+      status === 'match'
+        ? '✅ StateOverride objects match perfectly'
+        : `❌ StateOverride differences found: ${mismatchedFields}/${totalFields} fields differ`;
 
     return {
       summary,
@@ -72,8 +118,8 @@ export class DiffComparator {
         matchingFields,
         mismatchedFields,
         addedFields: fieldDiffs.filter(f => f.expected === '').length,
-        removedFields: fieldDiffs.filter(f => f.actual === '').length
-      }
+        removedFields: fieldDiffs.filter(f => f.actual === '').length,
+      },
     };
   }
 
@@ -88,11 +134,18 @@ export class DiffComparator {
     // Compare basic properties
     const nameDiff = this.createFieldDiff('name', 'name', expected.name, actual.name);
     fieldDiffs.push(nameDiff);
-    if (nameDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
+    if (nameDiff.type === 'unchanged') matchingFields++;
+    else mismatchedFields++;
 
-    const addressDiff = this.createFieldDiff('address', 'address', expected.address, actual.address);
+    const addressDiff = this.createFieldDiff(
+      'address',
+      'address',
+      expected.address,
+      actual.address
+    );
     fieldDiffs.push(addressDiff);
-    if (addressDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
+    if (addressDiff.type === 'unchanged') matchingFields++;
+    else mismatchedFields++;
 
     // Compare changes
     const maxLength = Math.max(expected.changes.length, actual.changes.length);
@@ -103,32 +156,70 @@ export class DiffComparator {
       if (!expectedChange && actualChange) {
         // Added change
         fieldDiffs.push(this.createFieldDiff('key', `changes[${i}].key`, '', actualChange.key));
-        fieldDiffs.push(this.createFieldDiff('before', `changes[${i}].before`, '', actualChange.before));
-        fieldDiffs.push(this.createFieldDiff('after', `changes[${i}].after`, '', actualChange.after));
-        fieldDiffs.push(this.createFieldDiff('description', `changes[${i}].description`, '', actualChange.description));
+        fieldDiffs.push(
+          this.createFieldDiff('before', `changes[${i}].before`, '', actualChange.before)
+        );
+        fieldDiffs.push(
+          this.createFieldDiff('after', `changes[${i}].after`, '', actualChange.after)
+        );
+        fieldDiffs.push(
+          this.createFieldDiff(
+            'description',
+            `changes[${i}].description`,
+            '',
+            actualChange.description
+          )
+        );
         mismatchedFields += 4;
       } else if (expectedChange && !actualChange) {
         // Removed change
         fieldDiffs.push(this.createFieldDiff('key', `changes[${i}].key`, expectedChange.key, ''));
-        fieldDiffs.push(this.createFieldDiff('before', `changes[${i}].before`, expectedChange.before, ''));
-        fieldDiffs.push(this.createFieldDiff('after', `changes[${i}].after`, expectedChange.after, ''));
-        fieldDiffs.push(this.createFieldDiff('description', `changes[${i}].description`, expectedChange.description, ''));
+        fieldDiffs.push(
+          this.createFieldDiff('before', `changes[${i}].before`, expectedChange.before, '')
+        );
+        fieldDiffs.push(
+          this.createFieldDiff('after', `changes[${i}].after`, expectedChange.after, '')
+        );
+        fieldDiffs.push(
+          this.createFieldDiff(
+            'description',
+            `changes[${i}].description`,
+            expectedChange.description,
+            ''
+          )
+        );
         mismatchedFields += 4;
       } else if (expectedChange && actualChange) {
         // Compare existing changes
-        const keyDiff = this.createFieldDiff('key', `changes[${i}].key`, expectedChange.key, actualChange.key);
+        const keyDiff = this.createFieldDiff(
+          'key',
+          `changes[${i}].key`,
+          expectedChange.key,
+          actualChange.key
+        );
         fieldDiffs.push(keyDiff);
-        if (keyDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
+        if (keyDiff.type === 'unchanged') matchingFields++;
+        else mismatchedFields++;
 
-        const beforeDiff = this.createFieldDiff('before', `changes[${i}].before`, expectedChange.before, actualChange.before);
+        const beforeDiff = this.createFieldDiff(
+          'before',
+          `changes[${i}].before`,
+          expectedChange.before,
+          actualChange.before
+        );
         fieldDiffs.push(beforeDiff);
-        if (beforeDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
+        if (beforeDiff.type === 'unchanged') matchingFields++;
+        else mismatchedFields++;
 
-        const afterDiff = this.createFieldDiff('after', `changes[${i}].after`, expectedChange.after, actualChange.after);
+        const afterDiff = this.createFieldDiff(
+          'after',
+          `changes[${i}].after`,
+          expectedChange.after,
+          actualChange.after
+        );
         fieldDiffs.push(afterDiff);
-        if (afterDiff.type === 'unchanged') matchingFields++; else mismatchedFields++;
-
-        // Note: Description excluded from comparison as requested
+        if (afterDiff.type === 'unchanged') matchingFields++;
+        else mismatchedFields++;
       }
     }
 
@@ -138,12 +229,13 @@ export class DiffComparator {
     const objectDiff: ObjectDiff = {
       type: 'StateChange',
       fieldDiffs,
-      status: status === 'match' ? 'match' : 'mismatch'
+      status: status === 'match' ? 'match' : 'mismatch',
     };
 
-    const summary = status === 'match'
-      ? '✅ StateChange objects match perfectly'
-      : `❌ StateChange differences found: ${mismatchedFields}/${totalFields} fields differ`;
+    const summary =
+      status === 'match'
+        ? '✅ StateChange objects match perfectly'
+        : `❌ StateChange differences found: ${mismatchedFields}/${totalFields} fields differ`;
 
     return {
       summary,
@@ -154,8 +246,8 @@ export class DiffComparator {
         matchingFields,
         mismatchedFields,
         addedFields: fieldDiffs.filter(f => f.expected === '').length,
-        removedFields: fieldDiffs.filter(f => f.actual === '').length
-      }
+        removedFields: fieldDiffs.filter(f => f.actual === '').length,
+      },
     };
   }
 
@@ -172,15 +264,19 @@ export class DiffComparator {
 
     // Find common prefix
     let prefixLength = 0;
-    while (prefixLength < Math.min(expected.length, actual.length) &&
-           expected[prefixLength] === actual[prefixLength]) {
+    while (
+      prefixLength < Math.min(expected.length, actual.length) &&
+      expected[prefixLength] === actual[prefixLength]
+    ) {
       prefixLength++;
     }
 
     // Find common suffix
     let suffixLength = 0;
-    while (suffixLength < Math.min(expected.length - prefixLength, actual.length - prefixLength) &&
-           expected[expected.length - 1 - suffixLength] === actual[actual.length - 1 - suffixLength]) {
+    while (
+      suffixLength < Math.min(expected.length - prefixLength, actual.length - prefixLength) &&
+      expected[expected.length - 1 - suffixLength] === actual[actual.length - 1 - suffixLength]
+    ) {
       suffixLength++;
     }
 
@@ -190,7 +286,7 @@ export class DiffComparator {
         type: 'unchanged',
         value: expected.substring(0, prefixLength),
         startIndex: 0,
-        endIndex: prefixLength
+        endIndex: prefixLength,
       });
     }
 
@@ -201,7 +297,7 @@ export class DiffComparator {
         type: 'removed',
         value: removedPart,
         startIndex: prefixLength,
-        endIndex: expected.length - suffixLength
+        endIndex: expected.length - suffixLength,
       });
     }
 
@@ -212,7 +308,7 @@ export class DiffComparator {
         type: 'added',
         value: addedPart,
         startIndex: prefixLength,
-        endIndex: actual.length - suffixLength
+        endIndex: actual.length - suffixLength,
       });
     }
 
@@ -222,7 +318,7 @@ export class DiffComparator {
         type: 'unchanged',
         value: expected.substring(expected.length - suffixLength),
         startIndex: expected.length - suffixLength,
-        endIndex: expected.length
+        endIndex: expected.length,
       });
     }
 
@@ -232,7 +328,12 @@ export class DiffComparator {
   /**
    * Create a field diff for two field values
    */
-  private createFieldDiff(field: string, path: string, expected: string, actual: string): FieldDiff {
+  private createFieldDiff(
+    field: string,
+    path: string,
+    expected: string,
+    actual: string
+  ): FieldDiff {
     const type: DiffType = expected === actual ? 'unchanged' : 'modified';
 
     return {
@@ -241,7 +342,7 @@ export class DiffComparator {
       expected,
       actual,
       diffs: this.createStringDiffs(expected, actual),
-      type
+      type,
     };
   }
 }

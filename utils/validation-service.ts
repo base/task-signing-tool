@@ -45,8 +45,6 @@ export class ValidationService {
     this.stateDiffClient = new StateDiffClient(stateDiffBinaryPath);
   }
 
-
-
   /**
    * Parse validation config file and return both ValidationOptions and parsed config
    */
@@ -63,11 +61,12 @@ export class ValidationService {
     parsedConfig: any;
   }> {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
-    
+
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const upgradePath = baseOptions.network === 'test'
-      ? path.join(process.cwd(), 'test-upgrade', baseOptions.upgradeId)
-      : path.join(contractDeploymentsPath, baseOptions.network, baseOptions.upgradeId);
+    const upgradePath =
+      baseOptions.network === 'test'
+        ? path.join(process.cwd(), 'test-upgrade', baseOptions.upgradeId)
+        : path.join(contractDeploymentsPath, baseOptions.network, baseOptions.upgradeId);
 
     // Look for validation config files based on user type in validations subdirectory
     const configFileName = this.getConfigFileName(baseOptions.userType);
@@ -90,7 +89,7 @@ export class ValidationService {
       }
 
       console.log(`✅ Loaded config data from ${configFileName}`);
-      
+
       // Return complete ValidationOptions with rpcUrl from config and the parsed config
       return {
         options: {
@@ -103,7 +102,7 @@ export class ValidationService {
           stateDiffBinaryPath: baseOptions.stateDiffBinaryPath,
           userLedgerAddress: baseOptions.userLedgerAddress,
         },
-        parsedConfig: parsedConfig.config
+        parsedConfig: parsedConfig.config,
       };
     } catch (error) {
       console.error(`❌ Error reading config file: ${error}`);
@@ -132,7 +131,7 @@ export class ValidationService {
     // 2. Get expected data from parsed config (no need to parse again)
     const expected = this.getExpectedData(parsedConfig);
 
-    // 3. Get actual data by running scripts and simulation  
+    // 3. Get actual data by running scripts and simulation
     const actual = await this.getActualData(options, expected.scriptParams);
 
     // 4. Sort state overrides and changes for consistent comparison
@@ -206,7 +205,6 @@ export class ValidationService {
     };
   }
 
-  
   private getExpectedData(parsedConfig: any): {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
@@ -226,7 +224,7 @@ export class ValidationService {
       stateOverrides: parsedConfig.state_overrides,
       stateChanges: parsedConfig.state_changes,
       domainAndMessageHashes: parsedConfig.expected_domain_and_message_hashes,
-      ledgerId: parsedConfig["ledger-id"],
+      ledgerId: parsedConfig['ledger-id'],
       scriptParams: {
         scriptName: parsedConfig.script_name,
         signature: parsedConfig.signature,
@@ -292,21 +290,24 @@ export class ValidationService {
     // If user explicitly specified a method, validate it's available
     if (options.simulationMethod) {
       console.log(`🎯 Using user-specified simulation method: ${options.simulationMethod}`);
-      
+
       if (options.simulationMethod === 'tenderly' && !this.tenderlyClient) {
         throw new Error(
           'Tenderly simulation method specified but no Tenderly API key available. ' +
-          'Set TENDERLY_ACCESS in .env file or provide via API request.'
+            'Set TENDERLY_ACCESS in .env file or provide via API request.'
         );
       }
-      
-      if (options.simulationMethod === 'state-diff' && !(await this.stateDiffClient?.checkAvailability())) {
+
+      if (
+        options.simulationMethod === 'state-diff' &&
+        !(await this.stateDiffClient?.checkAvailability())
+      ) {
         throw new Error(
           'State-diff simulation method specified but Go binary is not available. ' +
-          'Ensure Go is installed and the go-simulator directory exists.'
+            'Ensure Go is installed and the go-simulator directory exists.'
         );
       }
-      
+
       return options.simulationMethod;
     }
 
@@ -320,9 +321,9 @@ export class ValidationService {
     } else {
       throw new Error(
         'No simulation method available. Either:\n' +
-        '1. Set TENDERLY_ACCESS in .env file or provide Tenderly API key, OR\n' +
-        '2. Ensure Go is installed and the go-simulator directory exists.\n' +
-        'At least one simulation method must be available to proceed.'
+          '1. Set TENDERLY_ACCESS in .env file or provide Tenderly API key, OR\n' +
+          '2. Ensure Go is installed and the go-simulator directory exists.\n' +
+          'At least one simulation method must be available to proceed.'
       );
     }
   }
@@ -390,7 +391,7 @@ export class ValidationService {
     if (!this.tenderlyClient) {
       throw new Error(
         'Tenderly simulation requested but no Tenderly API key available. ' +
-        'Set TENDERLY_ACCESS in .env file or provide via API request.'
+          'Set TENDERLY_ACCESS in .env file or provide via API request.'
       );
     }
 
@@ -418,8 +419,6 @@ export class ValidationService {
     };
   }
 
-
-
   /**
    * Run Foundry script extraction
    */
@@ -432,11 +431,12 @@ export class ValidationService {
     }
   ): Promise<ExtractedData> {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
-    
+
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const scriptPath = options.network === 'test'
-      ? path.join(process.cwd(), 'test-upgrade', options.upgradeId)
-      : path.join(contractDeploymentsPath, options.network, options.upgradeId);
+    const scriptPath =
+      options.network === 'test'
+        ? path.join(process.cwd(), 'test-upgrade', options.upgradeId)
+        : path.join(contractDeploymentsPath, options.network, options.upgradeId);
 
     // Use the RPC URL from options
     const rpcUrl = options.rpcUrl;
@@ -502,16 +502,14 @@ export class ValidationService {
   /**
    * Clean up temporary files
    */
-  async cleanup(options: {
-    upgradeId: string;
-    network: string;
-  }): Promise<void> {
+  async cleanup(options: { upgradeId: string; network: string }): Promise<void> {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
-    
+
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const scriptPath = options.network === 'test'
-      ? path.join(process.cwd(), 'test-upgrade', options.upgradeId)
-      : path.join(contractDeploymentsPath, options.network, options.upgradeId);
+    const scriptPath =
+      options.network === 'test'
+        ? path.join(process.cwd(), 'test-upgrade', options.upgradeId)
+        : path.join(contractDeploymentsPath, options.network, options.upgradeId);
     const tempFile = path.join(scriptPath, 'temp-script-output.txt');
     const extractedFile = path.join(scriptPath, 'temp-script-output-extracted.json');
 

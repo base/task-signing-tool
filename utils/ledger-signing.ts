@@ -36,7 +36,7 @@ export class LedgerSigner {
         path.join(homeDir, 'go', 'bin', 'eip712sign'),
         '/usr/local/go/bin/eip712sign',
         '/usr/local/bin/eip712sign',
-        'eip712sign' // fallback to PATH
+        'eip712sign', // fallback to PATH
       ];
 
       this.eip712signPath = possiblePaths[0]; // Default to ~/go/bin/eip712sign
@@ -53,8 +53,9 @@ export class LedgerSigner {
       // Use the --address flag to get the address
       const result = await this.runEip712signCommand([
         '--ledger',
-        '--hd-paths', hdPath,
-        '--address'
+        '--hd-paths',
+        hdPath,
+        '--address',
       ]);
 
       if (result.success && result.output) {
@@ -63,7 +64,7 @@ export class LedgerSigner {
         if (addressMatch) {
           return {
             success: true,
-            address: addressMatch[1]
+            address: addressMatch[1],
           };
         }
 
@@ -74,7 +75,7 @@ export class LedgerSigner {
           if (match) {
             return {
               success: true,
-              address: match[1]
+              address: match[1],
             };
           }
         }
@@ -87,23 +88,24 @@ export class LedgerSigner {
         if (result.error.includes('reply lacks public key entry')) {
           errorMessage = 'Please unlock your Ledger device and open the Ethereum app';
         } else if (result.error.includes('no such file or directory')) {
-          errorMessage = 'eip712sign binary not found. Please ensure it is installed and in your PATH or GOPATH/bin.';
+          errorMessage =
+            'eip712sign binary not found. Please ensure it is installed and in your PATH or GOPATH/bin.';
         }
 
         return {
           success: false,
-          error: errorMessage
+          error: errorMessage,
         };
       }
 
       return {
         success: false,
-        error: 'Could not extract address from Ledger device output'
+        error: 'Could not extract address from Ledger device output',
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error getting Ledger address'
+        error: error instanceof Error ? error.message : 'Unknown error getting Ledger address',
       };
     }
   }
@@ -130,8 +132,10 @@ export class LedgerSigner {
       // Use eip712sign with --data flag to sign the data directly
       const result = await this.runEip712signCommand([
         '--ledger',
-        '--hd-paths', hdPath,
-        '--data', dataToSign
+        '--hd-paths',
+        hdPath,
+        '--data',
+        dataToSign,
       ]);
 
       if (result.success && result.output) {
@@ -143,7 +147,7 @@ export class LedgerSigner {
           return {
             success: true,
             signature: `0x${signatureMatch[1]}`,
-            signerAddress: signerMatch[1]
+            signerAddress: signerMatch[1],
           };
         }
 
@@ -155,7 +159,7 @@ export class LedgerSigner {
           return {
             success: true,
             signature: altSignatureMatch[1],
-            signerAddress: altSignerMatch[1]
+            signerAddress: altSignerMatch[1],
           };
         }
       }
@@ -167,25 +171,26 @@ export class LedgerSigner {
         if (result.error.includes('reply lacks public key entry')) {
           errorMessage = 'Please unlock your Ledger device and open the Ethereum app';
         } else if (result.error.includes('no such file or directory')) {
-          errorMessage = 'eip712sign binary not found. Please ensure it is installed and in your PATH or GOPATH/bin.';
+          errorMessage =
+            'eip712sign binary not found. Please ensure it is installed and in your PATH or GOPATH/bin.';
         } else if (result.error.includes('user denied')) {
           errorMessage = 'Transaction was denied on the Ledger device';
         }
 
         return {
           success: false,
-          error: errorMessage
+          error: errorMessage,
         };
       }
 
       return {
         success: false,
-        error: `Could not extract signature from eip712sign output. Output was: ${result.output}`
+        error: `Could not extract signature from eip712sign output. Output was: ${result.output}`,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error during Ledger signing'
+        error: error instanceof Error ? error.message : 'Unknown error during Ledger signing',
       };
     }
   }
@@ -198,7 +203,7 @@ export class LedgerSigner {
     output?: string;
     error?: string;
   }> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       console.log(`Running: ${this.eip712signPath} ${args.join(' ')}`);
 
       // Use shell-quote for security sanitization - validate that args are safe
@@ -206,38 +211,38 @@ export class LedgerSigner {
         if (typeof arg === 'string') {
           // Use shell-quote to detect potentially dangerous constructs
           const parsed = shellQuote.parse(arg);
-          
+
           // Check if parsing resulted in anything other than plain strings
           if (parsed.some(item => typeof item !== 'string')) {
             throw new Error(`Argument contains shell metacharacters: ${arg}`);
           }
-          
+
           // Additional validation for dangerous characters
           if (arg.includes('\n') || arg.includes('\r') || arg.includes('\0')) {
             throw new Error(`Invalid argument contains dangerous characters: ${arg}`);
           }
-          
+
           return arg; // Return original string, not quoted version
         }
         return arg;
       });
 
       const process = spawn(this.eip712signPath, sanitizedArgs, {
-        stdio: ['inherit', 'pipe', 'pipe']
+        stdio: ['inherit', 'pipe', 'pipe'],
       });
 
       let stdout = '';
       let stderr = '';
 
-      process.stdout.on('data', (data) => {
+      process.stdout.on('data', data => {
         stdout += data.toString();
       });
 
-      process.stderr.on('data', (data) => {
+      process.stderr.on('data', data => {
         stderr += data.toString();
       });
 
-      process.on('close', (code) => {
+      process.on('close', code => {
         console.log(`eip712sign exited with code ${code}`);
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
@@ -245,21 +250,21 @@ export class LedgerSigner {
         if (code === 0) {
           resolve({
             success: true,
-            output: stdout
+            output: stdout,
           });
         } else {
           resolve({
             success: false,
-            error: stderr || `Process exited with code ${code}`
+            error: stderr || `Process exited with code ${code}`,
           });
         }
       });
 
-      process.on('error', (error) => {
+      process.on('error', error => {
         console.error(`eip712sign process error:`, error);
         resolve({
           success: false,
-          error: error.message
+          error: error.message,
         });
       });
     });

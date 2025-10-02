@@ -267,12 +267,19 @@ export default function Home() {
           selectedWallet={selectedUpgrade}
           onNetworkClick={currentStep !== 'network' ? handleGoToNetworkSelection : undefined}
           onWalletClick={
-            currentStep === 'user' || currentStep === 'simulation' || currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing'
+            currentStep === 'user' ||
+            currentStep === 'simulation' ||
+            currentStep === 'validation' ||
+            currentStep === 'ledger' ||
+            currentStep === 'signing'
               ? handleGoToUpgradeSelection
               : undefined
           }
           onUserClick={
-            currentStep === 'simulation' || currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing'
+            currentStep === 'simulation' ||
+            currentStep === 'validation' ||
+            currentStep === 'ledger' ||
+            currentStep === 'signing'
               ? handleGoToUserSelection
               : undefined
           }
@@ -297,9 +304,7 @@ export default function Home() {
         )}
 
         {currentStep === 'simulation' && (
-          <SimulationMethodSelection
-            onSelect={handleSimulationMethodSelection}
-          />
+          <SimulationMethodSelection onSelect={handleSimulationMethodSelection} />
         )}
 
         {currentStep === 'validation' && selectedSimulationMethod && (

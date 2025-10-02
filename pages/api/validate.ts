@@ -9,8 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { upgradeId, network, userType, simulationMethod, userLedgerAddress } =
-      req.body;
+    const { upgradeId, network, userType, simulationMethod, userLedgerAddress } = req.body;
 
     if (!upgradeId || !network || !userType) {
       return res.status(400).json({

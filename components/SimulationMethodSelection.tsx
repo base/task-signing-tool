@@ -6,10 +6,12 @@ interface SimulationMethodSelectionProps {
   onSelect: (method: SimulationMethod) => void;
 }
 
-export const SimulationMethodSelection: React.FC<SimulationMethodSelectionProps> = ({ 
-  onSelect 
+export const SimulationMethodSelection: React.FC<SimulationMethodSelectionProps> = ({
+  onSelect,
 }) => {
-  const [selectedSimulationMethod, setSelectedSimulationMethod] = useState<SimulationMethod | null>(null);
+  const [selectedSimulationMethod, setSelectedSimulationMethod] = useState<SimulationMethod | null>(
+    null
+  );
 
   const handleStartValidation = () => {
     if (selectedSimulationMethod) {
@@ -248,4 +250,4 @@ export const SimulationMethodSelection: React.FC<SimulationMethodSelectionProps>
       `}</style>
     </div>
   );
-}; 
+};

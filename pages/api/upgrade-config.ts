@@ -15,10 +15,7 @@ interface UpgradeConfigResponse {
   error?: string;
 }
 
-export default function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<UpgradeConfigResponse>
-) {
+export default function handler(req: NextApiRequest, res: NextApiResponse<UpgradeConfigResponse>) {
   if (req.method !== 'GET') {
     return res.status(405).json({ configOptions: [], error: 'Method not allowed' });
   }
@@ -34,12 +31,13 @@ export default function handler(
     }
 
     const contractDeploymentsPath = path.join(process.cwd(), '..');
-    
+
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const upgradePath = (network as string).toLowerCase() === 'test'
-      ? path.join(process.cwd(), 'test-upgrade', upgradeId as string)
-      : path.join(contractDeploymentsPath, network as string, upgradeId as string);
-    
+    const upgradePath =
+      (network as string).toLowerCase() === 'test'
+        ? path.join(process.cwd(), 'test-upgrade', upgradeId as string)
+        : path.join(contractDeploymentsPath, network as string, upgradeId as string);
+
     const validationsPath = path.join(upgradePath, 'validations');
 
     if (!fs.existsSync(validationsPath)) {
@@ -48,8 +46,7 @@ export default function handler(
     }
 
     const configOptions: ConfigOption[] = [];
-    const files = fs.readdirSync(validationsPath)
-      .filter(file => file.endsWith('.json'));
+    const files = fs.readdirSync(validationsPath).filter(file => file.endsWith('.json'));
 
     for (const fileName of files) {
       // Parse filename to display name: "base-sc.json" → "Base Sc"
@@ -65,9 +62,9 @@ export default function handler(
         const filePath = path.join(validationsPath, fileName);
         const configContent = fs.readFileSync(filePath, 'utf-8');
         const parsedConfig = ConfigParser.parseFromString(configContent);
-        
+
         if (parsedConfig.result.success) {
-          ledgerId = parsedConfig.config["ledger-id"];
+          ledgerId = parsedConfig.config['ledger-id'];
         } else {
           console.warn(`Failed to parse ${fileName}, using default ledger-id: 0`);
         }
@@ -76,22 +73,24 @@ export default function handler(
       }
 
       configOptions.push({
-        fileName: baseName,      // "base-sc"
+        fileName: baseName, // "base-sc"
         displayName: displayName, // "Base Sc"
-        configFile: fileName,    // "base-sc.json"
-        ledgerId: ledgerId       // Extracted from validation file
+        configFile: fileName, // "base-sc.json"
+        ledgerId: ledgerId, // Extracted from validation file
       });
     }
 
-    console.log(`Found ${configOptions.length} config options for ${network}/${upgradeId}:`, 
-                configOptions.map(c => c.displayName));
+    console.log(
+      `Found ${configOptions.length} config options for ${network}/${upgradeId}:`,
+      configOptions.map(c => c.displayName)
+    );
 
     res.json({ configOptions });
   } catch (error) {
     console.error('Error fetching upgrade config:', error);
-    res.status(500).json({ 
-      configOptions: [], 
-      error: 'Failed to fetch upgrade configuration' 
+    res.status(500).json({
+      configOptions: [],
+      error: 'Failed to fetch upgrade configuration',
     });
   }
-} 
+}

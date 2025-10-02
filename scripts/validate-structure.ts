@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { ConfigParser } from '../utils/parser';
-import { parse as yamlParse } from "yaml";
+import { parse as yamlParse } from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,7 +64,7 @@ export class StructureValidator {
     return this.reportResults();
   }
 
-    /**
+  /**
    * Extract unique upgrade folders from changed file paths or direct folder paths
    */
   private extractUpgradeFolders(inputs: string[]): string[] {
@@ -139,7 +139,7 @@ export class StructureValidator {
     console.log(`   ✓ Structure validated\n`);
   }
 
-    /**
+  /**
    * Validate that at least one config file exists and all existing files are valid JSON
    */
   private validateConfigFiles(folderPath: string, validationsPath: string): void {
@@ -169,11 +169,13 @@ export class StructureValidator {
         if (!result.result.success) {
           invalidFiles.push({
             file: configFile,
-            errors: result.result.zodError?.issues?.map(issue => ({
-              message: issue.path.length > 0
-                ? `${issue.path.join('.')}: ${issue.message}`
-                : issue.message
-            })) || []
+            errors:
+              result.result.zodError?.issues?.map(issue => ({
+                message:
+                  issue.path.length > 0
+                    ? `${issue.path.join('.')}: ${issue.message}`
+                    : issue.message,
+              })) || [],
           });
         } else {
           console.log(`   ✓ ${configFile} - valid`);
@@ -182,20 +184,15 @@ export class StructureValidator {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         invalidFiles.push({
           file: configFile,
-          errors: [{ message: `Failed to read file: ${errorMessage}` }]
+          errors: [{ message: `Failed to read file: ${errorMessage}` }],
         });
       }
     }
 
     // Report invalid files
     for (const invalid of invalidFiles) {
-      const errorSummary = invalid.errors
-        .map(e => e.message)
-        .join('; ');
-      this.addError(
-        folderPath,
-        `Invalid ${invalid.file}: ${errorSummary}`
-      );
+      const errorSummary = invalid.errors.map(e => e.message).join('; ');
+      this.addError(folderPath, `Invalid ${invalid.file}: ${errorSummary}`);
     }
   }
 
@@ -254,9 +251,15 @@ function main(): void {
   if (args.length === 0) {
     console.error('❌ No input provided');
     console.error('Usage:');
-    console.error('  Validate specific folder: tsx scripts/validate-structure.ts "mainnet/2025-06-25-safe-swap-owner"');
-    console.error('  Validate multiple folders: tsx scripts/validate-structure.ts "mainnet/upgrade1 sepolia/upgrade2"');
-    console.error('  Validate from file paths: tsx scripts/validate-structure.ts "file1 file2 file3"');
+    console.error(
+      '  Validate specific folder: tsx scripts/validate-structure.ts "mainnet/2025-06-25-safe-swap-owner"'
+    );
+    console.error(
+      '  Validate multiple folders: tsx scripts/validate-structure.ts "mainnet/upgrade1 sepolia/upgrade2"'
+    );
+    console.error(
+      '  Validate from file paths: tsx scripts/validate-structure.ts "file1 file2 file3"'
+    );
     process.exit(1);
   }
 

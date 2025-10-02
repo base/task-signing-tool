@@ -1,11 +1,5 @@
 import { z } from 'zod';
-import {
-  ParsedConfig,
-  ParseResult,
-  StateChange,
-  StateOverride,
-  TaskConfig,
-} from './types/index';
+import { ParsedConfig, ParseResult, StateChange, StateOverride, TaskConfig } from './types/index';
 
 // Zod validation schemas
 const AddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address');
@@ -47,7 +41,7 @@ const TaskConfigSchema = z.object({
   script_name: z.string().min(1),
   signature: z.string().min(1),
   args: z.string(), // Allow empty string for scripts with no arguments
-  "ledger-id": z.number().int().nonnegative(), // Required ledger account index
+  'ledger-id': z.number().int().nonnegative(), // Required ledger account index
   rpc_url: z.string().url().min(1), // The actual RPC URL to use
   expected_domain_and_message_hashes: ExpectedHashesSchema,
   expected_nested_hash: z
@@ -89,7 +83,9 @@ export class ConfigParser {
                   {
                     code: z.ZodIssueCode.custom,
                     path: [],
-                    message: `Failed to parse configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                    message: `Failed to parse configuration: ${
+                      error instanceof Error ? error.message : 'Unknown error'
+                    }`,
                   },
                 ]),
         },
@@ -150,8 +146,8 @@ export class ConfigParser {
       script_name: '',
       signature: '',
       args: '',
-      "ledger-id": 0,
-      rpc_url: "https://eth-mainnet.public.blastapi.io",
+      'ledger-id': 0,
+      rpc_url: 'https://eth-mainnet.public.blastapi.io',
       expected_domain_and_message_hashes: { address: '', domain_hash: '', message_hash: '' },
       expected_nested_hash: '',
       state_overrides: [],

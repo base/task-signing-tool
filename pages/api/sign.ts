@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Validate required fields
     if (!action) {
       return res.status(400).json({
-        error: 'Missing required field: action'
+        error: 'Missing required field: action',
       });
     }
 
@@ -32,7 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!isAvailable) {
       return res.status(500).json({
         success: false,
-        error: 'eip712sign binary not found. Please ensure it is installed and in your PATH or GOPATH/bin.'
+        error:
+          'eip712sign binary not found. Please ensure it is installed and in your PATH or GOPATH/bin.',
       });
     }
 
@@ -44,27 +45,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log(`✅ Successfully retrieved Ledger address: ${result.address}`);
         res.status(200).json({
           success: true,
-          address: result.address
+          address: result.address,
         });
       } else {
         console.error('❌ Failed to get Ledger address:', result.error);
         res.status(500).json({
           success: false,
-          error: result.error
+          error: result.error,
         });
       }
     } else if (action === 'sign') {
       // Validate signing parameters
       if (!domainHash || !messageHash) {
         return res.status(400).json({
-          error: 'Missing required fields for signing: domainHash, messageHash'
+          error: 'Missing required fields for signing: domainHash, messageHash',
         });
       }
 
       const signingOptions: LedgerSigningOptions = {
         domainHash,
         messageHash,
-        ledgerAccount: ledgerAccount || 0
+        ledgerAccount: ledgerAccount || 0,
       };
 
       // Sign with Ledger device
@@ -75,27 +76,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(200).json({
           success: true,
           signature: result.signature,
-          signerAddress: result.signerAddress
+          signerAddress: result.signerAddress,
         });
       } else {
         console.error('❌ Failed to sign with Ledger:', result.error);
         res.status(500).json({
           success: false,
-          error: result.error
+          error: result.error,
         });
       }
     } else {
       return res.status(400).json({
-        error: 'Invalid action. Must be "get-address" or "sign"'
+        error: 'Invalid action. Must be "get-address" or "sign"',
       });
     }
-
   } catch (error) {
     console.error('❌ Ledger signing API error:', error);
 
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     });
   }
 }

@@ -10,18 +10,10 @@ interface ConfigOption {
 interface UserSelectionProps {
   network: string;
   upgradeId: string;
-  onSelect: (
-    user: string,
-    ledgerAddress: string,
-    ledgerAccount: number
-  ) => void;
+  onSelect: (user: string, ledgerAddress: string, ledgerAccount: number) => void;
 }
 
-export const UserSelection: React.FC<UserSelectionProps> = ({ 
-  network, 
-  upgradeId, 
-  onSelect 
-}) => {
+export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId, onSelect }) => {
   const [availableUsers, setAvailableUsers] = useState<ConfigOption[]>([]);
   const [selectedUser, setSelectedUser] = useState<ConfigOption | null>(null);
   const [ledgerAddress, setLedgerAddress] = useState<string>('');
@@ -37,12 +29,14 @@ export const UserSelection: React.FC<UserSelectionProps> = ({
   useEffect(() => {
     const fetchAvailableUsers = async () => {
       if (!network || !upgradeId) return;
-      
+
       setLoadingUsers(true);
       try {
-        const response = await fetch(`/api/upgrade-config?network=${network.toLowerCase()}&upgradeId=${upgradeId}`);
+        const response = await fetch(
+          `/api/upgrade-config?network=${network.toLowerCase()}&upgradeId=${upgradeId}`
+        );
         const { configOptions, error: apiError } = await response.json();
-        
+
         if (apiError) {
           setError(`Failed to load config options: ${apiError}`);
           setAvailableUsers([]);
@@ -68,10 +62,12 @@ export const UserSelection: React.FC<UserSelectionProps> = ({
     // Reset address states when user changes
     setLedgerAddress('');
     setManualAddress('');
-    
+
     // Set ledger account to the value from validation file
     setLedgerAccount(userOption.ledgerId);
-    console.log(`Set default ledger account to: ${userOption.ledgerId} for user: ${userOption.displayName}`);
+    console.log(
+      `Set default ledger account to: ${userOption.ledgerId} for user: ${userOption.displayName}`
+    );
   };
 
   const handleGetLedgerAddress = async () => {
@@ -171,7 +167,10 @@ export const UserSelection: React.FC<UserSelectionProps> = ({
                 style={{
                   width: '100%',
                   background: selectedUser?.fileName === option.fileName ? '#EBF8FF' : 'white',
-                  border: selectedUser?.fileName === option.fileName ? '2px solid #3B82F6' : '1px solid #E5E7EB',
+                  border:
+                    selectedUser?.fileName === option.fileName
+                      ? '2px solid #3B82F6'
+                      : '1px solid #E5E7EB',
                   borderRadius: '12px',
                   padding: '20px',
                   color: selectedUser?.fileName === option.fileName ? '#1E40AF' : '#374151',
@@ -202,7 +201,9 @@ export const UserSelection: React.FC<UserSelectionProps> = ({
                   }
                 }}
               >
-                {selectedUser?.fileName === option.fileName && <span style={{ marginRight: '8px' }}>✓</span>}
+                {selectedUser?.fileName === option.fileName && (
+                  <span style={{ marginRight: '8px' }}>✓</span>
+                )}
                 {option.displayName}
               </button>
             ))

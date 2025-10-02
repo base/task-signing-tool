@@ -47,6 +47,7 @@ Example from a safe swap owner operation that doesn't require arguments:
 ## Key Differences
 
 1. **Signature**:
+
    - With args: `"signature": "sign(address[])"`
    - Without args: `"signature": "sign()"`
 
@@ -65,11 +66,13 @@ The validation service uses these fields to construct the forge command:
 ### Resulting Commands
 
 With arguments:
+
 ```bash
 forge script --rpc-url <RPC_URL> UpgradeSystemConfigScript --sig "sign(address[])" [0x5dfEB066334B67355A15dc9b67317fD2a2e1f77f,0x646132A1667ca7aD00d36616AFBA1A28116C770A] --sender <SENDER>
 ```
 
 Without arguments:
+
 ```bash
 forge script --rpc-url <RPC_URL> SwapOwner --sig "sign()" --sender <SENDER>
 ```
