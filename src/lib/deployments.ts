@@ -31,10 +31,8 @@ function formatUpgradeName(folderName: string): string {
   return nameParts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
 }
 
-function extractDescription(readmePath: string): string {
+function extractDescription(content: string): string {
   try {
-    const content = fs.readFileSync(readmePath, 'utf-8');
-
     // Look for description after "## Description" header
     const descriptionMatch = content.match(/## Description\s*\n\n([^#]+?)(?=\n\n|\n##|\n###|$)/);
     if (descriptionMatch) {
@@ -192,11 +190,11 @@ export function getUpgradeOptions(network: 'mainnet' | 'sepolia'): DeploymentInf
         try {
           const readmePath = path.join(networkPath, folderName, 'README.md');
           const name = formatUpgradeName(folderName);
-          const description = extractDescription(readmePath);
 
           // Extract date from folder name (e.g., "2025-06-04-upgrade-system-config" -> "2025-06-04")
           const dateMatch = folderName.match(/^(\d{4}-\d{2}-\d{2})/);
           const date = dateMatch ? dateMatch[1] : folderName.substring(0, 10);
+          let description = '';
 
           if (!fs.existsSync(readmePath)) {
             return {
@@ -215,6 +213,7 @@ export function getUpgradeOptions(network: 'mainnet' | 'sepolia'): DeploymentInf
           try {
             const content = fs.readFileSync(readmePath, 'utf-8');
             const parseResult = parseExecutionStatus(content);
+            description = extractDescription(readmePath);
             status = parseResult.status;
             executionLinks = parseResult.executionLinks;
           } catch (parseError) {
