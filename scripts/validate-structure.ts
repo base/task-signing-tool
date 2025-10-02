@@ -28,7 +28,7 @@ interface InvalidFile {
 }
 
 interface ValidationConfig {
-  disabled: bool;
+  disabled: boolean;
 }
 
 export class StructureValidator {

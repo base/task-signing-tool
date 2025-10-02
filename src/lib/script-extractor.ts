@@ -251,21 +251,25 @@ function displayResults(data: ExtractedData) {
       try {
         // Decode URL-encoded JSON and parse it
         const decodedStateOverrides = decodeURIComponent(data.simulationLink.stateOverrides);
-        const parsedOverrides = JSON.parse(decodedStateOverrides);
+        const parsedOverrides: Array<{
+          contractAddress: string;
+          storage?: Array<{ key: string; value: string }>;
+        }> = JSON.parse(decodedStateOverrides);
 
         console.log(`• State Overrides:`);
-        parsedOverrides.forEach((override: any, index: number) => {
+        parsedOverrides.forEach((override, index) => {
           console.log(`  ${index + 1}. Contract: `);
           console.log(`     Name: (empty)`); // Leave empty as requested
           console.log(`     Address: ${override.contractAddress}`);
           console.log(`     Storage Overrides:`);
-          override.storage?.forEach((storage: any, storageIndex: number) => {
+          override.storage?.forEach((storage, storageIndex) => {
             console.log(`       ${storageIndex + 1}. Key: ${storage.key}`);
             console.log(`          Value: ${storage.value}`);
           });
         });
       } catch (error) {
         // If parsing fails, show raw data
+        console.error(error);
         console.log(`• State Overrides (raw): ${data.simulationLink.stateOverrides}`);
       }
     }

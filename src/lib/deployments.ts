@@ -74,6 +74,7 @@ function extractDescription(readmePath: string): string {
 
     return 'Smart contract upgrade deployment';
   } catch (error) {
+    console.warn(error);
     return 'Smart contract upgrade deployment';
   }
 }

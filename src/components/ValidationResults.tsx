@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { DiffComparator } from '@/lib/comparator';
-import { StringDiff } from '@/lib/types/index';
+import React, { useEffect, useState, useCallback } from 'react';
+import { StringDiff, Override, Change, SigningData } from '@/lib/types/index';
 import { ValidationData } from '@/lib/validation-service';
 import { ComparisonCard } from './index';
 
@@ -14,8 +13,50 @@ interface ValidationResultsProps {
   simulationMethod: 'tenderly' | 'state-diff';
   userLedgerAddress: string;
   onBackToSetup: () => void;
-  onProceedToLedgerSigning: (validationResult: any) => void;
+  onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
+
+type ValidationItemBase = {
+  step: 1 | 2 | 3;
+  stepName: string;
+  contractName: string;
+  contractAddress?: string;
+  stateChangeIndex?: number;
+  changeIndex?: number;
+  stateOverrideIndex?: number;
+  overrideIndex?: number;
+};
+
+type SigningDataItem = ValidationItemBase & {
+  type: 'signing-data';
+  expected: {
+    dataToSign: string;
+    address: string;
+    domainHash: string;
+    messageHash: string;
+    // Optional to allow safe access patterns used in the UI
+    description?: string;
+  };
+  actual?: SigningData;
+};
+
+type OverrideItem = ValidationItemBase & {
+  type: 'override';
+  stateOverrideIndex: number;
+  overrideIndex: number;
+  expected: Override;
+  actual?: Override;
+};
+
+type ChangeItem = ValidationItemBase & {
+  type: 'change';
+  stateChangeIndex: number;
+  changeIndex: number;
+  expected: Change;
+  actual?: Change;
+};
+
+type ValidationItem = SigningDataItem | OverrideItem | ChangeItem;
 
 export const ValidationResults: React.FC<ValidationResultsProps> = ({
   userType,
@@ -31,9 +72,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const [currentChangeIndex, setCurrentChangeIndex] = useState(0);
   const [validationResult, setValidationResult] = useState<ValidationData | null>(null);
   const [isInstallingDeps, setIsInstallingDeps] = useState(false);
-
-  // Create a diff comparator instance
-  const diffComparator = new DiffComparator();
 
   const createStringDiffs = (expected: string, actual: string): StringDiff[] => {
     if (expected === actual) {
@@ -111,34 +149,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     return createStringDiffs(expectedValue, actualValue);
   };
 
-  const getAllValidationItems = (): Array<{
-    step: 1 | 2 | 3;
-    stepName: string;
-    type: 'signing-data' | 'override' | 'change';
-    stateChangeIndex?: number;
-    changeIndex?: number;
-    stateOverrideIndex?: number;
-    overrideIndex?: number;
-    expected: any;
-    actual?: any;
-    contractName: string;
-    contractAddress?: string;
-  }> => {
+  const getAllValidationItems = (): ValidationItem[] => {
     if (!validationResult) return [];
 
-    const items: Array<{
-      step: 1 | 2 | 3;
-      stepName: string;
-      type: 'signing-data' | 'override' | 'change';
-      stateChangeIndex?: number;
-      changeIndex?: number;
-      stateOverrideIndex?: number;
-      overrideIndex?: number;
-      expected: any;
-      actual?: any;
-      contractName: string;
-      contractAddress?: string;
-    }> = [];
+    const items: ValidationItem[] = [];
 
     // Step 1: Domain and Message Hash Validation
     const expectedDomainAndMessageHashes = validationResult.expected.domainAndMessageHashes;
@@ -204,11 +218,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     return items;
   };
 
-  useEffect(() => {
-    handleRunValidation();
-  }, [userType, network, selectedUpgrade, simulationMethod]);
-
-  const handleRunValidation = async () => {
+  const handleRunValidation = useCallback(async () => {
     setLoading(true);
     setError(null);
     setValidationResult(null);
@@ -292,7 +302,11 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       setLoading(false);
       setIsInstallingDeps(false);
     }
-  };
+  }, [network, selectedUpgrade.id, userType, simulationMethod, userLedgerAddress]);
+
+  useEffect(() => {
+    handleRunValidation();
+  }, [handleRunValidation]);
 
   const allValidationItems = getAllValidationItems();
   const currentValidationItem = allValidationItems[currentChangeIndex];
@@ -373,12 +387,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       };
     }
 
-    const expected = currentValidationItem.expected;
-    const actual = currentValidationItem.actual;
-
     if (currentValidationItem.type === 'signing-data') {
       // Step 1: Compare EIP-712 data to sign
-      const match = expected.dataToSign === actual.dataToSign;
+      const match =
+        currentValidationItem.expected.dataToSign === currentValidationItem.actual!.dataToSign;
       return match
         ? {
             status: 'match',
@@ -394,12 +406,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           };
     } else if (currentValidationItem.type === 'override') {
       // Step 2: Compare state override (only key and value)
-      const match = expected.key === actual.key && expected.value === actual.value;
+      const match =
+        currentValidationItem.expected.key === currentValidationItem.actual!.key &&
+        currentValidationItem.expected.value === currentValidationItem.actual!.value;
 
       // Check if description indicates this difference is expected
       const isExpectedDifference =
-        expected.description &&
-        expected.description.toLowerCase().includes('difference is expected');
+        currentValidationItem.expected.description &&
+        currentValidationItem.expected.description.toLowerCase().includes('difference is expected');
 
       if (match) {
         return {
@@ -426,14 +440,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     } else {
       // Step 3: Compare state change (key, before, and after values)
       const match =
-        expected.key === actual.key &&
-        expected.before === actual.before &&
-        expected.after === actual.after;
+        currentValidationItem.expected.key === currentValidationItem.actual!.key &&
+        currentValidationItem.expected.before === currentValidationItem.actual!.before &&
+        currentValidationItem.expected.after === currentValidationItem.actual!.after;
 
       // Check if description indicates this difference is expected
       const isExpectedDifference =
-        expected.description &&
-        expected.description.toLowerCase().includes('difference is expected');
+        currentValidationItem.expected.description &&
+        currentValidationItem.expected.description.toLowerCase().includes('difference is expected');
 
       if (match) {
         return {

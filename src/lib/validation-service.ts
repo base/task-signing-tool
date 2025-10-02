@@ -8,6 +8,7 @@ import {
   ExtractedData,
   StateChange,
   StateOverride,
+  TaskConfig,
   TenderlySimulationResponse,
   ValidationData,
 } from './types/index';
@@ -58,7 +59,7 @@ export class ValidationService {
     userLedgerAddress: string;
   }): Promise<{
     options: ValidationOptions;
-    parsedConfig: any;
+    parsedConfig: TaskConfig;
   }> {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
@@ -205,7 +206,7 @@ export class ValidationService {
     };
   }
 
-  private getExpectedData(parsedConfig: any): {
+  private getExpectedData(parsedConfig: TaskConfig): {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
     domainAndMessageHashes?: {
@@ -471,32 +472,6 @@ export class ValidationService {
     const fileName = userType.toLowerCase().replace(/\s+/g, '-') + '.json';
     console.log(`🗂️ Mapping user type "${userType}" to config file: ${fileName}`);
     return fileName;
-  }
-
-  /**
-   * Parse state overrides from simulation link when Tenderly is not available
-   */
-  private parseStateOverridesFromLink(simulationLink: any): StateOverride[] {
-    if (!simulationLink.stateOverrides) {
-      return [];
-    }
-
-    try {
-      const stateOverrides = JSON.parse(simulationLink.stateOverrides);
-      return stateOverrides.map((override: any, index: number) => ({
-        name: `Contract ${index + 1}`,
-        address: override.contractAddress,
-        overrides:
-          override.storage?.map((storage: any) => ({
-            key: storage.key,
-            value: storage.value,
-            description: 'State override from script',
-          })) || [],
-      }));
-    } catch (error) {
-      console.error('Failed to parse state overrides:', error);
-      return [];
-    }
   }
 
   /**
