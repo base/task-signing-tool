@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { action, domainHash, messageHash, ledgerAccount, eip712signPath } = json.body as {
+    const { action, domainHash, messageHash, ledgerAccount, eip712signPath } = json as {
       action: 'get-address' | 'sign';
       domainHash?: string;
       messageHash?: string;

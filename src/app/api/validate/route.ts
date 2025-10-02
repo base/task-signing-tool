@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { upgradeId, network, userType, simulationMethod, userLedgerAddress } = json.body;
+    const { upgradeId, network, userType, simulationMethod, userLedgerAddress } = json;
 
     if (!upgradeId || !network || !userType) {
       return NextResponse.json(
