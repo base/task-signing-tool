@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { upgradeId, network, userType, simulationMethod, userLedgerAddress } = json;
+    const { upgradeId, network, userType, simulationMethod } = json;
 
     if (!upgradeId || !network || !userType) {
       return NextResponse.json(
@@ -13,14 +13,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!userLedgerAddress) {
-      return NextResponse.json({ message: 'Missing userLedgerAddress parameter' }, { status: 400 });
-    }
-
     const actualNetwork = network.toLowerCase();
 
     console.log(
-      `🔍 Starting validation for ${upgradeId} on ${actualNetwork} for ${userType} using ${simulationMethod} with ledger address ${userLedgerAddress}`
+      `🔍 Starting validation for ${upgradeId} on ${actualNetwork} for ${userType} using ${simulationMethod}`
     );
 
     // Initialize ValidationService
@@ -32,7 +28,6 @@ export async function POST(req: NextRequest) {
       network: actualNetwork,
       userType,
       simulationMethod,
-      userLedgerAddress,
     });
 
     // Clean up temp files

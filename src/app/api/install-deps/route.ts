@@ -22,8 +22,6 @@ export async function POST(req: NextRequest) {
 
     // Construct the path to the upgrade folder and lib subdirectory
     const contractDeploymentsPath = path.join(process.cwd(), '..');
-
-    // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
     const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
     const libPath = path.join(upgradePath, 'lib');
 
@@ -42,12 +40,7 @@ export async function POST(req: NextRequest) {
     const { stdout, stderr } = await execAsync('make deps', {
       cwd: upgradePath,
       timeout: 300000, // 5 minutes timeout
-      env: {
-        ...process.env,
-        PATH: process.env.PATH,
-        HOME: process.env.HOME,
-        USER: process.env.USER,
-      },
+      env: process.env,
     });
 
     console.log(`✅ Dependencies installed successfully for ${actualNetwork}/${upgradeId}`);

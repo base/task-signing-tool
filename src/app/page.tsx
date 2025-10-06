@@ -88,7 +88,7 @@ export default function Home() {
 
     setSigningData({
       signature,
-      signerAddress: userLedgerAddress, // Use the address we already have from user selection
+      signerAddress: userLedgerAddress,
       domainHash,
       messageHash,
     });
@@ -228,7 +228,6 @@ export default function Home() {
               name: selectedUpgrade || '',
             }}
             simulationMethod={selectedSimulationMethod}
-            userLedgerAddress={userLedgerAddress}
             onBackToSetup={handleBackToSetup}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
