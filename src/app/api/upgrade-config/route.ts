@@ -26,10 +26,7 @@ export async function GET(req: NextRequest) {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const upgradePath =
-      (network as string).toLowerCase() === 'test'
-        ? path.join(process.cwd(), 'test-upgrade', upgradeId as string)
-        : path.join(contractDeploymentsPath, network as string, upgradeId as string);
+    const upgradePath = path.join(contractDeploymentsPath, network as string, upgradeId as string);
 
     const validationsPath = path.join(upgradePath, 'validations');
 

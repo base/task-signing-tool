@@ -3,6 +3,7 @@ export interface TaskConfig {
   task_name: string;
   script_name: string;
   signature: string;
+  sender: string;
   args: string;
   'ledger-id': number;
   rpc_url: string;
