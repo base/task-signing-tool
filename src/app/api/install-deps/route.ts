@@ -24,10 +24,7 @@ export async function POST(req: NextRequest) {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const upgradePath =
-      actualNetwork === 'test'
-        ? path.join(process.cwd(), 'test-upgrade', upgradeId)
-        : path.join(contractDeploymentsPath, actualNetwork, upgradeId);
+    const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
     const libPath = path.join(upgradePath, 'lib');
 
     // Check if the upgrade folder exists
@@ -35,22 +32,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: `Upgrade folder not found: ${network}/${upgradeId}` },
         { status: 404 }
-      );
-    }
-
-    // Check if the lib folder already exists
-    const libExists = fs.existsSync(libPath);
-
-    if (libExists) {
-      console.log(`✅ Lib folder already exists for ${actualNetwork}/${upgradeId}`);
-      return NextResponse.json(
-        {
-          success: true,
-          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
-          libExists: true,
-          depsInstalled: false, // No installation was needed
-        },
-        { status: 200 }
       );
     }
 
