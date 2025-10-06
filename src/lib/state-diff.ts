@@ -13,9 +13,9 @@ const execAsync = promisify(exec);
 export class StateDiffClient {
   private binaryPath: string;
 
-  constructor(binaryPath?: string) {
+  constructor(binaryPath = path.join(process.cwd(), 'state-diff')) {
     // Default to go-simulator directory relative to tool
-    this.binaryPath = binaryPath || path.join(process.cwd(), '..', 'go-simulator');
+    this.binaryPath = binaryPath;
     console.log(`🔧 StateDiffClient initialized with binary path: ${this.binaryPath}`);
   }
 
