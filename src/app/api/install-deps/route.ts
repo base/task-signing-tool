@@ -35,10 +35,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(
-      `📦 Lib folder missing for ${actualNetwork}/${upgradeId}, installing dependencies...`
-    );
-    console.log(`📁 Working directory: ${upgradePath}`);
+    console.log('Installing dependencies...');
+    console.log(`Working directory: ${upgradePath}`);
 
     // Run make deps in the upgrade folder
     const { stdout, stderr } = await execAsync('make deps', {
