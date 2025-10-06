@@ -25,7 +25,6 @@ export interface ValidationOptions {
   tenderlyApiKey?: string;
   simulationMethod?: 'tenderly' | 'state-diff';
   stateDiffBinaryPath?: string; // Path to state-diff binary
-  userLedgerAddress: string; // User's Ledger address to use as sender
 }
 
 export class ValidationService {
@@ -57,7 +56,6 @@ export class ValidationService {
     tenderlyApiKey?: string;
     simulationMethod?: 'tenderly' | 'state-diff';
     stateDiffBinaryPath?: string;
-    userLedgerAddress: string;
   }): Promise<{
     options: ValidationOptions;
     parsedConfig: TaskConfig;
@@ -103,7 +101,6 @@ export class ValidationService {
           tenderlyApiKey: baseOptions.tenderlyApiKey,
           simulationMethod: baseOptions.simulationMethod,
           stateDiffBinaryPath: baseOptions.stateDiffBinaryPath,
-          userLedgerAddress: baseOptions.userLedgerAddress,
         },
         parsedConfig: parsedConfig.config,
       };
@@ -123,7 +120,6 @@ export class ValidationService {
     tenderlyApiKey?: string;
     simulationMethod?: 'tenderly' | 'state-diff';
     stateDiffBinaryPath?: string;
-    userLedgerAddress: string;
   }): Promise<ValidationData> {
     console.log(`🚀 Starting validation for ${baseOptions.upgradeId} on ${baseOptions.network}`);
     console.log(`🎯 Using simulation method: ${baseOptions.simulationMethod || 'auto-detect'}`);
@@ -441,17 +437,13 @@ export class ValidationService {
     // Use the RPC URL from options
     const rpcUrl = options.rpcUrl;
 
-    // Use the user's Ledger address as the sender instead of default
-    const senderAddress = options.userLedgerAddress;
-    console.log(`👤 Using user's Ledger address as sender: ${senderAddress}`);
-
     const extractorOptions = {
       scriptPath,
       rpcUrl,
       scriptName: scriptParams.scriptName,
       signature: scriptParams.signature,
       args: scriptParams.args ? [scriptParams.args] : [], // Handle empty args
-      sender: senderAddress,
+      sender: options.sender,
       saveOutput: path.join(scriptPath, 'temp-script-output.txt'),
     };
 

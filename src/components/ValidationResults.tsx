@@ -11,7 +11,6 @@ interface ValidationResultsProps {
     name: string;
   };
   simulationMethod: 'tenderly' | 'state-diff';
-  userLedgerAddress: string;
   onBackToSetup: () => void;
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
@@ -63,7 +62,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   network,
   selectedUpgrade,
   simulationMethod,
-  userLedgerAddress,
   onBackToSetup,
   onProceedToLedgerSigning,
 }) => {
@@ -268,7 +266,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         network,
         userType,
         simulationMethod,
-        userLedgerAddress,
       });
 
       const response = await fetch('/api/validate', {
@@ -281,7 +278,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           network: network.toLowerCase(),
           userType,
           simulationMethod,
-          userLedgerAddress,
         }),
       });
 
@@ -302,7 +298,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       setLoading(false);
       setIsInstallingDeps(false);
     }
-  }, [network, selectedUpgrade.id, userType, simulationMethod, userLedgerAddress]);
+  }, [network, selectedUpgrade.id, userType, simulationMethod]);
 
   useEffect(() => {
     handleRunValidation();
