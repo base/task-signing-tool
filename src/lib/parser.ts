@@ -40,6 +40,7 @@ const TaskConfigSchema = z.object({
   task_name: z.string().min(1),
   script_name: z.string().min(1),
   signature: z.string().regex(/^[xX0-9a-zA-Z\[\](),]+$/, 'Invalid signature format'),
+  sender: z.string().regex(/^[xX0-9a-fA-F\[\](),]+$/, 'Invalid sender format'),
   args: z.string().regex(/^[xX0-9a-zA-Z\[\](),]*$/, 'Invalid args format'), // Allow empty string for scripts with no arguments
   'ledger-id': z.number().int().nonnegative(), // Required ledger account index
   rpc_url: z.string().url().min(1), // The actual RPC URL to use
@@ -145,6 +146,7 @@ export class ConfigParser {
       task_name: '',
       script_name: '',
       signature: '',
+      sender: '',
       args: '',
       'ledger-id': 0,
       rpc_url: 'https://eth-mainnet.public.blastapi.io',

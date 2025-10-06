@@ -18,9 +18,10 @@ export type { ValidationData };
 
 export interface ValidationOptions {
   upgradeId: string; // e.g., "2025-06-04-upgrade-system-config"
-  network: 'mainnet' | 'sepolia' | 'test';
+  network: 'mainnet' | 'sepolia';
   userType: 'Base SC' | 'Coinbase' | 'OP';
   rpcUrl: string;
+  sender: string;
   tenderlyApiKey?: string;
   simulationMethod?: 'tenderly' | 'state-diff';
   stateDiffBinaryPath?: string; // Path to state-diff binary
@@ -63,11 +64,11 @@ export class ValidationService {
   }> {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
-    // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const upgradePath =
-      baseOptions.network === 'test'
-        ? path.join(process.cwd(), 'test-upgrade', baseOptions.upgradeId)
-        : path.join(contractDeploymentsPath, baseOptions.network, baseOptions.upgradeId);
+    const upgradePath = path.join(
+      contractDeploymentsPath,
+      baseOptions.network,
+      baseOptions.upgradeId
+    );
 
     // Look for validation config files based on user type in validations subdirectory
     const configFileName = this.getConfigFileName(baseOptions.userType);
@@ -95,9 +96,10 @@ export class ValidationService {
       return {
         options: {
           upgradeId: baseOptions.upgradeId,
-          network: baseOptions.network as 'mainnet' | 'sepolia' | 'test',
+          network: baseOptions.network as 'mainnet' | 'sepolia',
           userType: baseOptions.userType as 'Base SC' | 'Coinbase' | 'OP',
           rpcUrl: parsedConfig.config.rpc_url,
+          sender: parsedConfig.config.sender,
           tenderlyApiKey: baseOptions.tenderlyApiKey,
           simulationMethod: baseOptions.simulationMethod,
           stateDiffBinaryPath: baseOptions.stateDiffBinaryPath,
@@ -434,10 +436,7 @@ export class ValidationService {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const scriptPath =
-      options.network === 'test'
-        ? path.join(process.cwd(), 'test-upgrade', options.upgradeId)
-        : path.join(contractDeploymentsPath, options.network, options.upgradeId);
+    const scriptPath = path.join(contractDeploymentsPath, options.network, options.upgradeId);
 
     // Use the RPC URL from options
     const rpcUrl = options.rpcUrl;
@@ -481,10 +480,7 @@ export class ValidationService {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
     // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const scriptPath =
-      options.network === 'test'
-        ? path.join(process.cwd(), 'test-upgrade', options.upgradeId)
-        : path.join(contractDeploymentsPath, options.network, options.upgradeId);
+    const scriptPath = path.join(contractDeploymentsPath, options.network, options.upgradeId);
     const tempFile = path.join(scriptPath, 'temp-script-output.txt');
     const extractedFile = path.join(scriptPath, 'temp-script-output-extracted.json');
 
