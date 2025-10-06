@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { StringDiff, Override, Change, SigningData } from '@/lib/types/index';
 import { ValidationData } from '@/lib/validation-service';
 import { ComparisonCard } from './index';
@@ -70,6 +70,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const [currentChangeIndex, setCurrentChangeIndex] = useState(0);
   const [validationResult, setValidationResult] = useState<ValidationData | null>(null);
   const [isInstallingDeps, setIsInstallingDeps] = useState(false);
+  const isRunningRef = useRef(false);
 
   const createStringDiffs = (expected: string, actual: string): StringDiff[] => {
     if (expected === actual) {
@@ -217,6 +218,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   };
 
   const handleRunValidation = useCallback(async () => {
+    if (isRunningRef.current) {
+      return;
+    }
+    isRunningRef.current = true;
     setLoading(true);
     setError(null);
     setValidationResult(null);
@@ -251,10 +256,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           `✅ Dependencies installed successfully for ${network.toLowerCase()}/${
             selectedUpgrade.id
           }`
-        );
-      } else {
-        console.log(
-          `✅ Dependencies already exist for ${network.toLowerCase()}/${selectedUpgrade.id}`
         );
       }
 
@@ -297,6 +298,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     } finally {
       setLoading(false);
       setIsInstallingDeps(false);
+      isRunningRef.current = false;
     }
   }, [network, selectedUpgrade.id, userType, simulationMethod]);
 
