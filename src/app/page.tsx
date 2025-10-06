@@ -17,11 +17,11 @@ import {
 } from '@/components';
 import { ValidationData } from '@/lib/types';
 
-type UserType = string | null; // Changed to string to handle dynamic user types
-type NetworkType = 'Sepolia' | 'Mainnet' | 'Test' | null;
+type UserType = string | null;
+type NetworkType = 'Sepolia' | 'Mainnet' | null;
 type UpgradeType = string | null;
 type SimulationMethod = 'tenderly' | 'state-diff';
-type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing'; // Added 'simulation' step
+type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing';
 
 interface SigningData {
   signature: string;
@@ -31,7 +31,7 @@ interface SigningData {
 }
 
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState<Step>('network'); // Start with network instead of user
+  const [currentStep, setCurrentStep] = useState<Step>('network');
   const [selectedUser, setSelectedUser] = useState<UserType>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<UpgradeType>(null);
@@ -43,7 +43,6 @@ export default function Home() {
   const [userLedgerAddress, setUserLedgerAddress] = useState<string>('');
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
-  // Updated flow: Network → Upgrade → User → Simulation
   const handleNetworkSelection = (network: NetworkType) => {
     setSelectedNetwork(network);
     setCurrentStep('upgrade');
@@ -70,11 +69,8 @@ export default function Home() {
     setCurrentStep('validation');
   };
 
-  // Remove the old handleWalletSelection and handleStartValidation methods
-  // as they're no longer needed with the new flow
-
   const handleBackToSetup = () => {
-    setCurrentStep('simulation'); // Go back to simulation method selection
+    setCurrentStep('simulation');
     setSelectedSimulationMethod(null);
     setValidationData(null);
     setSigningData(null);

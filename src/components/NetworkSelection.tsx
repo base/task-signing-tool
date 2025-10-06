@@ -1,11 +1,11 @@
 import React from 'react';
 
 interface NetworkSelectionProps {
-  onSelect: (network: 'Mainnet' | 'Sepolia' | 'Test') => void;
+  onSelect: (network: 'Mainnet' | 'Sepolia') => void;
 }
 
 export const NetworkSelection: React.FC<NetworkSelectionProps> = ({ onSelect }) => {
-  const options = ['Mainnet', 'Sepolia', 'Test'] as const;
+  const options = ['Mainnet', 'Sepolia'] as const;
 
   return (
     <div style={{ textAlign: 'center' }}>
