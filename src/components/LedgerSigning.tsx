@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 interface LedgerSigningProps {
   domainHash: string;
   messageHash: string;
-  expectedSignerAddress: string;
   ledgerAccount: number;
   onSigningComplete: (signature: string) => void;
   onCancel: () => void;
@@ -14,7 +13,6 @@ type LedgerSigningStep = 'connect' | 'sign' | 'complete';
 export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   domainHash,
   messageHash,
-  expectedSignerAddress,
   ledgerAccount,
   onSigningComplete,
   onCancel,
@@ -147,72 +145,6 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                   Blind signing is enabled (Settings → Debug → Blind signing)
                 </li>
               </ul>
-            </div>
-
-            <div
-              style={{
-                background: '#D1FAE5',
-                border: '1px solid #6EE7B7',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '20px',
-              }}
-            >
-              <p
-                style={{
-                  margin: '0 0 8px 0',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#065F46',
-                }}
-              >
-                ✅ Using Ledger Address:
-              </p>
-              <div
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  color: '#14532D',
-                  background: '#F0FDF4',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: '1px solid #BBF7D0',
-                  wordBreak: 'break-all',
-                }}
-              >
-                {expectedSignerAddress}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <div
-                style={{
-                  background: '#F3F4F6',
-                  border: '1px solid #D1D5DB',
-                  borderRadius: '8px',
-                  padding: '12px',
-                }}
-              >
-                <p
-                  style={{
-                    margin: '0 0 4px 0',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#374151',
-                  }}
-                >
-                  Using Ledger Account Index: {ledgerAccount}
-                </p>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: '12px',
-                    color: '#6B7280',
-                  }}
-                >
-                  HD Path: m/44&apos;/60&apos;/{ledgerAccount}&apos;/0/0
-                </p>
-              </div>
             </div>
 
             <button

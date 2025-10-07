@@ -231,7 +231,6 @@ export default function Home() {
           <LedgerSigning
             domainHash={validationData.expected?.domainAndMessageHashes?.domain_hash || ''}
             messageHash={validationData.expected?.domainAndMessageHashes?.message_hash || ''}
-            expectedSignerAddress={userLedgerAddress}
             ledgerAccount={userLedgerAccount}
             onSigningComplete={handleLedgerSigningComplete}
             onCancel={handleBackToValidation}
