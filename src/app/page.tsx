@@ -53,14 +53,8 @@ export default function Home() {
     setCurrentStep('user');
   };
 
-  const handleUserSelection = (
-    userType: UserType,
-    ledgerAddress: string,
-    ledgerAccount: number
-  ) => {
+  const handleUserSelection = (userType: UserType) => {
     setSelectedUser(userType);
-    setUserLedgerAddress(ledgerAddress);
-    setUserLedgerAccount(ledgerAccount);
     setCurrentStep('simulation');
   };
 

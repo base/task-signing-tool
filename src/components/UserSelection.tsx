@@ -10,14 +10,12 @@ interface ConfigOption {
 interface UserSelectionProps {
   network: string;
   upgradeId: string;
-  onSelect: (user: string, ledgerAddress: string, ledgerAccount: number) => void;
+  onSelect: (user: string) => void;
 }
 
 export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId, onSelect }) => {
   const [availableUsers, setAvailableUsers] = useState<ConfigOption[]>([]);
   const [selectedUser, setSelectedUser] = useState<ConfigOption | null>(null);
-  const [ledgerAddress, setLedgerAddress] = useState<string>('');
-  const [ledgerAccount, setLedgerAccount] = useState<number>(0);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -55,19 +53,11 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
   const handleUserSelect = (userOption: ConfigOption) => {
     setSelectedUser(userOption);
     setError('');
-    // Reset address states when user changes
-    setLedgerAddress('');
-
-    // Set ledger account to the value from validation file
-    setLedgerAccount(userOption.ledgerId);
-    console.log(
-      `Set default ledger account to: ${userOption.ledgerId} for user: ${userOption.displayName}`
-    );
   };
 
   const handleProceed = () => {
-    if (selectedUser && ledgerAddress) {
-      onSelect(selectedUser.fileName, ledgerAddress, ledgerAccount);
+    if (selectedUser) {
+      onSelect(selectedUser.fileName);
     }
   };
 
@@ -209,7 +199,7 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
       )}
 
       {/* Proceed Button */}
-      {selectedUser && ledgerAddress && (
+      {selectedUser && (
         <button
           onClick={handleProceed}
           style={{
