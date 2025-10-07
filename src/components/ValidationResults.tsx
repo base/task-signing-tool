@@ -582,7 +582,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             color: '#D97706',
             padding: '24px',
             borderRadius: '12px',
-            marginBottom: '24px',
             maxWidth: '600px',
             margin: '0 auto 24px',
           }}
