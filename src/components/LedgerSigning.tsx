@@ -37,8 +37,6 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
     }
   }, [domainHash, messageHash]);
 
-  const combinedData = `0x1901${domainHash.slice(2)}${messageHash.slice(2)}`;
-
   const handleConnect = () => {
     // Check if required fields are present before proceeding
     if (!domainHash || !messageHash) {
@@ -340,23 +338,6 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                   }}
                 >
                   {messageHash}
-                </div>
-              </div>
-              <div>
-                <strong style={{ color: '#92400E' }}>Combined Data to Sign:</strong>
-                <div
-                  style={{
-                    fontFamily: 'monospace',
-                    fontSize: '12px',
-                    color: '#92400E',
-                    background: '#FEF3C7',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    marginTop: '4px',
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {combinedData}
                 </div>
               </div>
             </div>
