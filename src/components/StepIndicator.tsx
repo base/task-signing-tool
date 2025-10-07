@@ -5,7 +5,6 @@ interface StepIndicatorProps {
   hasNetwork: boolean;
   hasWallet: boolean;
   hasUser: boolean;
-  hasSimulation?: boolean;
 }
 
 export const StepIndicator: React.FC<StepIndicatorProps> = ({
@@ -13,7 +12,6 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   hasNetwork,
   hasWallet,
   hasUser,
-  hasSimulation = false,
 }) => {
   if (currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing')
     return null;
@@ -22,7 +20,6 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
     { key: 'network', completed: hasNetwork },
     { key: 'upgrade', completed: hasWallet },
     { key: 'user', completed: hasUser },
-    { key: 'simulation', completed: hasSimulation },
   ];
 
   return (

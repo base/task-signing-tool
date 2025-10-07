@@ -2,7 +2,6 @@ import { StateChange, StateOverride } from '../../src/lib/types';
 import { ValidationService } from '../../src/lib/validation-service';
 
 // Mock the dependencies
-jest.mock('../../src/lib/tenderly');
 jest.mock('../../src/lib/script-extractor');
 jest.mock('../../src/lib/parser');
 jest.mock('fs');

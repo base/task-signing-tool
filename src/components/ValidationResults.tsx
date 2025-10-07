@@ -10,7 +10,6 @@ interface ValidationResultsProps {
     id: string;
     name: string;
   };
-  simulationMethod: 'tenderly' | 'state-diff';
   onBackToSetup: () => void;
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
@@ -61,7 +60,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   userType,
   network,
   selectedUpgrade,
-  simulationMethod,
   onBackToSetup,
   onProceedToLedgerSigning,
 }) => {
@@ -266,7 +264,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         upgradeId: selectedUpgrade.id,
         network,
         userType,
-        simulationMethod,
       });
 
       const response = await fetch('/api/validate', {
@@ -278,7 +275,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           upgradeId: selectedUpgrade.id,
           network: network.toLowerCase(),
           userType,
-          simulationMethod,
         }),
       });
 
@@ -300,7 +296,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       setIsInstallingDeps(false);
       isRunningRef.current = false;
     }
-  }, [network, selectedUpgrade.id, userType, simulationMethod]);
+  }, [network, selectedUpgrade.id, userType]);
 
   useEffect(() => {
     handleRunValidation();
@@ -476,10 +472,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     const getLoadingMessage = () => {
       if (isInstallingDeps) {
         return 'Checking dependencies and running make deps if needed...';
-      } else if (simulationMethod === 'state-diff') {
-        return 'Extracting script data, running native simulator, and comparing with expected results...';
       } else {
-        return 'Extracting script data, calling Tenderly API, and comparing with expected results...';
+        return 'Extracting script data, running native simulator, and comparing with expected results...';
       }
     };
 
@@ -941,8 +935,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             }}
           >
             <p>
-              <strong>Simulation Method:</strong>{' '}
-              {simulationMethod === 'state-diff' ? 'Native Go Simulator' : 'Tenderly API'}
+              <strong>Simulation Method:</strong> Native Go Simulator
             </p>
             <p>
               <strong>Extracted Hashes:</strong>{' '}
@@ -952,17 +945,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
               <strong>Simulation Link:</strong>{' '}
               {validationResult.extractedData.simulationLink ? '✅' : '❌'}
             </p>
-            {simulationMethod === 'tenderly' && (
-              <p>
-                <strong>Tenderly Simulation:</strong>{' '}
-                {validationResult.tenderlyResponse ? '✅' : '❌'}
-              </p>
-            )}
-            {simulationMethod === 'state-diff' && (
-              <p>
-                <strong>State-Diff Output:</strong> {validationResult.stateDiffOutput ? '✅' : '❌'}
-              </p>
-            )}
+            <p>
+              <strong>State-Diff Output:</strong> {validationResult.stateDiffOutput ? '✅' : '❌'}
+            </p>
             <p>
               <strong>Domain/Message Hash Validation:</strong>{' '}
               {validationResult.expected.domainAndMessageHashes ? '✅' : '❌'}

@@ -14,7 +14,6 @@ interface SigningConfirmationProps {
     id: string;
     name: string;
   };
-  simulationMethod: 'tenderly' | 'state-diff';
   signingData?: SigningData | null;
   onBackToValidation: () => void;
   onBackToLedger?: () => void;
@@ -25,7 +24,6 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
   userType,
   network,
   selectedUpgrade,
-  simulationMethod,
   signingData,
   onBackToValidation,
   onBackToLedger,
@@ -119,9 +117,7 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: '#6B7280' }}>Simulation Method:</span>
-            <span style={{ fontWeight: '500', color: '#1F2937' }}>
-              {simulationMethod === 'tenderly' ? '☁️ Tenderly' : '⚡ State-Diff'}
-            </span>
+            <span style={{ fontWeight: '500', color: '#1F2937' }}>⚡ State-Diff</span>
           </div>
           {signingData && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
