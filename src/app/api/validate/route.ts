@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { upgradeId, network, userType, simulationMethod } = json;
+    const { upgradeId, network, userType } = json;
 
     if (!upgradeId || !network || !userType) {
       return NextResponse.json(
@@ -15,9 +15,7 @@ export async function POST(req: NextRequest) {
 
     const actualNetwork = network.toLowerCase();
 
-    console.log(
-      `🔍 Starting validation for ${upgradeId} on ${actualNetwork} for ${userType} using ${simulationMethod}`
-    );
+    console.log(`🔍 Starting validation for ${upgradeId} on ${actualNetwork} for ${userType}`);
 
     // Initialize ValidationService
     const validationService = new ValidationService();
@@ -27,7 +25,6 @@ export async function POST(req: NextRequest) {
       upgradeId,
       network: actualNetwork,
       userType,
-      simulationMethod,
     });
 
     // Clean up temp files
@@ -46,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Increase timeout for script execution and Tenderly calls
+// Increase timeout for script execution
 export const config = {
   api: {
     externalResolver: true,

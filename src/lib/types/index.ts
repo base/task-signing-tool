@@ -140,70 +140,6 @@ export interface ComparisonResult {
   };
 }
 
-// ------------------------------- Tenderly API Types -------------------------------
-export interface TenderlySimulationRequest {
-  network_id: string;
-  from: string;
-  to: string;
-  input: string;
-  gas?: number;
-  block_number?: number;
-  value?: string;
-  save?: boolean;
-  save_if_fails?: boolean;
-  simulation_type?: string;
-  state_objects?: { [contractAddress: string]: TenderlyStateObject };
-}
-
-export interface TenderlyStateObject {
-  nonce?: number;
-  code?: string;
-  balance?: {
-    value: string;
-  };
-  stateDiff?: { [storageSlot: string]: string };
-}
-
-export interface TenderlySimulationResponse {
-  simulation: {
-    id: string;
-    status: boolean;
-    block_number: number;
-    network_id: string;
-    gas_used: number;
-    error_message?: string;
-    state_diff?: { [address: string]: { [slot: string]: { from: string; to: string } } };
-  };
-  transaction?: {
-    'transaction-info'?: {
-      call_trace?: {
-        state_diff?: Array<{
-          address: string;
-          soltype?: {
-            name: string;
-            type: string;
-            storage_location: string;
-            offset: number;
-            index: string;
-            indexed: boolean;
-            simple_type: {
-              type: string;
-            };
-          };
-          original: string;
-          dirty: string;
-          raw?: Array<{
-            address: string;
-            key: string;
-            original: string;
-            dirty: string;
-          }>;
-        }>;
-      };
-    };
-  };
-}
-
 // ------------------------------- State Diff Types -------------------------------
 export interface StateDiffOptions {
   rpcUrl: string;
@@ -243,6 +179,5 @@ export interface ValidationData {
     stateChanges: StateChange[];
   };
   extractedData?: ExtractedData;
-  tenderlyResponse?: TenderlySimulationResponse;
   stateDiffOutput?: string;
 }

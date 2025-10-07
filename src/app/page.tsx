@@ -9,7 +9,6 @@ import {
   NetworkSelection,
   SelectionSummary,
   SigningConfirmation,
-  SimulationMethodSelection,
   StepIndicator,
   UpgradeSelection,
   UserSelection,
@@ -20,7 +19,6 @@ import { ValidationData } from '@/lib/types';
 type UserType = string | null;
 type NetworkType = 'Sepolia' | 'Mainnet' | null;
 type UpgradeType = string | null;
-type SimulationMethod = 'tenderly' | 'state-diff';
 type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing';
 
 interface SigningData {
@@ -35,9 +33,6 @@ export default function Home() {
   const [selectedUser, setSelectedUser] = useState<UserType>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<UpgradeType>(null);
-  const [selectedSimulationMethod, setSelectedSimulationMethod] = useState<SimulationMethod | null>(
-    null
-  );
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<SigningData | null>(null);
   const [userLedgerAddress, setUserLedgerAddress] = useState<string>('');
@@ -55,17 +50,11 @@ export default function Home() {
 
   const handleUserSelection = (userType: UserType) => {
     setSelectedUser(userType);
-    setCurrentStep('simulation');
-  };
-
-  const handleSimulationMethodSelection = (simulationMethod: SimulationMethod) => {
-    setSelectedSimulationMethod(simulationMethod);
     setCurrentStep('validation');
   };
 
   const handleBackToSetup = () => {
     setCurrentStep('simulation');
-    setSelectedSimulationMethod(null);
     setValidationData(null);
     setSigningData(null);
   };
@@ -102,7 +91,6 @@ export default function Home() {
     setSelectedUser(null);
     setSelectedNetwork(null);
     setSelectedUpgrade(null);
-    setSelectedSimulationMethod(null);
     setValidationData(null);
     setSigningData(null);
     setUserLedgerAddress('');
@@ -113,7 +101,6 @@ export default function Home() {
     setCurrentStep('upgrade');
     setSelectedUpgrade(null);
     setSelectedUser(null);
-    setSelectedSimulationMethod(null);
     setValidationData(null);
     setSigningData(null);
     setUserLedgerAddress('');
@@ -123,7 +110,6 @@ export default function Home() {
   const handleGoToUserSelection = () => {
     setCurrentStep('user');
     setSelectedUser(null);
-    setSelectedSimulationMethod(null);
     setValidationData(null);
     setSigningData(null);
     setUserLedgerAddress('');
@@ -164,7 +150,6 @@ export default function Home() {
           hasNetwork={!!selectedNetwork}
           hasWallet={!!selectedUpgrade}
           hasUser={!!selectedUser}
-          hasSimulation={!!selectedSimulationMethod}
         />
 
         <SelectionSummary
@@ -209,11 +194,7 @@ export default function Home() {
           />
         )}
 
-        {currentStep === 'simulation' && (
-          <SimulationMethodSelection onSelect={handleSimulationMethodSelection} />
-        )}
-
-        {currentStep === 'validation' && selectedSimulationMethod && (
+        {currentStep === 'validation' && (
           <ValidationResults
             userType={selectedUser || ''}
             network={selectedNetwork || ''}
@@ -221,7 +202,6 @@ export default function Home() {
               id: selectedUpgrade || '',
               name: selectedUpgrade || '',
             }}
-            simulationMethod={selectedSimulationMethod}
             onBackToSetup={handleBackToSetup}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
@@ -237,7 +217,7 @@ export default function Home() {
           />
         )}
 
-        {currentStep === 'signing' && selectedSimulationMethod && (
+        {currentStep === 'signing' && (
           <SigningConfirmation
             userType={selectedUser || ''}
             network={selectedNetwork || ''}
@@ -245,7 +225,6 @@ export default function Home() {
               id: selectedUpgrade || '',
               name: selectedUpgrade || '',
             }}
-            simulationMethod={selectedSimulationMethod}
             signingData={signingData}
             onBackToValidation={handleBackToValidation}
             onBackToLedger={signingData ? handleBackToLedger : undefined}

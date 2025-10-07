@@ -3,13 +3,11 @@ import path from 'path';
 import { ConfigParser } from './parser';
 import { runAndExtract } from './script-extractor';
 import { StateDiffClient } from './state-diff';
-import { TenderlyClient } from './tenderly';
 import {
   ExtractedData,
   StateChange,
   StateOverride,
   TaskConfig,
-  TenderlySimulationResponse,
   ValidationData,
 } from './types/index';
 
@@ -22,27 +20,13 @@ export interface ValidationOptions {
   userType: 'Base SC' | 'Coinbase' | 'OP';
   rpcUrl: string;
   sender: string;
-  tenderlyApiKey?: string;
-  simulationMethod?: 'tenderly' | 'state-diff';
   stateDiffBinaryPath?: string; // Path to state-diff binary
 }
 
 export class ValidationService {
-  private tenderlyClient?: TenderlyClient;
   private stateDiffClient?: StateDiffClient;
 
-  constructor(tenderlyApiKey?: string, stateDiffBinaryPath?: string) {
-    const apiKey = tenderlyApiKey || process.env.TENDERLY_ACCESS;
-
-    if (apiKey) {
-      this.tenderlyClient = new TenderlyClient(apiKey);
-      console.log(
-        `🔑 Tenderly client initialized with ${tenderlyApiKey ? 'provided' : 'environment'} API key`
-      );
-    } else {
-      console.warn('⚠️ No Tenderly API key found in parameters or environment variables');
-    }
-
+  constructor(stateDiffBinaryPath?: string) {
     this.stateDiffClient = new StateDiffClient(stateDiffBinaryPath);
   }
 
@@ -53,8 +37,6 @@ export class ValidationService {
     upgradeId: string;
     network: string;
     userType: string;
-    tenderlyApiKey?: string;
-    simulationMethod?: 'tenderly' | 'state-diff';
     stateDiffBinaryPath?: string;
   }): Promise<{
     options: ValidationOptions;
@@ -98,8 +80,6 @@ export class ValidationService {
           userType: baseOptions.userType as 'Base SC' | 'Coinbase' | 'OP',
           rpcUrl: parsedConfig.config.rpc_url,
           sender: parsedConfig.config.sender,
-          tenderlyApiKey: baseOptions.tenderlyApiKey,
-          simulationMethod: baseOptions.simulationMethod,
           stateDiffBinaryPath: baseOptions.stateDiffBinaryPath,
         },
         parsedConfig: parsedConfig.config,
@@ -117,12 +97,9 @@ export class ValidationService {
     upgradeId: string;
     network: string;
     userType: string;
-    tenderlyApiKey?: string;
-    simulationMethod?: 'tenderly' | 'state-diff';
     stateDiffBinaryPath?: string;
   }): Promise<ValidationData> {
     console.log(`🚀 Starting validation for ${baseOptions.upgradeId} on ${baseOptions.network}`);
-    console.log(`🎯 Using simulation method: ${baseOptions.simulationMethod || 'auto-detect'}`);
 
     // 1. Get complete config data including rpcUrl from validation file
     const { options, parsedConfig } = await this.getConfigData(baseOptions);
@@ -154,7 +131,6 @@ export class ValidationService {
       expected: sortedExpected,
       actual: sortedActual,
       extractedData: actual.extractedData,
-      tenderlyResponse: actual.tenderlyResponse,
       stateDiffOutput: actual.stateDiffOutput,
     };
   }
@@ -248,7 +224,6 @@ export class ValidationService {
       stateChanges: StateChange[];
     };
     extractedData?: ExtractedData;
-    tenderlyResponse?: TenderlySimulationResponse;
     stateDiffOutput?: string;
   }> {
     // 1. Run script extraction (handle only script extraction errors)
@@ -269,62 +244,8 @@ export class ValidationService {
       );
     }
 
-    // 2. Choose simulation method
-    const simulationMethod = await this.selectSimulationMethod(options);
-
-    // 3. Run simulation (let simulation errors propagate to UI for retry)
-    if (simulationMethod === 'state-diff') {
-      return await this.runStateDiffSimulation(options, extractedData);
-    } else {
-      return await this.runTenderlySimulation(extractedData);
-    }
-  }
-
-  /**
-   * Select the appropriate simulation method based on availability and user preference
-   */
-  private async selectSimulationMethod(
-    options: ValidationOptions
-  ): Promise<'tenderly' | 'state-diff'> {
-    // If user explicitly specified a method, validate it's available
-    if (options.simulationMethod) {
-      console.log(`🎯 Using user-specified simulation method: ${options.simulationMethod}`);
-
-      if (options.simulationMethod === 'tenderly' && !this.tenderlyClient) {
-        throw new Error(
-          'Tenderly simulation method specified but no Tenderly API key available. ' +
-            'Set TENDERLY_ACCESS in .env file or provide via API request.'
-        );
-      }
-
-      if (
-        options.simulationMethod === 'state-diff' &&
-        !(await this.stateDiffClient?.checkAvailability())
-      ) {
-        throw new Error(
-          'State-diff simulation method specified but Go binary is not available. ' +
-            'Ensure Go is installed and the go-simulator directory exists.'
-        );
-      }
-
-      return options.simulationMethod;
-    }
-
-    // Auto-detect: prefer Tenderly if available, fallback to state-diff
-    if (this.tenderlyClient) {
-      console.log(`🎯 Auto-detected: Using Tenderly simulation (API key available)`);
-      return 'tenderly';
-    } else if (await this.stateDiffClient?.checkAvailability()) {
-      console.log(`🎯 Auto-detected: Using state-diff simulation (Go binary available)`);
-      return 'state-diff';
-    } else {
-      throw new Error(
-        'No simulation method available. Either:\n' +
-          '1. Set TENDERLY_ACCESS in .env file or provide Tenderly API key, OR\n' +
-          '2. Ensure Go is installed and the go-simulator directory exists.\n' +
-          'At least one simulation method must be available to proceed.'
-      );
-    }
+    // 2. Run simulation (let simulation errors propagate to UI for retry)
+    return await this.runStateDiffSimulation(options, extractedData);
   }
 
   /**
@@ -374,48 +295,6 @@ export class ValidationService {
       console.error('❌ State-diff simulation failed:', error);
       throw error;
     }
-  }
-
-  /**
-   * Run simulation using Tenderly API (existing functionality)
-   */
-  private async runTenderlySimulation(extractedData: ExtractedData): Promise<{
-    data: {
-      stateOverrides: StateOverride[];
-      stateChanges: StateChange[];
-    };
-    extractedData?: ExtractedData;
-    tenderlyResponse?: TenderlySimulationResponse;
-  }> {
-    if (!this.tenderlyClient) {
-      throw new Error(
-        'Tenderly simulation requested but no Tenderly API key available. ' +
-          'Set TENDERLY_ACCESS in .env file or provide via API request.'
-      );
-    }
-
-    let tenderlyResponse: TenderlySimulationResponse | undefined;
-    let stateOverrides: StateOverride[] = [];
-    let stateChanges: StateChange[] = [];
-
-    try {
-      tenderlyResponse = await this.tenderlyClient.simulateFromExtractedData(extractedData);
-
-      // Parse state overrides and changes from Tenderly response
-      stateOverrides = this.tenderlyClient.parseStateOverrides(extractedData.simulationLink!);
-      stateChanges = this.tenderlyClient.parseStateChanges(tenderlyResponse);
-
-      console.log(`✅ Tenderly simulation completed: ${stateChanges.length} state changes found`);
-    } catch (error) {
-      console.error('❌ Tenderly simulation failed:', error);
-      throw error;
-    }
-
-    return {
-      data: { stateOverrides, stateChanges },
-      extractedData,
-      tenderlyResponse,
-    };
   }
 
   /**
