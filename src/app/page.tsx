@@ -15,6 +15,7 @@ import {
   ValidationResults,
 } from '@/components';
 import { ValidationData } from '@/lib/types';
+import { ConfigOption } from '@/components/UserSelection';
 
 type UserType = string | null;
 type NetworkType = 'Sepolia' | 'Mainnet' | null;
@@ -48,8 +49,9 @@ export default function Home() {
     setCurrentStep('user');
   };
 
-  const handleUserSelection = (userType: UserType) => {
-    setSelectedUser(userType);
+  const handleUserSelection = (cfg: ConfigOption) => {
+    setSelectedUser(cfg.fileName);
+    setUserLedgerAccount(cfg.ledgerId);
     setCurrentStep('validation');
   };
 

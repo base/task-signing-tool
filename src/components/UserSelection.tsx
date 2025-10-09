@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-interface ConfigOption {
+export interface ConfigOption {
   fileName: string;
   displayName: string;
   configFile: string;
@@ -10,7 +10,7 @@ interface ConfigOption {
 interface UserSelectionProps {
   network: string;
   upgradeId: string;
-  onSelect: (user: string) => void;
+  onSelect: (cfg: ConfigOption) => void;
 }
 
 export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId, onSelect }) => {
@@ -57,7 +57,7 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
 
   const handleProceed = () => {
     if (selectedUser) {
-      onSelect(selectedUser.fileName);
+      onSelect(selectedUser);
     }
   };
 
