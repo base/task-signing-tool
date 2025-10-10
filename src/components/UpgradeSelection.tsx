@@ -1,6 +1,7 @@
 import { TaskStatus } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ExecutionLink {
   url: string;
@@ -210,7 +211,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                 opacity: selectedWallet === option.id ? 0.95 : 0.8,
               }}
             >
-              <Markdown>{option.description}</Markdown>
+              <Markdown remarkPlugins={[remarkGfm]}>{option.description}</Markdown>
             </div>
 
             {selectedWallet === option.id && (
