@@ -1,7 +1,5 @@
 import { spawn } from 'child_process';
 import * as shellQuote from 'shell-quote';
-import os from 'os';
-import path from 'path';
 
 export interface LedgerSigningOptions {
   domainHash: string;
@@ -24,25 +22,6 @@ export interface LedgerAddressResult {
 }
 
 export class LedgerSigner {
-  private eip712signPath: string;
-
-  constructor(eip712signPath?: string) {
-    if (eip712signPath) {
-      this.eip712signPath = eip712signPath;
-    } else {
-      // Try to find eip712sign in common locations
-      const homeDir = os.homedir();
-      const possiblePaths = [
-        path.join(homeDir, 'go', 'bin', 'eip712sign'),
-        '/usr/local/go/bin/eip712sign',
-        '/usr/local/bin/eip712sign',
-        'eip712sign', // fallback to PATH
-      ];
-
-      this.eip712signPath = possiblePaths[0]; // Default to ~/go/bin/eip712sign
-    }
-  }
-
   /**
    * Get the Ethereum address for a given HD path from Ledger device
    */
@@ -204,7 +183,7 @@ export class LedgerSigner {
     error?: string;
   }> {
     return new Promise(resolve => {
-      console.log(`Running: ${this.eip712signPath} ${args.join(' ')}`);
+      console.log(`Running: eip712sign ${args.join(' ')}`);
 
       // Use shell-quote for security sanitization - validate that args are safe
       const sanitizedArgs = args.map(arg => {
@@ -227,7 +206,7 @@ export class LedgerSigner {
         return arg;
       });
 
-      const process = spawn(this.eip712signPath, sanitizedArgs, {
+      const process = spawn('eip712sign', sanitizedArgs, {
         stdio: ['inherit', 'pipe', 'pipe'],
       });
 
@@ -275,7 +254,7 @@ export class LedgerSigner {
    */
   async checkAvailability(): Promise<boolean> {
     try {
-      console.log(`Checking eip712sign availability at: ${this.eip712signPath}`);
+      console.log('Checking eip712sign availability');
       const result = await this.runEip712signCommand(['--help']);
       console.log(`eip712sign availability check result: ${result.success}`);
       return result.success;
