@@ -1,6 +1,6 @@
 import { ExtractedData, ScriptRunnerOptions, SimulationLink } from './types/index';
 
-import { spawnSync } from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
 
 /**
@@ -36,33 +36,50 @@ export async function runAndExtract(options: ScriptRunnerOptions): Promise<Extra
       throw new Error(`Script directory does not exist: ${scriptPath}`);
     }
 
-    const result = spawnSync('forge', forgeArgs, {
-      cwd: scriptPath,
-      encoding: 'utf8',
-      stdio: 'pipe',
-      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+    // Stream output in real-time while accumulating for later parsing
+    const { stdout, stderr } = await new Promise<{
+      stdout: string;
+      stderr: string;
+    }>((resolve, reject) => {
+      const child = spawn('forge', forgeArgs, {
+        cwd: scriptPath,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let out = '';
+      let err = '';
+
+      child.stdout.on('data', chunk => {
+        const text = chunk.toString();
+        out += text;
+        process.stdout.write(text);
+      });
+
+      child.stderr.on('data', chunk => {
+        const text = chunk.toString();
+        err += text;
+        process.stderr.write(text);
+      });
+
+      child.on('error', error => {
+        reject(new Error(`Script execution failed: ${error.message}`));
+      });
+
+      child.on('close', code => {
+        if (code !== 0) {
+          reject(new Error(`Script execution failed: ${err || `Exit code ${code}`}`));
+          return;
+        }
+        resolve({ stdout: out, stderr: err });
+      });
     });
 
-    if (result.error) {
-      console.error('❌ Script execution failed:');
-      if (result.stdout) console.error('STDOUT:', result.stdout.toString());
-      if (result.stderr) console.error('STDERR:', result.stderr.toString());
-      console.error('Error:', result.error.message);
-      throw new Error(`Script execution failed: ${result.error.message}`);
+    if (stderr) {
+      console.error(stderr);
+      throw new Error(stderr);
     }
 
-    if (typeof result.status === 'number' && result.status !== 0) {
-      console.error('❌ Script execution failed:');
-      if (result.stdout) console.error('STDOUT:', result.stdout.toString());
-      if (result.stderr) console.error('STDERR:', result.stderr.toString());
-      throw new Error(
-        `Script execution failed: ${
-          result.stderr ? result.stderr.toString() : `Exit code ${result.status}`
-        }`
-      );
-    }
-
-    scriptOutput = (result.stdout as string) || '';
+    scriptOutput = stdout || '';
 
     console.log('✅ Script executed successfully!\n');
 
