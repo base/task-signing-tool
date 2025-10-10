@@ -1,5 +1,6 @@
 import { TaskStatus } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
+import Markdown from 'react-markdown';
 
 interface ExecutionLink {
   url: string;
@@ -209,7 +210,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                 opacity: selectedWallet === option.id ? 0.95 : 0.8,
               }}
             >
-              {option.description}
+              <Markdown>{option.description}</Markdown>
             </div>
 
             {selectedWallet === option.id && (
