@@ -11,12 +11,12 @@ describe('ValidationService', () => {
   let validationService: ValidationService;
 
   beforeEach(() => {
-    validationService = new ValidationService();
-
     // Mock console methods to avoid cluttering test output
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    validationService = new ValidationService();
   });
 
   afterEach(() => {
