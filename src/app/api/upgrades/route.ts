@@ -1,4 +1,6 @@
+import { availableNetworks } from '@/lib/constants';
 import { getUpgradeOptions } from '@/lib/deployments';
+import { NetworkType } from '@/lib/types';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -6,12 +8,11 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const network = url.searchParams.get('network');
 
-    const actualNetwork = (network as string).toLowerCase() as 'mainnet' | 'sepolia';
-    const ACCEPTED_NETWORKS = ['mainnet', 'sepolia'];
+    const actualNetwork = network?.toLowerCase() as NetworkType;
 
-    if (!ACCEPTED_NETWORKS.includes(actualNetwork)) {
+    if (!availableNetworks.includes(actualNetwork)) {
       return NextResponse.json(
-        { error: 'Invalid network parameter. Must be "mainnet", "sepolia", or "test"' },
+        { error: `Invalid network parameter: ${actualNetwork}` },
         { status: 400 }
       );
     }
