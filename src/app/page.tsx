@@ -14,11 +14,10 @@ import {
   UserSelection,
   ValidationResults,
 } from '@/components';
-import { ValidationData } from '@/lib/types';
+import { NetworkType, ValidationData } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
 
 type UserType = string | null;
-type NetworkType = 'Sepolia' | 'Mainnet' | null;
 type UpgradeType = string | null;
 type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing';
 
@@ -32,7 +31,7 @@ interface SigningData {
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('network');
   const [selectedUser, setSelectedUser] = useState<UserType>(null);
-  const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>(null);
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<UpgradeType>(null);
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<SigningData | null>(null);

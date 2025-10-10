@@ -181,3 +181,9 @@ export interface ValidationData {
   extractedData?: ExtractedData;
   stateDiffOutput?: string;
 }
+
+// ------------------------------------------ Shared Types ------------------------------------------
+export enum NetworkType {
+  Sepolia = 'sepolia',
+  Mainnet = 'mainnet',
+}

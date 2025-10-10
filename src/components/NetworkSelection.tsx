@@ -1,12 +1,12 @@
+import { availableNetworks } from '@/lib/constants';
+import { NetworkType } from '@/lib/types';
 import React from 'react';
 
 interface NetworkSelectionProps {
-  onSelect: (network: 'Mainnet' | 'Sepolia') => void;
+  onSelect: (network: NetworkType) => void;
 }
 
 export const NetworkSelection: React.FC<NetworkSelectionProps> = ({ onSelect }) => {
-  const options = ['Mainnet', 'Sepolia'] as const;
-
   return (
     <div style={{ textAlign: 'center' }}>
       <h2
@@ -27,7 +27,7 @@ export const NetworkSelection: React.FC<NetworkSelectionProps> = ({ onSelect }) 
           gap: '12px',
         }}
       >
-        {options.map(option => (
+        {availableNetworks.map(option => (
           <button
             key={option}
             onClick={() => onSelect(option)}
@@ -62,7 +62,7 @@ export const NetworkSelection: React.FC<NetworkSelectionProps> = ({ onSelect }) 
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
             }}
           >
-            <span>🌐</span> {option}
+            <span>🌐</span> {option.charAt(0).toUpperCase() + option.slice(1)}
           </button>
         ))}
       </div>

@@ -1,11 +1,12 @@
 import fs from 'fs';
 import path from 'path';
+import { NetworkType } from './types';
 
 export interface UpgradeOption {
   id: string;
   name: string;
   description: string;
-  network: 'mainnet' | 'sepolia';
+  network: NetworkType;
   status?: string;
   executionLink?: string;
 }
@@ -15,7 +16,7 @@ export interface DeploymentInfo {
   name: string;
   description: string;
   date: string;
-  network: string;
+  network: NetworkType;
   status?: 'EXECUTED' | 'READY TO SIGN' | 'PENDING';
   executionLinks?: Array<{
     url: string;
@@ -166,7 +167,7 @@ function parseExecutionStatus(content: string): {
   }
 }
 
-export function getUpgradeOptions(network: 'mainnet' | 'sepolia'): DeploymentInfo[] {
+export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
   const contractDeploymentsPath = path.join(process.cwd(), '..');
 
   // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
@@ -256,8 +257,8 @@ export function getUpgradeOptions(network: 'mainnet' | 'sepolia'): DeploymentInf
 }
 
 export function getAllUpgradeOptions(): DeploymentInfo[] {
-  const mainnetOptions = getUpgradeOptions('mainnet');
-  const sepoliaOptions = getUpgradeOptions('sepolia');
+  const mainnetOptions = getUpgradeOptions(NetworkType.Mainnet);
+  const sepoliaOptions = getUpgradeOptions(NetworkType.Sepolia);
 
   return [...mainnetOptions, ...sepoliaOptions];
 }

@@ -5,6 +5,7 @@ import { runAndExtract } from './script-extractor';
 import { StateDiffClient } from './state-diff';
 import {
   ExtractedData,
+  NetworkType,
   StateChange,
   StateOverride,
   TaskConfig,
@@ -16,12 +17,19 @@ export type { ValidationData };
 
 export interface ValidationOptions {
   upgradeId: string; // e.g., "2025-06-04-upgrade-system-config"
-  network: 'mainnet' | 'sepolia';
+  network: NetworkType;
   userType: 'Base SC' | 'Coinbase' | 'OP';
   rpcUrl: string;
   sender: string;
   stateDiffBinaryPath?: string; // Path to state-diff binary
 }
+
+type BaseOptions = {
+  upgradeId: string;
+  network: NetworkType;
+  userType: string;
+  stateDiffBinaryPath?: string;
+};
 
 export class ValidationService {
   private stateDiffClient?: StateDiffClient;
@@ -33,12 +41,7 @@ export class ValidationService {
   /**
    * Parse validation config file and return both ValidationOptions and parsed config
    */
-  private async getConfigData(baseOptions: {
-    upgradeId: string;
-    network: string;
-    userType: string;
-    stateDiffBinaryPath?: string;
-  }): Promise<{
+  private async getConfigData(baseOptions: BaseOptions): Promise<{
     options: ValidationOptions;
     parsedConfig: TaskConfig;
   }> {
@@ -76,7 +79,7 @@ export class ValidationService {
       return {
         options: {
           upgradeId: baseOptions.upgradeId,
-          network: baseOptions.network as 'mainnet' | 'sepolia',
+          network: baseOptions.network as NetworkType,
           userType: baseOptions.userType as 'Base SC' | 'Coinbase' | 'OP',
           rpcUrl: parsedConfig.config.rpc_url,
           sender: parsedConfig.config.sender,
@@ -93,12 +96,7 @@ export class ValidationService {
   /**
    * Main validation flow that orchestrates script extraction, simulation, and config parsing
    */
-  async validateUpgrade(baseOptions: {
-    upgradeId: string;
-    network: string;
-    userType: string;
-    stateDiffBinaryPath?: string;
-  }): Promise<ValidationData> {
+  async validateUpgrade(baseOptions: BaseOptions): Promise<ValidationData> {
     console.log(`🚀 Starting validation for ${baseOptions.upgradeId} on ${baseOptions.network}`);
 
     // 1. Get complete config data including rpcUrl from validation file
