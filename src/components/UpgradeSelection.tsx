@@ -32,6 +32,36 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   const [upgradeOptions, setUpgradeOptions] = useState<Upgrade[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  const stripMarkdown = (markdown: string): string => {
+    // Remove code blocks
+    let text = markdown.replace(/```[\s\S]*?```/g, '');
+    // Remove inline code
+    text = text.replace(/`([^`]*)`/g, '$1');
+    // Replace images with alt text
+    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '$1');
+    // Replace links with link text
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
+    // Remove headings and blockquotes markers
+    text = text.replace(/^\s{0,3}#{1,6}\s+/gm, '');
+    text = text.replace(/^\s{0,3}>\s?/gm, '');
+    // Remove list markers and horizontal rules
+    text = text.replace(/^\s{0,3}([-*+]\s+|\d+\.\s+)/gm, '');
+    text = text.replace(/^\s{0,3}(-{3,}|\*{3,}|_{3,})\s*$/gm, '');
+    // Remove emphasis markers
+    text = text.replace(/[*_~]+/g, '');
+    // Strip remaining HTML tags if any
+    text = text.replace(/<[^>]+>/g, '');
+    // Collapse whitespace
+    text = text.replace(/\s+/g, ' ').trim();
+    return text;
+  };
+
+  const truncateText = (text: string, max: number): string => {
+    if (text.length <= max) return text;
+    return text.slice(0, max).trimEnd() + '…';
+  };
 
   useEffect(() => {
     if (!selectedNetwork) return;
@@ -135,7 +165,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
         }}
       >
         {upgradeOptions.map(option => (
-          <button
+          <div
             key={option.id}
             onClick={() => onSelect(option.id)}
             onMouseEnter={e => {
@@ -148,6 +178,16 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
               if (selectedWallet !== option.id) {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+              }
+            }}
+            className="upgrade-card"
+            data-selected={selectedWallet === option.id ? 'true' : 'false'}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(option.id);
               }
             }}
             style={{
@@ -211,7 +251,75 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                 opacity: selectedWallet === option.id ? 0.95 : 0.8,
               }}
             >
-              <Markdown remarkPlugins={[remarkGfm]}>{option.description}</Markdown>
+              {(() => {
+                const isExpanded = !!expandedCards[option.id];
+                const plain = stripMarkdown(option.description || '');
+                const isTruncated = plain.length > 150;
+                const preview = truncateText(plain, 150);
+                const isSelected = selectedWallet === option.id;
+                const buttonStyles: React.CSSProperties = {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginTop: '10px',
+                  padding: '6px 10px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  borderRadius: '9999px',
+                  border: isSelected ? '1px solid rgba(255,255,255,0.6)' : '1px solid #E5E7EB',
+                  background: isSelected ? 'rgba(255,255,255,0.16)' : '#FFFFFF',
+                  color: isSelected ? '#FFFFFF' : '#374151',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                };
+
+                return (
+                  <div className="markdown-content">
+                    {isExpanded ? (
+                      <Markdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          a: ({ node, ...props }) => (
+                            <a
+                              {...props}
+                              onClick={e => {
+                                e.stopPropagation();
+                              }}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            />
+                          ),
+                        }}
+                      >
+                        {option.description}
+                      </Markdown>
+                    ) : (
+                      <p style={{ margin: 0 }}>{preview}</p>
+                    )}
+
+                    {isTruncated && (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setExpandedCards(prev => ({ ...prev, [option.id]: !isExpanded }));
+                        }}
+                        style={buttonStyles}
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded ? 'Show less description' : 'Show full description'}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLButtonElement).style.opacity = '0.9';
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+                        }}
+                      >
+                        {isExpanded ? 'Show less' : 'Show more'}
+                        <span style={{ fontSize: '14px' }}>{isExpanded ? '▲' : '▼'}</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {selectedWallet === option.id && (
@@ -234,7 +342,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                 ✓
               </div>
             )}
-          </button>
+          </div>
         ))}
       </div>
 
@@ -246,6 +354,126 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
           100% {
             transform: rotate(360deg);
           }
+        }
+
+        /* Make links in markdown visibly distinct */
+        .upgrade-card .markdown-content a {
+          color: #2563eb; /* blue-600 */
+          text-decoration: underline;
+          text-underline-offset: 2px;
+          text-decoration-thickness: 2px;
+          font-weight: 600;
+        }
+        .upgrade-card .markdown-content a:hover {
+          color: #1d4ed8; /* blue-700 */
+        }
+        .upgrade-card[data-selected='true'] .markdown-content a {
+          color: #e0e7ff; /* indigo-100 for contrast on gradient */
+        }
+        .upgrade-card[data-selected='true'] .markdown-content a:hover {
+          color: #ffffff;
+        }
+
+        /* Inline code styling */
+        .upgrade-card .markdown-content :global(code) {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+            'Courier New', monospace;
+          font-size: 0.9em;
+          background: #eef2ff; /* indigo-50 */
+          color: #111827; /* gray-900 */
+          padding: 0.15em 0.45em;
+          border-radius: 6px;
+          border: 1px solid #c7d2fe; /* indigo-200 */
+          box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+        }
+        .upgrade-card[data-selected='true'] .markdown-content :global(code) {
+          background: rgba(255, 255, 255, 0.28);
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Code block styling */
+        .upgrade-card .markdown-content :global(pre) {
+          background: #111827; /* gray-900 */
+          color: #e5e7eb; /* gray-200 */
+          padding: 12px 14px;
+          border-radius: 8px;
+          overflow: auto;
+          margin: 0 0 12px 0;
+          border: 1px solid #1f2937; /* gray-800 */
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+          border-left: 3px solid #6366f1; /* indigo-500 accent */
+        }
+        .upgrade-card .markdown-content :global(pre code) {
+          background: transparent;
+          color: inherit;
+          padding: 0;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+            'Courier New', monospace;
+          font-size: 0.9em;
+        }
+        .upgrade-card[data-selected='true'] .markdown-content :global(pre) {
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.45);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          border-left: 3px solid rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(2px);
+        }
+
+        /* Ensure bold markdown renders bold */
+        .upgrade-card .markdown-content strong,
+        .upgrade-card .markdown-content b {
+          font-weight: 700;
+        }
+
+        /* Restore paragraph spacing inside markdown content (react-markdown output) */
+        .upgrade-card .markdown-content :global(p) {
+          margin: 0 0 12px 0;
+        }
+        .upgrade-card .markdown-content :global(p:last-child) {
+          margin-bottom: 0;
+        }
+
+        /* Ensure markdown lists render properly (lines starting with "-", "*", or numbered) */
+        .upgrade-card .markdown-content :global(ul),
+        .upgrade-card .markdown-content :global(ol) {
+          margin: 0 0 12px 0;
+          padding-left: 1.25rem; /* indent bullets */
+        }
+        .upgrade-card .markdown-content :global(li) {
+          margin: 6px 0;
+        }
+        .upgrade-card .markdown-content :global(ul) {
+          list-style-type: disc;
+          list-style-position: outside;
+        }
+        .upgrade-card .markdown-content :global(ol) {
+          list-style-type: decimal;
+          list-style-position: outside;
+        }
+        /* Better spacing for nested lists */
+        .upgrade-card .markdown-content :global(li > ul),
+        .upgrade-card .markdown-content :global(li > ol) {
+          margin-top: 6px;
+        }
+
+        /* Render markdown blockquotes (lines starting with ">") clearly */
+        .upgrade-card .markdown-content :global(blockquote) {
+          margin: 0 0 12px 0;
+          padding: 10px 12px;
+          border-left: 4px solid #d1d5db; /* gray-300 */
+          background: #f9fafb; /* gray-50 */
+          color: #374151; /* gray-700 for readability */
+          border-radius: 6px;
+        }
+        .upgrade-card .markdown-content :global(blockquote > :last-child) {
+          margin-bottom: 0; /* avoid extra space at end */
+        }
+        .upgrade-card[data-selected='true'] .markdown-content :global(blockquote) {
+          background: rgba(255, 255, 255, 0.15);
+          border-left-color: rgba(255, 255, 255, 0.6);
+          color: #f8fafc; /* slate-50 */
         }
       `}</style>
     </div>

@@ -34,25 +34,44 @@ function formatUpgradeName(folderName: string): string {
 
 function extractDescription(content: string): string {
   try {
-    // Look for description after "## Description" header
-    const descriptionMatch = content.match(/## Description\s*\n\n([^#]+?)(?=\n\n|\n##|\n###|$)/);
+    // Normalize line endings to avoid CRLF-related mismatches
+    const normalized = content.replace(/\r\n/g, '\n');
+
+    // Look for description after a "## Description" header (case-insensitive)
+    // Capture everything after the header until the next line that starts with "##" or EOF
+    const descriptionMatch = normalized.match(/##\s*Description[^\n]*\n([\s\S]*?)(?=\n##\s+|$)/i);
     if (descriptionMatch) {
-      let description = descriptionMatch[1].trim();
-      // Remove any markdown formatting and clean up
-      return description
-        .replace(/\n+/g, ' ')
-        .replace(/\*\*/g, '')
-        .replace(/\*/g, '')
-        .replace(/`([^`]+)`/g, '$1')
-        .trim();
+      const block = descriptionMatch[1];
+      // Preserve paragraphs and blank lines; trim trailing spaces per line and strip leading/trailing blank lines
+      const cleaned = block.replace(/[ \t]+$/gm, '').replace(/^\n+|\n+$/g, '');
+      return cleaned;
     }
 
-    // Fallback: look for first meaningful line after title
-    const lines = content.split('\n').filter(line => line.trim());
-    for (let i = 1; i < lines.length; i++) {
+    // Fallback: capture from the first meaningful line until the next "##" header or EOF
+    const lines = normalized.split('\n');
+    let startIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line.startsWith('#') && !line.startsWith('Status:') && line.length > 10) {
-        return line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+      if (!line) continue; // skip empty
+      if (line.startsWith('#')) continue; // skip headings
+      if (/^status\s*:/i.test(line)) continue; // skip status lines
+      startIndex = i;
+      break;
+    }
+
+    if (startIndex !== -1) {
+      let endIndex = lines.length;
+      for (let j = startIndex + 1; j < lines.length; j++) {
+        if (/^[\t ]*##\s+/.test(lines[j])) {
+          endIndex = j;
+          break;
+        }
+      }
+
+      const descriptionBlock = lines.slice(startIndex, endIndex).join('\n');
+      const cleaned = descriptionBlock.replace(/[ \t]+$/gm, '').replace(/^\n+|\n+$/g, '');
+      if (cleaned) {
+        return cleaned;
       }
     }
 
