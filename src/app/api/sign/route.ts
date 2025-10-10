@@ -4,12 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { action, domainHash, messageHash, ledgerAccount, eip712signPath } = json as {
+    const { action, domainHash, messageHash, ledgerAccount } = json as {
       action: 'get-address' | 'sign';
       domainHash?: string;
       messageHash?: string;
       ledgerAccount?: number;
-      eip712signPath?: string;
     };
 
     // Validate required fields
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
     console.log(`🔐 Starting Ledger ${action} operation`);
 
     // Initialize Ledger signer
-    const ledgerSigner = new LedgerSigner(eip712signPath);
+    const ledgerSigner = new LedgerSigner();
 
     // Check if eip712sign is available
     const isAvailable = await ledgerSigner.checkAvailability();
