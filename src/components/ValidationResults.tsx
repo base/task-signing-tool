@@ -920,64 +920,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         </div>
       </div>
 
-      {/* Debug Info */}
-      {validationResult.extractedData && (
-        <details style={{ marginBottom: '32px', fontSize: '14px' }}>
-          <summary style={{ cursor: 'pointer', fontWeight: '600', marginBottom: '12px' }}>
-            Debug Information
-          </summary>
-          <div
-            style={{
-              background: '#F9FAFB',
-              padding: '16px',
-              borderRadius: '8px',
-              fontFamily: 'monospace',
-            }}
-          >
-            <p>
-              <strong>Simulation Method:</strong> Native Go Simulator
-            </p>
-            <p>
-              <strong>Extracted Hashes:</strong>{' '}
-              {validationResult.extractedData.nestedHashes?.length || 0}
-            </p>
-            <p>
-              <strong>Simulation Link:</strong>{' '}
-              {validationResult.extractedData.simulationLink ? '✅' : '❌'}
-            </p>
-            <p>
-              <strong>State-Diff Output:</strong> {validationResult.stateDiffOutput ? '✅' : '❌'}
-            </p>
-            <p>
-              <strong>Domain/Message Hash Validation:</strong>{' '}
-              {validationResult.expected.domainAndMessageHashes ? '✅' : '❌'}
-            </p>
-            <p>
-              <strong>Signing Data Available:</strong>{' '}
-              {validationResult.extractedData.signingData ? '✅' : '❌'}
-            </p>
-            <p>
-              <strong>Expected State Changes:</strong>{' '}
-              {validationResult.expected.stateChanges.length}
-            </p>
-            <p>
-              <strong>Actual State Changes:</strong> {validationResult.actual.stateChanges.length}
-            </p>
-            <p>
-              <strong>Expected State Overrides:</strong>{' '}
-              {validationResult.expected.stateOverrides.length}
-            </p>
-            <p>
-              <strong>Actual State Overrides:</strong>{' '}
-              {validationResult.actual.stateOverrides.length}
-            </p>
-            <p>
-              <strong>Total Validation Items:</strong> {totalValidationItems}
-            </p>
-          </div>
-        </details>
-      )}
-
       {/* Proceed to Signing Button */}
       {currentChangeIndex === totalValidationItems - 1 && (
         <div
