@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { NetworkType } from './types';
+import { NetworkType, TaskStatus } from './types';
 
 export interface UpgradeOption {
   id: string;
   name: string;
   description: string;
   network: NetworkType;
-  status?: string;
+  status?: TaskStatus;
   executionLink?: string;
 }
 
@@ -17,7 +17,7 @@ export interface DeploymentInfo {
   description: string;
   date: string;
   network: NetworkType;
-  status?: 'EXECUTED' | 'READY TO SIGN' | 'PENDING';
+  status?: TaskStatus;
   executionLinks?: Array<{
     url: string;
     label: string;
@@ -79,7 +79,7 @@ function extractDescription(content: string): string {
 }
 
 function parseExecutionStatus(content: string): {
-  status?: 'EXECUTED' | 'READY TO SIGN' | 'PENDING';
+  status?: TaskStatus;
   executionLinks?: Array<{ url: string; label: string }>;
 } {
   try {
@@ -95,11 +95,11 @@ function parseExecutionStatus(content: string): {
     const statusLower = statusLine.toLowerCase();
 
     // Check if it's executed
-    if (!statusLower.includes('executed')) {
-      if (statusLower.includes('ready to sign')) {
-        return { status: 'READY TO SIGN' };
+    if (!statusLower.includes(TaskStatus.Executed.toLowerCase())) {
+      if (statusLower.includes(TaskStatus.ReadyToSign.toLowerCase())) {
+        return { status: TaskStatus.ReadyToSign };
       }
-      return { status: 'PENDING' };
+      return { status: TaskStatus.Pending };
     }
 
     const executionLinks: Array<{ url: string; label: string }> = [];
@@ -112,33 +112,33 @@ function parseExecutionStatus(content: string): {
       if (urlEnd > urlStart) {
         const url = statusLine.substring(urlStart + 1, urlEnd);
         executionLinks.push({ url, label: 'Transaction' });
-        return { status: 'EXECUTED', executionLinks };
+        return { status: TaskStatus.Executed, executionLinks };
       }
     }
 
-    if (statusLine.includes('[EXECUTED](http')) {
+    if (statusLine.includes(`[${TaskStatus.Executed}](http`)) {
       // Pattern 2: Status: [EXECUTED](https://...)
       const urlStart = statusLine.indexOf('](http') + 2;
       const urlEnd = statusLine.indexOf(')', urlStart);
       if (urlEnd > urlStart) {
         const url = statusLine.substring(urlStart, urlEnd);
         executionLinks.push({ url, label: 'Transaction' });
-        return { status: 'EXECUTED', executionLinks };
+        return { status: TaskStatus.Executed, executionLinks };
       }
     }
 
-    if (statusLine.includes('EXECUTED http')) {
+    if (statusLine.includes(`${TaskStatus.Executed} http`)) {
       // Pattern 3: Status: EXECUTED https://...
       const urlStart = statusLine.indexOf('http');
       const url = statusLine.substring(urlStart).split(' ')[0];
       if (url.startsWith('http')) {
         executionLinks.push({ url, label: 'Transaction' });
-        return { status: 'EXECUTED', executionLinks };
+        return { status: TaskStatus.Executed, executionLinks };
       }
     }
 
     // Pattern 4: Multi-line format - only check next 5 lines
-    if (statusLower.includes('executed') && !statusLine.includes('http')) {
+    if (statusLower.includes(TaskStatus.Executed.toLowerCase()) && !statusLine.includes('http')) {
       for (let i = statusLineIndex + 1; i < Math.min(statusLineIndex + 6, lines.length); i++) {
         const line = lines[i].trim();
         if (!line || line.startsWith('#')) break;
@@ -155,12 +155,12 @@ function parseExecutionStatus(content: string): {
       }
 
       if (executionLinks.length > 0) {
-        return { status: 'EXECUTED', executionLinks };
+        return { status: TaskStatus.Executed, executionLinks };
       }
     }
 
     // If we detected EXECUTED but couldn't parse links, still mark as executed
-    return { status: 'EXECUTED' };
+    return { status: TaskStatus.Executed };
   } catch (error) {
     console.error('Error in parseExecutionStatus:', error);
     return {};

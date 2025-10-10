@@ -1,3 +1,4 @@
+import { TaskStatus } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
 
 interface ExecutionLink {
@@ -11,7 +12,7 @@ interface Upgrade {
   description: string;
   date: string;
   network: string;
-  status?: 'EXECUTED' | 'READY TO SIGN' | 'PENDING';
+  status?: TaskStatus;
   executionLinks?: ExecutionLink[];
 }
 
@@ -250,28 +251,28 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
 };
 
 const StatusBadge: React.FC<{
-  status?: string;
+  status?: TaskStatus;
   executionLinks?: ExecutionLink[];
 }> = ({ status, executionLinks }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   if (!status) return null;
 
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: TaskStatus) => {
     switch (status) {
-      case 'EXECUTED':
+      case TaskStatus.Executed:
         return {
           backgroundColor: '#DCFCE7', // green-100
           color: '#166534', // green-800
           borderColor: '#BBF7D0', // green-200
         };
-      case 'READY TO SIGN':
+      case TaskStatus.ReadyToSign:
         return {
           backgroundColor: '#FEF3C7', // yellow-100
           color: '#92400E', // yellow-800
           borderColor: '#FDE68A', // yellow-200
         };
-      case 'PENDING':
+      case TaskStatus.Pending:
         return {
           backgroundColor: '#F3F4F6', // gray-100
           color: '#1F2937', // gray-800
@@ -293,7 +294,7 @@ const StatusBadge: React.FC<{
   };
 
   // If it's executed and has links
-  if (status === 'EXECUTED' && executionLinks && executionLinks.length > 0) {
+  if (status === TaskStatus.Executed && executionLinks && executionLinks.length > 0) {
     // Single link - make the badge clickable
     if (executionLinks.length === 1) {
       const styles = getStatusStyle(status);
