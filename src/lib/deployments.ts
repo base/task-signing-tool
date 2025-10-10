@@ -39,21 +39,12 @@ function extractDescription(content: string): string {
     if (descriptionMatch) {
       let description = descriptionMatch[1].trim();
       // Remove any markdown formatting and clean up
-      description = description
+      return description
         .replace(/\n+/g, ' ')
         .replace(/\*\*/g, '')
         .replace(/\*/g, '')
         .replace(/`([^`]+)`/g, '$1')
         .trim();
-
-      // Truncate if too long (aim for ~150 characters)
-      if (description.length > 150) {
-        const truncated = description.substring(0, 147);
-        const lastSpace = truncated.lastIndexOf(' ');
-        description = (lastSpace > 100 ? truncated.substring(0, lastSpace) : truncated) + '...';
-      }
-
-      return description;
     }
 
     // Fallback: look for first meaningful line after title
@@ -61,13 +52,7 @@ function extractDescription(content: string): string {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line.startsWith('#') && !line.startsWith('Status:') && line.length > 10) {
-        let description = line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
-        if (description.length > 150) {
-          const truncated = description.substring(0, 147);
-          const lastSpace = truncated.lastIndexOf(' ');
-          description = (lastSpace > 100 ? truncated.substring(0, lastSpace) : truncated) + '...';
-        }
-        return description;
+        return line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
       }
     }
 
@@ -214,7 +199,7 @@ export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
           try {
             const content = fs.readFileSync(readmePath, 'utf-8');
             const parseResult = parseExecutionStatus(content);
-            description = extractDescription(readmePath);
+            description = extractDescription(content);
             status = parseResult.status;
             executionLinks = parseResult.executionLinks;
           } catch (parseError) {
