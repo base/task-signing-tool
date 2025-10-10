@@ -34,35 +34,6 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
-  const stripMarkdown = (markdown: string): string => {
-    // Remove code blocks
-    let text = markdown.replace(/```[\s\S]*?```/g, '');
-    // Remove inline code
-    text = text.replace(/`([^`]*)`/g, '$1');
-    // Replace images with alt text
-    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '$1');
-    // Replace links with link text
-    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
-    // Remove headings and blockquotes markers
-    text = text.replace(/^\s{0,3}#{1,6}\s+/gm, '');
-    text = text.replace(/^\s{0,3}>\s?/gm, '');
-    // Remove list markers and horizontal rules
-    text = text.replace(/^\s{0,3}([-*+]\s+|\d+\.\s+)/gm, '');
-    text = text.replace(/^\s{0,3}(-{3,}|\*{3,}|_{3,})\s*$/gm, '');
-    // Remove emphasis markers
-    text = text.replace(/[*_~]+/g, '');
-    // Strip remaining HTML tags if any
-    text = text.replace(/<[^>]+>/g, '');
-    // Collapse whitespace
-    text = text.replace(/\s+/g, ' ').trim();
-    return text;
-  };
-
-  const truncateText = (text: string, max: number): string => {
-    if (text.length <= max) return text;
-    return text.slice(0, max).trimEnd() + '…';
-  };
-
   useEffect(() => {
     if (!selectedNetwork) return;
 
@@ -253,9 +224,8 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
             >
               {(() => {
                 const isExpanded = !!expandedCards[option.id];
-                const plain = stripMarkdown(option.description || '');
-                const isTruncated = plain.length > 150;
-                const preview = truncateText(plain, 150);
+                // Heuristic: show the toggle if description is reasonably long
+                const isTruncated = (option.description || '').length > 200;
                 const isSelected = selectedWallet === option.id;
                 const buttonStyles: React.CSSProperties = {
                   display: 'inline-flex',
@@ -274,8 +244,12 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                 };
 
                 return (
-                  <div className="markdown-content">
-                    {isExpanded ? (
+                  <div>
+                    <div
+                      className={
+                        'markdown-content' + (!isExpanded && isTruncated ? ' collapsed' : '')
+                      }
+                    >
                       <Markdown
                         remarkPlugins={[remarkGfm]}
                         components={{
@@ -293,9 +267,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                       >
                         {option.description}
                       </Markdown>
-                    ) : (
-                      <p style={{ margin: 0 }}>{preview}</p>
-                    )}
+                    </div>
 
                     {isTruncated && (
                       <button
@@ -372,6 +344,32 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
         }
         .upgrade-card[data-selected='true'] .markdown-content a:hover {
           color: #ffffff;
+        }
+
+        /* Collapsed state: visually clamp full markdown while keeping full content rendered */
+        .upgrade-card .markdown-content.collapsed {
+          display: -webkit-box;
+          -webkit-line-clamp: 5; /* approx preview */
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          position: relative;
+        }
+        .upgrade-card .markdown-content.collapsed a {
+          pointer-events: none; /* disable link interactions while collapsed */
+          cursor: default;
+        }
+        .upgrade-card .markdown-content.collapsed::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2.25em;
+          background: linear-gradient(180deg, rgba(249, 250, 251, 0), #f9fafb);
+          pointer-events: none;
+        }
+        .upgrade-card[data-selected='true'] .markdown-content.collapsed::after {
+          background: linear-gradient(180deg, rgba(99, 102, 241, 0), rgba(255, 255, 255, 0.16));
         }
 
         /* Inline code styling */
