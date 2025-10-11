@@ -19,18 +19,7 @@ export class StateDiffClient {
     result: StateDiffResult;
     output: string;
   }> {
-    const args = [
-      'run',
-      '.',
-      '--rpc',
-      rpcUrl,
-      '--format',
-      'json',
-      '--workdir',
-      workdir,
-      '--',
-      ...forgeCmdParts,
-    ];
+    const args = ['run', '.', '--rpc', rpcUrl, '--workdir', workdir, '--', ...forgeCmdParts];
     console.log(`🔧 Executing state-diff using spawn`);
     console.log(`📁 Working directory: ${this.binaryPath}`);
     console.log(`🔧 Command: go ${args.join(' ')}`);

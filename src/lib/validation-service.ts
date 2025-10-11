@@ -108,7 +108,10 @@ export class ValidationService {
       ...sortedExpectedData,
       domainAndMessageHashes: expected.domainAndMessageHashes,
     };
-    const sortedActual = sortedActualData;
+    const sortedActual = {
+      ...sortedActualData,
+      domainAndMessageHashes: actual.domainAndMessageHashes,
+    };
 
     console.log(
       `📊 Sorted data for comparison: ${sortedExpected.stateChanges.length} state changes, ${sortedExpected.stateOverrides.length} state overrides`
@@ -209,6 +212,11 @@ export class ValidationService {
       stateOverrides: StateOverride[];
       stateChanges: StateChange[];
     };
+    domainAndMessageHashes: {
+      address: string;
+      domain_hash: string;
+      message_hash: string;
+    };
     stateDiffOutput?: string;
   }> {
     if (!this.stateDiffClient) {
@@ -254,6 +262,7 @@ export class ValidationService {
 
       return {
         data: { stateOverrides, stateChanges },
+        domainAndMessageHashes: stateDiffResult.result.expected_domain_and_message_hashes,
         stateDiffOutput: stateDiffResult.output,
       };
     } catch (error) {

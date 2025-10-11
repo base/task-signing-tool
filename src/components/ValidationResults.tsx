@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StringDiff, Override, Change } from '@/lib/types/index';
-import { ValidationData } from '@/lib/validation-service';
+import { StringDiff, Override, Change, ValidationData } from '@/lib/types/index';
 import { ComparisonCard } from './index';
 
 interface ValidationResultsProps {

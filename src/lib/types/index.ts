@@ -64,9 +64,16 @@ export interface StringDiff {
 
 // ------------------------------- State Diff Types -------------------------------
 export interface StateDiffResult {
-  domain_hash: string;
-  message_hash: string;
-  target_safe: string;
+  task_name: string;
+  script_name: string;
+  signature: string;
+  args: string;
+  expected_domain_and_message_hashes: {
+    address: string;
+    domain_hash: string;
+    message_hash: string;
+  };
+  expected_nested_hash: string;
   state_overrides: StateOverride[];
   state_changes: StateChange[];
 }
