@@ -33,7 +33,9 @@ export async function runAndExtract(options: ScriptRunnerOptions): Promise<Extra
     console.log(`🚀 Running: ${formatCommandForDisplay('forge', forgeArgs)}\n`);
 
     if (!fs.existsSync(scriptPath)) {
-      throw new Error(`Script directory does not exist: ${scriptPath}`);
+      throw new Error(
+        `ScriptExtractorLib::runAndExtract: Script directory does not exist: ${scriptPath}`
+      );
     }
 
     // Stream output in real-time while accumulating for later parsing
@@ -62,12 +64,20 @@ export async function runAndExtract(options: ScriptRunnerOptions): Promise<Extra
       });
 
       child.on('error', error => {
-        reject(new Error(`Script execution failed: ${error.message}`));
+        reject(
+          new Error(`ScriptExtractorLib::runAndExtract: Script execution failed: ${error.message}`)
+        );
       });
 
       child.on('close', code => {
         if (code !== 0) {
-          reject(new Error(`Script execution failed: ${err || `Exit code ${code}`}`));
+          reject(
+            new Error(
+              `ScriptExtractorLib::runAndExtract: Script execution closed with nonzero exit code: ${
+                err || `Exit code ${code}`
+              }`
+            )
+          );
           return;
         }
         resolve({ stdout: out, stderr: err });
@@ -76,7 +86,7 @@ export async function runAndExtract(options: ScriptRunnerOptions): Promise<Extra
 
     if (stderr) {
       console.error(stderr);
-      throw new Error(stderr);
+      throw new Error(`ScriptExtractorLib::runAndExtract: script execution failed: ${stderr}`);
     }
 
     scriptOutput = stdout || '';
@@ -113,7 +123,9 @@ export async function runAndExtract(options: ScriptRunnerOptions): Promise<Extra
 
     // Throw error instead of exiting the process
     throw new Error(
-      `Data extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `ScriptExtractorLib::runAndExtract: Data extraction failed: ${
+        error instanceof Error ? error.message : error
+      }`
     );
   }
 }

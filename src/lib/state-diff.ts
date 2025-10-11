@@ -29,7 +29,9 @@ export class StateDiffClient {
     const { rpcUrl, extractedData } = options;
 
     if (!extractedData.signingData || !extractedData.simulationLink) {
-      throw new Error('Extracted data must contain signingData and simulationLink');
+      throw new Error(
+        'StateDiffLib::simulateWithExtractedData: Extracted data must contain signingData and simulationLink'
+      );
     }
 
     const args = [
@@ -87,7 +89,11 @@ export class StateDiffClient {
 
       const timeout = setTimeout(() => {
         child.kill();
-        reject(new Error('State-diff simulation timed out after 2 minutes'));
+        reject(
+          new Error(
+            'StateDiffLib::simulateWithExtractedData: State-diff simulation timed out after 2 minutes'
+          )
+        );
       }, 120000);
 
       child.on('close', code => {
@@ -97,7 +103,11 @@ export class StateDiffClient {
           console.error('❌ State-diff simulation failed with exit code:', code);
           console.error('Stdout:', stdout);
           console.error('Stderr:', stderr);
-          reject(new Error(`Command failed with exit code ${code}: ${stderr}`));
+          reject(
+            new Error(
+              `'StateDiffLib::simulateWithExtractedData: Command failed with exit code ${code}: ${stderr}`
+            )
+          );
           return;
         }
 
@@ -115,7 +125,11 @@ export class StateDiffClient {
         } catch (parseError) {
           console.error('❌ Failed to parse JSON output:', parseError);
           console.error('Raw output:', stdout);
-          reject(new Error(`Failed to parse state-diff JSON output: ${parseError}`));
+          reject(
+            new Error(
+              `'StateDiffLib::simulateWithExtractedData: Failed to parse state-diff JSON output: ${parseError}`
+            )
+          );
           return;
         }
 
@@ -128,7 +142,11 @@ export class StateDiffClient {
       child.on('error', error => {
         clearTimeout(timeout);
         console.error('❌ State-diff process error:', error);
-        reject(new Error(`State-diff simulation failed: ${error.message}`));
+        reject(
+          new Error(
+            `'StateDiffLib::simulateWithExtractedData: State-diff simulation failed: ${error.message}`
+          )
+        );
       });
     });
   }

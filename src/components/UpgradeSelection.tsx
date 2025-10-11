@@ -46,13 +46,13 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
         const response = await fetch(`/api/upgrades?network=${network}`);
 
         if (!response.ok) {
-          throw new Error('Failed to fetch upgrades');
+          throw new Error(`UpgradeSelection::fetchUpgrades: API response not ok: ${response}`);
         }
 
         const upgrades = await response.json();
         setUpgradeOptions(upgrades);
       } catch (err) {
-        setError('Failed to load upgrades');
+        setError(`UpgradeSelection::fetchUpgrades: Failed to load upgrades: ${err}`);
         console.error('Error fetching upgrades:', err);
       } finally {
         setLoading(false);

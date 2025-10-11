@@ -99,10 +99,10 @@ export class LedgerSigner {
     try {
       // Validate input format
       if (!domainHash.startsWith('0x') || domainHash.length !== 66) {
-        throw new Error('Invalid domain hash format');
+        throw new Error('LedgerSigningLib::signDomainAndMessageHash: Invalid domain hash format');
       }
       if (!messageHash.startsWith('0x') || messageHash.length !== 66) {
-        throw new Error('Invalid message hash format');
+        throw new Error('LedgerSigningLib::signDomainAndMessageHash: Invalid message hash format');
       }
 
       // Create EIP-712 formatted data to sign: 0x1901 + domain hash + message hash
@@ -193,12 +193,16 @@ export class LedgerSigner {
 
           // Check if parsing resulted in anything other than plain strings
           if (parsed.some(item => typeof item !== 'string')) {
-            throw new Error(`Argument contains shell metacharacters: ${arg}`);
+            throw new Error(
+              `LedgerSigningLib::runEip712signCommand: Argument contains shell metacharacters: ${arg}`
+            );
           }
 
           // Additional validation for dangerous characters
           if (arg.includes('\n') || arg.includes('\r') || arg.includes('\0')) {
-            throw new Error(`Invalid argument contains dangerous characters: ${arg}`);
+            throw new Error(
+              `LedgerSigningLib::runEip712signCommand: Invalid argument contains dangerous characters: ${arg}`
+            );
           }
 
           return arg; // Return original string, not quoted version

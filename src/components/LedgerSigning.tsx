@@ -28,7 +28,9 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
       const missingFields = [];
       if (!domainHash) missingFields.push('domainHash');
       if (!messageHash) missingFields.push('messageHash');
-      setError(`Missing required fields for signing: ${missingFields.join(', ')}`);
+      setError(
+        `LedgerSigning::useEffect: Missing required fields for signing: ${missingFields.join(', ')}`
+      );
     } else {
       // Clear error if fields are present
       setError('');
@@ -38,7 +40,7 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   const handleConnect = () => {
     // Check if required fields are present before proceeding
     if (!domainHash || !messageHash) {
-      setError('Cannot proceed: missing domain hash or message hash');
+      setError('LedgerSigning::handleConnect: Cannot proceed: missing domain hash or message hash');
       return;
     }
 
@@ -49,7 +51,7 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   const handleSign = async () => {
     // Check if required fields are present
     if (!domainHash || !messageHash) {
-      setError('Cannot sign: missing domain hash or message hash');
+      setError('LedgerSigning::handleSign: Cannot sign: missing domain hash or message hash');
       return;
     }
 
@@ -76,10 +78,16 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
         setSignature(result.signature);
         setCurrentStep('complete');
       } else {
-        setError(result.error || 'Failed to sign transaction');
+        setError(
+          `LedgerSigning::handleSign: api error: ${result.error}` || 'Failed to sign transaction'
+        );
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign transaction');
+      setError(
+        `LedgerSigning::handleSign: failed to sign transaction: ${
+          err instanceof Error ? err.message : err
+        }`
+      );
     } finally {
       setLoading(false);
     }
