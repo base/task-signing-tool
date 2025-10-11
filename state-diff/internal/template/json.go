@@ -1,24 +1,15 @@
 package template
 
-// JSON types that match TypeScript validation tool expectations
-type ValidationResult struct {
-	DomainHash     string          `json:"domain_hash"`
-	MessageHash    string          `json:"message_hash"`
-	TargetSafe     string          `json:"target_safe"`
-	StateOverrides []StateOverride `json:"state_overrides"`
-	StateChanges   []StateChange   `json:"state_changes"`
-}
-
 // JSON types that match the expected validation format (base-nested.json)
 type ValidationResultFormatted struct {
-	TaskName                          string                           `json:"task_name"`
-	ScriptName                        string                           `json:"script_name"`
-	Signature                         string                           `json:"signature"`
-	Args                              string                           `json:"args"`
-	ExpectedDomainAndMessageHashes    DomainAndMessageHashes           `json:"expected_domain_and_message_hashes"`
-	ExpectedNestedHash                string                           `json:"expected_nested_hash"`
-	StateOverrides                    []StateOverride                  `json:"state_overrides"`
-	StateChanges                      []StateChange                    `json:"state_changes"`
+	TaskName                       string                 `json:"task_name"`
+	ScriptName                     string                 `json:"script_name"`
+	Signature                      string                 `json:"signature"`
+	Args                           string                 `json:"args"`
+	ExpectedDomainAndMessageHashes DomainAndMessageHashes `json:"expected_domain_and_message_hashes"`
+	ExpectedNestedHash             string                 `json:"expected_nested_hash"`
+	StateOverrides                 []StateOverride        `json:"state_overrides"`
+	StateChanges                   []StateChange          `json:"state_changes"`
 }
 
 type DomainAndMessageHashes struct {
