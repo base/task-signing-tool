@@ -253,7 +253,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                       <Markdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          a: ({ node, ...props }) => (
+                          a: ({ ...props }) => (
                             <a
                               {...props}
                               onClick={e => {

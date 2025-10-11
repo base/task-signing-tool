@@ -1,14 +1,6 @@
-import { exec, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import path from 'path';
-import { promisify } from 'util';
-import {
-  ExtractedStateDiffOptions,
-  StateChange,
-  StateDiffResult,
-  StateOverride,
-} from './types/index';
-
-const execAsync = promisify(exec);
+import { StateChange, StateDiffResult, StateOverride } from './types/index';
 
 export class StateDiffClient {
   private binaryPath: string;
@@ -19,54 +11,16 @@ export class StateDiffClient {
     console.log(`🔧 StateDiffClient initialized with binary path: ${this.binaryPath}`);
   }
 
-  /**
-   * Simulate using pre-extracted data (new method)
-   */
-  async simulateWithExtractedData(options: ExtractedStateDiffOptions): Promise<{
+  async simulate(
+    rpcUrl: string,
+    forgeCmdParts: string[],
+    workdir: string
+  ): Promise<{
     result: StateDiffResult;
     output: string;
   }> {
-    const { rpcUrl, extractedData } = options;
-
-    if (!extractedData.signingData || !extractedData.simulationLink) {
-      throw new Error(
-        'StateDiffLib::simulateWithExtractedData: Extracted data must contain signingData and simulationLink'
-      );
-    }
-
-    const args = [
-      'run',
-      '.',
-      '--rpc',
-      rpcUrl,
-      '--format',
-      'json',
-      '--use-extracted',
-      '--signing-data',
-      extractedData.signingData.dataToSign,
-      '--sender',
-      extractedData.simulationLink.from,
-    ];
-
-    // Add optional parameters from parsed SimulationLink
-    if (extractedData.simulationLink.network) {
-      args.push('--network', extractedData.simulationLink.network);
-    }
-    if (extractedData.simulationLink.contractAddress) {
-      args.push('--contract', extractedData.simulationLink.contractAddress);
-    }
-    if (extractedData.simulationLink.stateOverrides) {
-      args.push('--state-overrides', extractedData.simulationLink.stateOverrides);
-    }
-    if (extractedData.simulationLink.rawFunctionInput) {
-      args.push('--raw-input', extractedData.simulationLink.rawFunctionInput);
-    }
-    // Optionally include the full URL for reference/logging in Go
-    if (extractedData.simulationLink.url) {
-      args.push('--tenderly-link', extractedData.simulationLink.url);
-    }
-
-    console.log(`🔧 Executing state-diff with extracted data using spawn`);
+    const args = ['run', '.', '--rpc', rpcUrl, '--workdir', workdir, '--', ...forgeCmdParts];
+    console.log(`🔧 Executing state-diff using spawn`);
     console.log(`📁 Working directory: ${this.binaryPath}`);
     console.log(`🔧 Command: go ${args.join(' ')}`);
 
@@ -118,10 +72,16 @@ export class StateDiffClient {
 
         console.log(`✅ State-diff simulation completed with extracted data`);
 
+        const anchor = '<<<RESULT>>>';
+        const strt = stdout.indexOf(anchor);
+        const jsonRes = stdout.slice(strt + anchor.length + 1);
+        console.log('Raw result:');
+        console.log(jsonRes);
+
         // Parse JSON output
         let result: StateDiffResult;
         try {
-          result = JSON.parse(stdout);
+          result = JSON.parse(jsonRes);
         } catch (parseError) {
           console.error('❌ Failed to parse JSON output:', parseError);
           console.error('Raw output:', stdout);
@@ -175,36 +135,5 @@ export class StateDiffClient {
         description: o.description,
       })),
     }));
-  }
-
-  /**
-   * Get domain and message hashes from the result
-   */
-  getDomainAndMessageHashes(result: StateDiffResult): {
-    address: string;
-    domain_hash: string;
-    message_hash: string;
-  } {
-    return {
-      address: result.target_safe,
-      domain_hash: result.domain_hash,
-      message_hash: result.message_hash,
-    };
-  }
-
-  /**
-   * Check if the state-diff binary is available
-   */
-  async checkAvailability(): Promise<boolean> {
-    try {
-      await execAsync('go version', {
-        cwd: this.binaryPath,
-        timeout: 5000,
-      });
-      return true;
-    } catch (e) {
-      console.warn('⚠️ Go not available or state-diff binary path incorrect', e);
-      return false;
-    }
   }
 }

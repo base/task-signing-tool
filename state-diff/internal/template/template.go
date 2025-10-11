@@ -3,7 +3,6 @@ package template
 import (
 	_ "embed"
 	"fmt"
-	"math/big"
 	"sort"
 	"strings"
 
@@ -31,8 +30,6 @@ type Config struct {
 
 var DEFAULT_CONTRACT = Contract{Name: "<<ContractName>>", Slots: map[string]Slot{}}
 var DEFAULT_SLOT = Slot{Type: "<<DecodedKind>>", Summary: "<<Summary>>", OverrideMeaning: "<<OverrideMeaning>>"}
-
-
 
 type FileGenerator struct {
 	db      *state.CachingStateDB
@@ -116,20 +113,6 @@ func (c *Config) UnmarshalYAML() error {
 		}
 	}
 	return nil
-}
-
-
-
-// BuildValidationJSONForTool creates a JSON representation of the validation data for the TypeScript tool
-func (g *FileGenerator) BuildValidationJSONForTool(safe string, overrides []state.Override, diffs []state.StateDiff, domainHash, messageHash []byte) (*ValidationResult, error) {
-	result := &ValidationResult{
-		DomainHash:     fmt.Sprintf("0x%x", domainHash),
-		MessageHash:    fmt.Sprintf("0x%x", messageHash),
-		TargetSafe:     safe,
-		StateOverrides: g.convertOverridesToJSON(overrides),
-		StateChanges:   g.convertDiffsToJSON(diffs),
-	}
-	return result, nil
 }
 
 // BuildValidationJSON creates a JSON representation of the validation data in the new format
@@ -240,8 +223,6 @@ func (g *FileGenerator) convertDiffsToJSON(diffs []state.StateDiff) []StateChang
 	return result
 }
 
-
-
 func (g *FileGenerator) getContractCfg(address string) Contract {
 	contract, ok := g.cfg.Contracts[g.chainId][strings.ToLower(address)]
 	if !ok {
@@ -271,18 +252,4 @@ func (g *FileGenerator) getSlot(cfg *Contract, slot string) Slot {
 			return slotType
 		}
 	}
-}
-
-func getDecodedValue(slotType string, value string) string {
-	switch slotType {
-	case "uint256":
-		// Convert from bytes to uint256
-		bigInt := new(big.Int)
-		bigInt.SetBytes(common.FromHex(value))
-		return bigInt.String()
-	case "address":
-		return common.HexToAddress(value).Hex()
-	}
-
-	return "<<DecodedValue>>"
 }

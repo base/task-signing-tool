@@ -2,15 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { NetworkType, TaskStatus } from './types';
 
-export interface UpgradeOption {
-  id: string;
-  name: string;
-  description: string;
-  network: NetworkType;
-  status?: TaskStatus;
-  executionLink?: string;
-}
-
 export interface DeploymentInfo {
   id: string;
   name: string;
@@ -258,11 +249,4 @@ export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
     console.error(`Error reading deployment folders for ${network}:`, error);
     return [];
   }
-}
-
-export function getAllUpgradeOptions(): DeploymentInfo[] {
-  const mainnetOptions = getUpgradeOptions(NetworkType.Mainnet);
-  const sepoliaOptions = getUpgradeOptions(NetworkType.Sepolia);
-
-  return [...mainnetOptions, ...sepoliaOptions];
 }

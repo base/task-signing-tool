@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StringDiff, Override, Change, SigningData } from '@/lib/types/index';
-import { ValidationData } from '@/lib/validation-service';
+import { StringDiff, Override, Change, ValidationData } from '@/lib/types/index';
 import { ComparisonCard } from './index';
 
 interface ValidationResultsProps {
@@ -35,7 +34,14 @@ type SigningDataItem = ValidationItemBase & {
     // Optional to allow safe access patterns used in the UI
     description?: string;
   };
-  actual?: SigningData;
+  actual?: {
+    dataToSign: string;
+    address: string;
+    domainHash: string;
+    messageHash: string;
+    // Optional to allow safe access patterns used in the UI
+    description?: string;
+  };
 };
 
 type OverrideItem = ValidationItemBase & {
@@ -153,7 +159,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
     // Step 1: Domain and Message Hash Validation
     const expectedDomainAndMessageHashes = validationResult.expected.domainAndMessageHashes;
-    const actualSigningData = validationResult.extractedData?.signingData;
+    const actualSigningData = validationResult.actual.domainAndMessageHashes;
 
     if (expectedDomainAndMessageHashes && actualSigningData) {
       // Combine domain and message hash with EIP-712 prefix (0x1901)
@@ -161,6 +167,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         '0x',
         ''
       )}${expectedDomainAndMessageHashes.message_hash.replace('0x', '')}`;
+      const actualDataToSign = `0x1901${actualSigningData.domain_hash.replace(
+        '0x',
+        ''
+      )}${actualSigningData.message_hash.replace('0x', '')}`;
 
       items.push({
         step: 1,
@@ -172,7 +182,12 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           domainHash: expectedDomainAndMessageHashes.domain_hash,
           messageHash: expectedDomainAndMessageHashes.message_hash,
         },
-        actual: actualSigningData,
+        actual: {
+          dataToSign: actualDataToSign,
+          address: actualSigningData.address,
+          domainHash: actualSigningData.domain_hash,
+          messageHash: actualSigningData.message_hash,
+        },
         contractName: 'EIP-712 Signing Data',
         contractAddress: expectedDomainAndMessageHashes.address,
       });
