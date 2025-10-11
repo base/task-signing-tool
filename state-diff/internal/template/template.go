@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/base/task-signing-tool/state-diff/config"
+	"github.com/base/task-signing-tool/state-diff/internal/state"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackchuma/state-diff/config"
-	"github.com/jackchuma/state-diff/internal/state"
 	"gopkg.in/yaml.v2"
 )
 

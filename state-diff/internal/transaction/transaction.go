@@ -7,14 +7,14 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/base/task-signing-tool/state-diff/bindings"
+	"github.com/base/task-signing-tool/state-diff/internal/state"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/holiman/uint256"
-	"github.com/jackchuma/state-diff/bindings"
-	"github.com/jackchuma/state-diff/internal/state"
 )
 
 var VALUE = big.NewInt(0)

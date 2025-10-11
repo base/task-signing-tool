@@ -9,13 +9,13 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/base/task-signing-tool/state-diff/internal/command"
+	"github.com/base/task-signing-tool/state-diff/internal/evm"
+	"github.com/base/task-signing-tool/state-diff/internal/state"
+	"github.com/base/task-signing-tool/state-diff/internal/template"
+	"github.com/base/task-signing-tool/state-diff/internal/transaction"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jackchuma/state-diff/internal/command"
-	"github.com/jackchuma/state-diff/internal/evm"
-	"github.com/jackchuma/state-diff/internal/state"
-	"github.com/jackchuma/state-diff/internal/template"
-	"github.com/jackchuma/state-diff/internal/transaction"
 )
 
 func main() {

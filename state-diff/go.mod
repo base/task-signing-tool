@@ -1,4 +1,4 @@
-module github.com/jackchuma/state-diff
+module github.com/base/task-signing-tool/state-diff
 
 go 1.23.0
 
