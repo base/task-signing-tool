@@ -1,19 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { ConfigParser } from './parser';
-import { runAndExtract } from './script-extractor';
 import { StateDiffClient } from './state-diff';
-import {
-  ExtractedData,
-  NetworkType,
-  StateChange,
-  StateOverride,
-  TaskConfig,
-  ValidationData,
-} from './types/index';
-
-// Re-export ValidationData for external use
-export type { ValidationData };
+import { NetworkType, StateChange, StateOverride, TaskConfig, ValidationData } from './types/index';
 
 export interface ValidationOptions {
   upgradeId: string; // e.g., "2025-06-04-upgrade-system-config"
@@ -21,7 +10,7 @@ export interface ValidationOptions {
   userType: 'Base SC' | 'Coinbase' | 'OP';
   rpcUrl: string;
   sender: string;
-  stateDiffBinaryPath?: string; // Path to state-diff binary
+  stateDiffBinaryPath?: string;
 }
 
 type BaseOptions = {
@@ -102,11 +91,11 @@ export class ValidationService {
     // 1. Get complete config data including rpcUrl from validation file
     const { options, parsedConfig } = await this.getConfigData(baseOptions);
 
-    // 2. Get expected data from parsed config (no need to parse again)
+    // 2. Get expected data from parsed config
     const expected = this.getExpectedData(parsedConfig);
 
     // 3. Get actual data by running scripts and simulation
-    const actual = await this.getActualData(options, expected.scriptParams);
+    const actual = await this.runStateDiffSimulation(options, expected.scriptParams);
 
     // 4. Sort state overrides and changes for consistent comparison
     const sortedExpectedData = this.sortValidationData({
@@ -128,7 +117,6 @@ export class ValidationService {
     return {
       expected: sortedExpected,
       actual: sortedActual,
-      extractedData: actual.extractedData,
       stateDiffOutput: actual.stateDiffOutput,
     };
   }
@@ -207,9 +195,9 @@ export class ValidationService {
   }
 
   /**
-   * Get actual state changes and overrides by running scripts and simulation
+   * Run simulation using state-diff tool
    */
-  private async getActualData(
+  private async runStateDiffSimulation(
     options: ValidationOptions,
     scriptParams: {
       scriptName: string;
@@ -221,45 +209,6 @@ export class ValidationService {
       stateOverrides: StateOverride[];
       stateChanges: StateChange[];
     };
-    extractedData?: ExtractedData;
-    stateDiffOutput?: string;
-  }> {
-    // 1. Run script extraction (handle only script extraction errors)
-    let extractedData: ExtractedData;
-    try {
-      extractedData = await this.runScriptExtraction(options, scriptParams);
-    } catch (error) {
-      console.error('❌ Script extraction failed:', error);
-      throw new Error(
-        `ValidationService::getActualData: Script extraction failed: ${
-          error instanceof Error ? error.message : error
-        }`
-      );
-    }
-
-    if (!extractedData.simulationLink) {
-      console.warn('⚠️ No simulation link found in script output');
-      throw new Error(
-        'ValidationService::getActualData: No simulation link found in script output. Please check the script configuration.'
-      );
-    }
-
-    // 2. Run simulation (let simulation errors propagate to UI for retry)
-    return await this.runStateDiffSimulation(options, extractedData);
-  }
-
-  /**
-   * Run simulation using state-diff tool
-   */
-  private async runStateDiffSimulation(
-    options: ValidationOptions,
-    extractedData: ExtractedData
-  ): Promise<{
-    data: {
-      stateOverrides: StateOverride[];
-      stateChanges: StateChange[];
-    };
-    extractedData?: ExtractedData;
     stateDiffOutput?: string;
   }> {
     if (!this.stateDiffClient) {
@@ -270,15 +219,30 @@ export class ValidationService {
 
     try {
       console.log('🔧 Running state-diff simulation with extracted data...');
-
-      // Use the RPC URL from options
-      const rpcUrl = options.rpcUrl;
-
-      // Use the new simulateWithExtractedData method
-      const stateDiffResult = await this.stateDiffClient.simulateWithExtractedData({
-        rpcUrl,
-        extractedData,
+      const contractDeploymentsPath = path.join(process.cwd(), '..');
+      const scriptPath = path.join(contractDeploymentsPath, options.network, options.upgradeId);
+      const opts = {
+        scriptPath,
+        rpcUrl: options.rpcUrl,
+        scriptName: scriptParams.scriptName,
+        signature: scriptParams.signature,
+        args: scriptParams.args ? [scriptParams.args] : [], // Handle empty args
+        sender: options.sender,
+        saveOutput: path.join(scriptPath, 'temp-script-output.txt'),
+      };
+      const forgeArgs = this.buildForgeArgs({
+        rpcUrl: opts.rpcUrl,
+        scriptName: opts.scriptName,
+        signature: opts.signature,
+        args: opts.args,
+        sender: opts.sender,
       });
+      const forgeCmdParts = ['forge', ...forgeArgs];
+      const stateDiffResult = await this.stateDiffClient.simulate(
+        options.rpcUrl,
+        forgeCmdParts,
+        scriptPath
+      );
 
       // Parse both state overrides and state changes from state-diff output
       const stateOverrides = this.stateDiffClient.parseStateOverrides(stateDiffResult.result);
@@ -290,47 +254,12 @@ export class ValidationService {
 
       return {
         data: { stateOverrides, stateChanges },
-        extractedData,
         stateDiffOutput: stateDiffResult.output,
       };
     } catch (error) {
       console.error('❌ State-diff simulation failed:', error);
       throw error;
     }
-  }
-
-  /**
-   * Run Foundry script extraction
-   */
-  private async runScriptExtraction(
-    options: ValidationOptions,
-    scriptParams: {
-      scriptName: string;
-      signature: string;
-      args: string;
-    }
-  ): Promise<ExtractedData> {
-    const contractDeploymentsPath = path.join(process.cwd(), '..');
-
-    // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const scriptPath = path.join(contractDeploymentsPath, options.network, options.upgradeId);
-
-    // Use the RPC URL from options
-    const rpcUrl = options.rpcUrl;
-
-    const extractorOptions = {
-      scriptPath,
-      rpcUrl,
-      scriptName: scriptParams.scriptName,
-      signature: scriptParams.signature,
-      args: scriptParams.args ? [scriptParams.args] : [], // Handle empty args
-      sender: options.sender,
-      saveOutput: path.join(scriptPath, 'temp-script-output.txt'),
-    };
-
-    console.log(`🔧 Running script extraction with options:`, extractorOptions);
-
-    return await runAndExtract(extractorOptions);
   }
 
   /**
@@ -346,26 +275,28 @@ export class ValidationService {
     return fileName;
   }
 
-  /**
-   * Clean up temporary files
-   */
-  async cleanup(options: { upgradeId: string; network: string }): Promise<void> {
-    const contractDeploymentsPath = path.join(process.cwd(), '..');
+  private buildForgeArgs(options: {
+    rpcUrl: string;
+    scriptName: string;
+    signature?: string;
+    args?: string[];
+    sender?: string;
+  }): string[] {
+    const { rpcUrl, scriptName, signature, args = [], sender } = options;
 
-    // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const scriptPath = path.join(contractDeploymentsPath, options.network, options.upgradeId);
-    const tempFile = path.join(scriptPath, 'temp-script-output.txt');
-    const extractedFile = path.join(scriptPath, 'temp-script-output-extracted.json');
+    const forgeArgs: string[] = ['script', '--rpc-url', rpcUrl, scriptName];
 
-    try {
-      if (fs.existsSync(tempFile)) {
-        fs.unlinkSync(tempFile);
+    if (signature) {
+      forgeArgs.push('--sig', signature);
+      for (const arg of args) {
+        forgeArgs.push(arg);
       }
-      if (fs.existsSync(extractedFile)) {
-        fs.unlinkSync(extractedFile);
-      }
-    } catch (error) {
-      console.warn('Warning: Failed to clean up temporary files:', error);
     }
+
+    if (sender) {
+      forgeArgs.push('--sender', sender);
+    }
+
+    return forgeArgs;
   }
 }

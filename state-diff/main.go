@@ -34,7 +34,7 @@ func main() {
 	var stateOverrides string
 	var rawFunctionInput string
 	var senderAddress string
-		var networkID string
+	var networkID string
 	var contractAddress string
 
 	flag.StringVar(&prefix, "prefix", "vvvvvvvv", "String that prefixes the data to be signed")
@@ -51,7 +51,7 @@ func main() {
 	flag.StringVar(&stateOverrides, "state-overrides", "", "State overrides JSON (optional)")
 	flag.StringVar(&rawFunctionInput, "raw-input", "", "Raw function input (optional)")
 	flag.StringVar(&senderAddress, "sender", "", "Sender address for simulation")
-		flag.StringVar(&networkID, "network", "", "Network ID (optional)")
+	flag.StringVar(&networkID, "network", "", "Network ID (optional)")
 	flag.StringVar(&contractAddress, "contract", "", "Contract address (optional)")
 
 	flag.Parse()
@@ -181,7 +181,8 @@ func main() {
 	}
 
 	// Generate output based on format
-	if outputFormat == "tool" {
+	switch outputFormat {
+	case "tool":
 		// Generate JSON output for TypeScript tool compatibility
 		jsonResult, err := fileGenerator.BuildValidationJSONForTool(targetSafe, evm.StateDB.(*state.CachingStateDB).GetOverrides(), diffs, domainHash, messageHash)
 		if err != nil {
@@ -204,7 +205,7 @@ func main() {
 		} else {
 			fmt.Println(string(jsonBytes))
 		}
-	} else if outputFormat == "json" {
+	case "json":
 		// Generate JSON output in base-nested.json format
 		jsonResult, err := fileGenerator.BuildValidationJSON("", "", "", "", targetSafe, evm.StateDB.(*state.CachingStateDB).GetOverrides(), diffs, domainHash, messageHash)
 		if err != nil {
@@ -225,9 +226,10 @@ func main() {
 				return
 			}
 		} else {
+			fmt.Println("<<<RESULT>>>")
 			fmt.Println(string(jsonBytes))
 		}
-	} else {
+	default:
 		fmt.Printf("Error: Invalid output format '%s'. Use 'tool' or 'json'\n", outputFormat)
 		os.Exit(1)
 	}
@@ -236,9 +238,7 @@ func main() {
 // parseSigningData extracts domain and message hashes from EIP-712 signing data
 func parseSigningData(signingData string) ([]byte, []byte, error) {
 	// Remove 0x prefix if present
-	if strings.HasPrefix(signingData, "0x") {
-		signingData = signingData[2:]
-	}
+	signingData = strings.TrimPrefix(signingData, "0x")
 
 	// The signing data should be 66 bytes (132 hex characters)
 	// First 2 bytes are EIP-712 prefix (0x1901)
