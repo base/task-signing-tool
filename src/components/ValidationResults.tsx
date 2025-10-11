@@ -243,7 +243,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       const depsResult = await depsResponse.json();
 
       if (!depsResult.success) {
-        setError(`Dependency installation failed: ${depsResult.error}`);
+        setError(
+          `ValidationResults::handleRunValidation: install-deps api returned an error: ${depsResult.error}`
+        );
         setIsInstallingDeps(false);
         setLoading(false);
         return;
@@ -284,12 +286,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         setValidationResult(result.data);
         console.log('Validation completed successfully');
       } else {
-        setError(result.error || 'Validation failed');
+        setError(
+          `ValidationResults::handleRunValidation: validate api returned an error: ${
+            result.error || 'Validation failed'
+          }`
+        );
         console.error('Validation failed:', result.error);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Network error occurred';
-      setError(errorMessage);
+      setError(`ValidationResults::handleRunValidation: error running validation: ${errorMessage}`);
       console.error('Validation error:', err);
     } finally {
       setLoading(false);

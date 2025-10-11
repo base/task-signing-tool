@@ -58,7 +58,7 @@ export class ValidationService {
     const configPath = path.join(upgradePath, 'validations', configFileName);
 
     if (!fs.existsSync(configPath)) {
-      throw new Error(`Config file not found: ${configPath}`);
+      throw new Error(`ValidationService::getConfigData: Config file not found: ${configPath}`);
     }
 
     try {
@@ -70,7 +70,7 @@ export class ValidationService {
           '❌ Failed to parse config:',
           ConfigParser.getValidationSummary(parsedConfig.result)
         );
-        throw new Error('Failed to parse config file');
+        throw new Error('ValidationService::getConfigData: Failed to parse config file');
       }
 
       console.log(`✅ Loaded config data from ${configFileName}`);
@@ -231,14 +231,16 @@ export class ValidationService {
     } catch (error) {
       console.error('❌ Script extraction failed:', error);
       throw new Error(
-        `Script extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `ValidationService::getActualData: Script extraction failed: ${
+          error instanceof Error ? error.message : error
+        }`
       );
     }
 
     if (!extractedData.simulationLink) {
       console.warn('⚠️ No simulation link found in script output');
       throw new Error(
-        'No simulation link found in script output. Please check the script configuration.'
+        'ValidationService::getActualData: No simulation link found in script output. Please check the script configuration.'
       );
     }
 
@@ -261,7 +263,9 @@ export class ValidationService {
     stateDiffOutput?: string;
   }> {
     if (!this.stateDiffClient) {
-      throw new Error('StateDiffClient not initialized.');
+      throw new Error(
+        'ValidationService::runStateDiffSimulation: StateDiffClient not initialized.'
+      );
     }
 
     try {

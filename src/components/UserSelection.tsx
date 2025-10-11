@@ -32,7 +32,7 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
         const { configOptions, error: apiError } = await response.json();
 
         if (apiError) {
-          setError(`Failed to load config options: ${apiError}`);
+          setError(`UserSelection::fetchAvailableUsers: API returned an error: ${apiError}`);
           setAvailableUsers([]);
         } else {
           setAvailableUsers(configOptions);
@@ -40,7 +40,7 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
         }
       } catch (err) {
         console.error('Failed to fetch upgrade config:', err);
-        setError('Failed to load config options');
+        setError(`UserSelection::fetchAvailableUsers: Failed to fetch upgrade config: ${err}`);
         setAvailableUsers([]);
       } finally {
         setLoadingUsers(false);
