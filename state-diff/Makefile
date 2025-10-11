@@ -10,15 +10,5 @@ SENDER=0x9986ccaf9e3de0ffef82a0f7fa3a06d5afe07252
 
 .PHONY: run
 run:
-	go run . --rpc https://eth-mainnet.public.blastapi.io --format json --workdir /Users/jackchuma/projects/active/base-chain/sign-task/contract-deployments/mainnet/2025-10-02-test-upgrade -- forge script --rpc-url https://eth-mainnet.public.blastapi.io SwapOwner --sig "sign()" --sender 0x6CD3850756b7894774Ab715D136F9dD02837De50
-# .PHONY: run
-# run:
-# 	go run . --rpc https://eth-mainnet.public.blastapi.io --format json \
-# 	--workdir /Users/jackchuma/projects/active/base-chain/sign-task/contract-deployments/mainnet/2025-10-02-test-upgrade \
-# 	-- forge script --rpc-url https://eth-mainnet.public.blastapi.io \
-# 	SwapOwner --sig "sign()" --sender 0x6CD3850756b7894774Ab715D136F9dD02837De50
-
-# .PHONY: run
-# run:
-# 	go run . --rpc $(RPC) -o validation.md \
-# 	-- ./run.sh --sender $(SENDER)
+	go run . --rpc $(RPC) -o validation.md \
+	-- ./run.sh --sender $(SENDER)
