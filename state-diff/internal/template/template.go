@@ -7,10 +7,28 @@ import (
 	"strings"
 
 	"github.com/base/task-signing-tool/state-diff/config"
-	"github.com/base/task-signing-tool/state-diff/internal/state"
+	"github.com/base/task-signing-tool/state-diff/internal/processor"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/holiman/uint256"
 	"gopkg.in/yaml.v2"
 )
+
+type StorageDiff struct {
+	Key         common.Hash
+	ValueBefore common.Hash
+	ValueAfter  common.Hash
+	Preimage    string
+}
+
+type StateDiff struct {
+	Address       common.Address
+	BalanceBefore *uint256.Int
+	BalanceAfter  *uint256.Int
+	NonceSeen     bool
+	NonceBefore   uint64
+	NonceAfter    uint64
+	StorageDiffs  map[common.Hash]StorageDiff
+}
 
 type Slot struct {
 	Type            string `yaml:"type"`
@@ -32,18 +50,17 @@ var DEFAULT_CONTRACT = Contract{Name: "<<ContractName>>", Slots: map[string]Slot
 var DEFAULT_SLOT = Slot{Type: "<<DecodedKind>>", Summary: "<<Summary>>", OverrideMeaning: "<<OverrideMeaning>>"}
 
 type FileGenerator struct {
-	db      *state.CachingStateDB
 	chainId string
 	cfg     *Config
 }
 
-func NewFileGenerator(db *state.CachingStateDB, chainId string) (*FileGenerator, error) {
+func NewFileGenerator(chainId string) (*FileGenerator, error) {
 	cfg, err := loadConfig()
 	if err != nil {
 		fmt.Printf("Error loading config: %v\n", err)
 		return nil, err
 	}
-	return &FileGenerator{db, chainId, cfg}, nil
+	return &FileGenerator{chainId, cfg}, nil
 }
 
 func loadConfig() (*Config, error) {
@@ -116,7 +133,7 @@ func (c *Config) UnmarshalYAML() error {
 }
 
 // BuildValidationJSON creates a JSON representation of the validation data in the new format
-func (g *FileGenerator) BuildValidationJSON(taskName, scriptName, signature, args, safe string, overrides []state.Override, diffs []state.StateDiff, domainHash, messageHash []byte) (*ValidationResultFormatted, error) {
+func (g *FileGenerator) BuildValidationJSON(taskName, scriptName, signature, args, safe string, overrides []processor.Override, diffs []StateDiff, domainHash, messageHash []byte, parentMap map[common.Hash]common.Hash) (*ValidationResultFormatted, error) {
 	result := &ValidationResultFormatted{
 		TaskName:   taskName,
 		ScriptName: scriptName,
@@ -128,14 +145,14 @@ func (g *FileGenerator) BuildValidationJSON(taskName, scriptName, signature, arg
 			MessageHash: fmt.Sprintf("0x%x", messageHash),
 		},
 		ExpectedNestedHash: "", // This can be set later if needed
-		StateOverrides:     g.convertOverridesToJSON(overrides),
-		StateChanges:       g.convertDiffsToJSON(diffs),
+		StateOverrides:     g.convertOverridesToJSON(overrides, parentMap),
+		StateChanges:       g.convertDiffsToJSON(diffs, parentMap),
 	}
 	return result, nil
 }
 
 // convertOverridesToJSON converts state overrides to JSON format
-func (g *FileGenerator) convertOverridesToJSON(overrides []state.Override) []StateOverride {
+func (g *FileGenerator) convertOverridesToJSON(overrides []processor.Override, parentMap map[common.Hash]common.Hash) []StateOverride {
 	result := make([]StateOverride, 0, len(overrides))
 
 	// Sort overrides by address
@@ -153,7 +170,7 @@ func (g *FileGenerator) convertOverridesToJSON(overrides []state.Override) []Sta
 		})
 
 		for _, storageOverride := range override.Storage {
-			slot := g.getSlot(&contract, storageOverride.Key.Hex())
+			slot := g.getSlot(&contract, storageOverride.Key, parentMap)
 			jsonOverrides = append(jsonOverrides, Override{
 				Key:         storageOverride.Key.Hex(),
 				Value:       storageOverride.Value.Hex(),
@@ -172,7 +189,7 @@ func (g *FileGenerator) convertOverridesToJSON(overrides []state.Override) []Sta
 }
 
 // convertDiffsToJSON converts state diffs to JSON format
-func (g *FileGenerator) convertDiffsToJSON(diffs []state.StateDiff) []StateChange {
+func (g *FileGenerator) convertDiffsToJSON(diffs []StateDiff, parentMap map[common.Hash]common.Hash) []StateChange {
 	result := make([]StateChange, 0, len(diffs))
 
 	// Sort diffs by address
@@ -185,7 +202,7 @@ func (g *FileGenerator) convertDiffsToJSON(diffs []state.StateDiff) []StateChang
 		jsonChanges := make([]Change, 0)
 
 		// Convert storage diffs to slice for sorting
-		storageDiffs := make([]state.StorageDiff, 0, len(diff.StorageDiffs))
+		storageDiffs := make([]StorageDiff, 0, len(diff.StorageDiffs))
 		for _, storageDiff := range diff.StorageDiffs {
 			storageDiffs = append(storageDiffs, storageDiff)
 		}
@@ -201,7 +218,7 @@ func (g *FileGenerator) convertDiffsToJSON(diffs []state.StateDiff) []StateChang
 				continue
 			}
 
-			slot := g.getSlot(&contract, storageDiff.Key.String())
+			slot := g.getSlot(&contract, storageDiff.Key, parentMap)
 			jsonChanges = append(jsonChanges, Change{
 				Key:         storageDiff.Key.Hex(),
 				Before:      storageDiff.ValueBefore.Hex(),
@@ -232,22 +249,22 @@ func (g *FileGenerator) getContractCfg(address string) Contract {
 	return contract
 }
 
-func (g *FileGenerator) getSlot(cfg *Contract, slot string) Slot {
-	slotType, ok := cfg.Slots[strings.ToLower(slot)]
+func (g *FileGenerator) getSlot(cfg *Contract, slot common.Hash, parentMap map[common.Hash]common.Hash) Slot {
+	slotType, ok := cfg.Slots[strings.ToLower(slot.String())]
 
 	if ok {
 		return slotType
 	}
 
+	// If key not recognized as slot, look for preimage
 	for {
-		slot = g.db.GetPreimage(common.HexToHash(slot))
+		slot, ok = parentMap[slot]
 
-		// If key not recognized as slot, attempt to parse preimage
-		if len(slot) != 128 {
+		if !ok {
 			return DEFAULT_SLOT
 		}
 
-		slotType, ok = cfg.Slots["0x"+strings.ToLower(slot[64:])]
+		slotType, ok = cfg.Slots[strings.ToLower(slot.String())]
 		if ok {
 			return slotType
 		}
