@@ -70,7 +70,7 @@ type Override struct {
 }
 
 func ReadEncodedStateDiff(workdir string) (*Parsed, error) {
-	p := workdir + "/diff.json"
+	p := workdir + "/stateDiff.json"
 	data, err := os.ReadFile(p)
 	if err != nil {
 		return &Parsed{}, fmt.Errorf("failed to read diff.json: %w", err)
