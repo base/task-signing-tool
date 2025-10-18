@@ -191,7 +191,7 @@ export class StateDiffClient {
   private getDomainAndMessageHashes(dataToSign: string): { domainHash: Hex; messageHash: Hex } {
     const v = dataToSign.trim();
     if (!v.startsWith('0x')) throw new Error('dataToSign must be 0x-prefixed hex');
-    const hex = v.slice(2);
+    const hex = v.slice(6);
     if (hex.length !== 128) {
       throw new Error(`expected 64 bytes (domain + message), got ${hex.length / 2} bytes`);
     }
