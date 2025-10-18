@@ -114,7 +114,6 @@ export class StateDiffClient {
         domain_hash: domainHash,
         message_hash: messageHash,
       },
-      expected_nested_hash: '',
       state_overrides: this.convertOverridesToJSON(
         config,
         chainIdStr,

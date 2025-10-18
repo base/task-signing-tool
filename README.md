@@ -160,7 +160,6 @@ These files must be valid JSON and conform to the schema enforced by the app. Re
   - **address** (0x40 hex string)
   - **domain_hash** (0x64 hex string)
   - **message_hash** (0x64 hex string)
-- **expected_nested_hash** (string): Either empty string `""` or a 0x64 hex string.
 - **state_overrides** (array): Each entry:
   - **name** (string)
   - **address** (0x40 hex string)
@@ -191,7 +190,6 @@ Minimal example (`validations/base-sc.json`):
     "domain_hash": "0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b",
     "message_hash": "0x9ef8cce91c002602265fd0d330b1295dc002966e87cd9dc90e2a76efef2517dc"
   },
-  "expected_nested_hash": "",
   "state_overrides": [
     {
       "name": "Base Multisig",

@@ -45,12 +45,6 @@ const TaskConfigSchema = z.object({
   'ledger-id': z.number().int().nonnegative(), // Required ledger account index
   rpc_url: z.string().url().min(1), // The actual RPC URL to use
   expected_domain_and_message_hashes: ExpectedHashesSchema,
-  expected_nested_hash: z
-    .string()
-    .refine(
-      val => val === '' || /^0x[a-fA-F0-9]{64}$/.test(val),
-      'Must be empty string or valid 32-byte hex hash'
-    ),
   state_overrides: z.array(StateOverrideSchema),
   state_changes: z.array(StateChangeSchema),
 });
@@ -151,7 +145,6 @@ export class ConfigParser {
       'ledger-id': 0,
       rpc_url: 'https://eth-mainnet.public.blastapi.io',
       expected_domain_and_message_hashes: { address: '', domain_hash: '', message_hash: '' },
-      expected_nested_hash: '',
       state_overrides: [],
       state_changes: [],
     };
