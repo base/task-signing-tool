@@ -90,6 +90,7 @@ export class StateDiffClient {
     const chainIdStr = BigInt(chainIdHex).toString();
 
     const parsed = await this.readEncodedStateDiff(workdir);
+    this.deleteStateDiffFile(workdir);
     const { domainHash, messageHash } = this.getDomainAndMessageHashes(parsed.dataToSign);
     const payload = this.decodeOverrides(parsed.overrides);
     const decodedDiff = this.decodeStateDiff(parsed.stateDiff);
@@ -188,6 +189,19 @@ export class StateDiffClient {
     const raw = fs.readFileSync(p, 'utf-8');
     const parsed = JSON.parse(raw);
     return parsed as ParsedInput;
+  }
+
+  private deleteStateDiffFile(workdir: string) {
+    const p = path.join(workdir, 'stateDiff.json');
+    if (!fs.existsSync(p)) {
+      throw new Error(`stateDiff.json not found at ${p}`);
+    }
+    try {
+      fs.unlinkSync(p);
+    } catch (err: any) {
+      const message = err?.message || String(err);
+      throw new Error(`Failed to delete stateDiff.json at ${p}: ${message}`);
+    }
   }
 
   private getDomainAndMessageHashes(dataToSign: string): { domainHash: Hex; messageHash: Hex } {
