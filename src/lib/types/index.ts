@@ -8,7 +8,6 @@ export interface TaskConfig {
   'ledger-id': number;
   rpc_url: string;
   expected_domain_and_message_hashes: ExpectedHashes;
-  expected_nested_hash: string;
   state_overrides: StateOverride[];
   state_changes: StateChange[];
 }
@@ -73,7 +72,6 @@ export interface StateDiffResult {
     domain_hash: string;
     message_hash: string;
   };
-  expected_nested_hash: string;
   state_overrides: StateOverride[];
   state_changes: StateChange[];
 }

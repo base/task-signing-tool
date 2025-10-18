@@ -17,7 +17,6 @@ describe('ConfigParser', () => {
           domain_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
           message_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
         },
-        expected_nested_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
         state_overrides: [
           {
             name: 'Test Contract',
@@ -69,7 +68,6 @@ describe('ConfigParser', () => {
           domain_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
           message_hash: '0x9ef8cce91c002602265fd0d330b1295dc002966e87cd9dc90e2a76efef2517dc',
         },
-        expected_nested_hash: '',
         state_overrides: [
           {
             name: 'ProxyAdminOwner',
@@ -195,7 +193,6 @@ describe('ConfigParser', () => {
       expect(result.config.expected_domain_and_message_hashes.message_hash).toBe(
         '0x9ef8cce91c002602265fd0d330b1295dc002966e87cd9dc90e2a76efef2517dc'
       );
-      expect(result.config.expected_nested_hash).toBe('');
 
       // Validate state overrides
       expect(result.config.state_overrides).toHaveLength(3);
@@ -253,7 +250,6 @@ describe('ConfigParser', () => {
           domain_hash: 'not_a_hash',
           message_hash: 'not_a_hash',
         },
-        expected_nested_hash: '',
         state_overrides: [],
         state_changes: [],
       };
@@ -284,7 +280,6 @@ describe('ConfigParser', () => {
           domain_hash: 'invalid_hash_format', // Invalid: not 32-byte hex
           message_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b', // Valid hash
         },
-        expected_nested_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
         state_overrides: [
           {
             name: 'Test Contract',
@@ -349,7 +344,6 @@ describe('ConfigParser', () => {
           domain_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
           message_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
         },
-        expected_nested_hash: '0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b',
         state_overrides: [],
         state_changes: [],
       });
