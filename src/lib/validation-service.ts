@@ -23,8 +23,8 @@ type BaseOptions = {
 export class ValidationService {
   private stateDiffClient?: StateDiffClient;
 
-  constructor(stateDiffBinaryPath?: string) {
-    this.stateDiffClient = new StateDiffClient(stateDiffBinaryPath);
+  constructor() {
+    this.stateDiffClient = new StateDiffClient();
   }
 
   /**
