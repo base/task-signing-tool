@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { createPublicClient, http, decodeAbiParameters, Hex } from 'viem';
+import { createPublicClient, http, decodeAbiParameters, Hex, Address } from 'viem';
 import YAML from 'yaml';
 import { StateChange, StateDiffResult, StateOverride } from './types/index';
 import { CONTRACTS_YAML } from './state-diff-config';
@@ -15,12 +15,15 @@ type ParsedInput = {
 };
 
 type StorageOverrideDecoded = { key: Hex; value: Hex };
-type StateOverrideDecoded = { contractAddress: string; overrides: StorageOverrideDecoded[] };
+type StateOverrideDecoded = {
+  contractAddress: string;
+  overrides: readonly StorageOverrideDecoded[];
+};
 type PayloadDecoded = {
-  from: string;
-  to: string;
+  from: Address;
+  to: Address;
   data: Hex;
-  stateOverrides: StateOverrideDecoded[];
+  stateOverrides: readonly StateOverrideDecoded[];
 };
 
 type VmSafeStorageAccess = {
@@ -44,7 +47,7 @@ type VmSafeAccountAccess = {
   value: bigint;
   data: Hex;
   reverted: boolean;
-  storageAccesses: VmSafeStorageAccess[];
+  storageAccesses: readonly VmSafeStorageAccess[];
   depth: bigint;
   oldNonce: bigint;
   newNonce: bigint;
@@ -228,20 +231,12 @@ export class StateDiffClient {
         },
       ],
       encoded as Hex
-    ) as unknown as any[];
-    const from = tuple[0] as string;
-    const to = tuple[1] as string;
-    const data = tuple[2] as Hex;
-    const arr = tuple[3] as any[];
-    const stateOverrides = arr.map(item => ({
-      contractAddress: item[0] as string,
-      overrides: (item[1] as any[]).map(o => ({ key: o[0] as Hex, value: o[1] as Hex })),
-    }));
-    return { from, to, data, stateOverrides };
+    );
+    return tuple;
   }
 
-  private decodeStateDiff(encoded: string): VmSafeAccountAccess[] {
-    const [arr] = decodeAbiParameters(
+  private decodeStateDiff(encoded: string): readonly VmSafeAccountAccess[] {
+    const [accesses] = decodeAbiParameters(
       [
         {
           type: 'tuple[]',
@@ -283,32 +278,9 @@ export class StateDiffClient {
         },
       ],
       encoded as Hex
-    ) as unknown as any[];
+    );
 
-    return (arr as any[]).map(d => ({
-      chainInfo: { forkId: BigInt(d[0][0]), chainId: BigInt(d[0][1]) },
-      kind: Number(d[1]),
-      account: d[2] as string,
-      accessor: d[3] as string,
-      initialized: Boolean(d[4]),
-      oldBalance: BigInt(d[5]),
-      newBalance: BigInt(d[6]),
-      deployedCode: d[7] as Hex,
-      value: BigInt(d[8]),
-      data: d[9] as Hex,
-      reverted: Boolean(d[10]),
-      storageAccesses: (d[11] as any[]).map(a => ({
-        account: a[0] as string,
-        slot: a[1] as Hex,
-        isWrite: Boolean(a[2]),
-        previousValue: a[3] as Hex,
-        newValue: a[4] as Hex,
-        reverted: Boolean(a[5]),
-      })),
-      depth: BigInt(d[12]),
-      oldNonce: BigInt(d[13]),
-      newNonce: BigInt(d[14]),
-    }));
+    return accesses;
   }
 
   private decodePreimages(encoded: string): ParentPreimage[] {
@@ -360,7 +332,7 @@ export class StateDiffClient {
   }
 
   private buildDiffsMap(
-    decoded: VmSafeAccountAccess[]
+    decoded: readonly VmSafeAccountAccess[]
   ): Map<
     string,
     { address: string; storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }> }
@@ -399,7 +371,7 @@ export class StateDiffClient {
   private convertOverridesToJSON(
     cfg: { contracts: Record<string, Record<string, ContractCfg>> },
     chainId: string,
-    overrides: StateOverrideDecoded[],
+    overrides: readonly StateOverrideDecoded[],
     parentMap: Map<Hex, Hex>
   ): StateOverride[] {
     const result: StateOverride[] = [];
