@@ -490,14 +490,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   };
 
   if (loading) {
-    const getLoadingMessage = () => {
-      if (isInstallingDeps) {
-        return 'Checking dependencies and running make deps if needed...';
-      } else {
-        return 'Extracting script data, running native simulator, and comparing with expected results...';
-      }
-    };
-
     const getLoadingTitle = () => {
       if (isInstallingDeps) {
         return 'Installing Dependencies';
@@ -521,7 +513,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           }}
         />
         <h3 style={{ color: '#374151', marginBottom: '8px' }}>{getLoadingTitle()}</h3>
-        <p style={{ color: '#6B7280', margin: 0 }}>{getLoadingMessage()}</p>
         <style jsx>{`
           @keyframes spin {
             0% {
