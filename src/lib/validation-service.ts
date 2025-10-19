@@ -10,14 +10,12 @@ export interface ValidationOptions {
   userType: 'Base SC' | 'Coinbase' | 'OP';
   rpcUrl: string;
   sender: string;
-  stateDiffBinaryPath?: string;
 }
 
 type BaseOptions = {
   upgradeId: string;
   network: NetworkType;
   userType: string;
-  stateDiffBinaryPath?: string;
 };
 
 export class ValidationService {
@@ -72,7 +70,6 @@ export class ValidationService {
           userType: baseOptions.userType as 'Base SC' | 'Coinbase' | 'OP',
           rpcUrl: parsedConfig.config.rpc_url,
           sender: parsedConfig.config.sender,
-          stateDiffBinaryPath: baseOptions.stateDiffBinaryPath,
         },
         parsedConfig: parsedConfig.config,
       };

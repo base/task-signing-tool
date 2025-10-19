@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toChecksumAddressSafe } from '@/lib/format';
 
 interface SigningData {
   signature: string;
@@ -130,7 +131,7 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
                   fontSize: '14px',
                 }}
               >
-                {signingData.signerAddress}
+                {toChecksumAddressSafe(signingData.signerAddress)}
               </span>
             </div>
           )}

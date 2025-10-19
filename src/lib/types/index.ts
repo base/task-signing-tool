@@ -61,40 +61,17 @@ export interface StringDiff {
   endIndex?: number;
 }
 
-// ------------------------------- State Diff Types -------------------------------
-export interface StateDiffResult {
-  task_name: string;
-  script_name: string;
-  signature: string;
-  args: string;
-  expected_domain_and_message_hashes: {
-    address: string;
-    domain_hash: string;
-    message_hash: string;
-  };
-  state_overrides: StateOverride[];
-  state_changes: StateChange[];
-}
-
 // ------------------------------- Validation Data (Last Steps) Types -------------------------------
 export interface ValidationData {
   expected: {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
-    domainAndMessageHashes?: {
-      address: string;
-      domain_hash: string;
-      message_hash: string;
-    };
+    domainAndMessageHashes?: ExpectedHashes;
   };
   actual: {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
-    domainAndMessageHashes?: {
-      address: string;
-      domain_hash: string;
-      message_hash: string;
-    };
+    domainAndMessageHashes?: ExpectedHashes;
   };
   stateDiffOutput?: string;
 }
