@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { createPublicClient, http, decodeAbiParameters, Hex, Address } from 'viem';
-import { StateChange, StateDiffResult, StateOverride } from './types/index';
+import { StateChange, StateOverride, TaskConfig } from './types/index';
 import contractsCfg from './config/contracts.json';
 
 type ParsedInput = {
@@ -64,7 +64,7 @@ export class StateDiffClient {
     forgeCmdParts: string[],
     workdir: string
   ): Promise<{
-    result: StateDiffResult;
+    result: TaskConfig;
     output: string;
   }> {
     const [cmd, cmdArgs] = this.normalizeForgeCmd(forgeCmdParts);
@@ -101,7 +101,7 @@ export class StateDiffClient {
     const diffsMap = this.buildDiffsMap(decodedDiff);
     const diffsList = Array.from(diffsMap.values());
 
-    const result: StateDiffResult = {
+    const result: TaskConfig = {
       task_name: '',
       script_name: '',
       signature: '',
@@ -129,7 +129,7 @@ export class StateDiffClient {
   }
 
   // Convert JSON to app types
-  parseStateChanges(result: StateDiffResult): StateChange[] {
+  parseStateChanges(result: TaskConfig): StateChange[] {
     return result.state_changes.map(change => ({
       name: change.name,
       address: change.address,
@@ -142,7 +142,7 @@ export class StateDiffClient {
     }));
   }
 
-  parseStateOverrides(result: StateDiffResult): StateOverride[] {
+  parseStateOverrides(result: TaskConfig): StateOverride[] {
     return result.state_overrides.map(override => ({
       name: override.name,
       address: override.address,
