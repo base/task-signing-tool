@@ -1,5 +1,6 @@
 import React from 'react';
 import { StringDiff } from '@/lib/types/index';
+import { checksummizeAddressesInText } from '@/lib/format';
 
 interface HighlightedTextProps {
   diffs: StringDiff[];
@@ -46,7 +47,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ diffs, classNa
           style={getStyleForDiffType(diff.type)}
           title={diff.type !== 'unchanged' ? `${diff.type}: "${diff.value}"` : undefined}
         >
-          {diff.value}
+          {checksummizeAddressesInText(diff.value)}
         </span>
       ))}
     </span>

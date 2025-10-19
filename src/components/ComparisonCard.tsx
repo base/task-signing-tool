@@ -1,5 +1,6 @@
 import React from 'react';
 import { StringDiff } from '@/lib/types/index';
+import { toChecksumAddressSafe, checksummizeAddressesInText } from '@/lib/format';
 import { HighlightedText } from './HighlightedText';
 
 interface ComparisonCardProps {
@@ -84,7 +85,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
             margin: 0,
           }}
         >
-          {contractAddress}
+          {toChecksumAddressSafe(contractAddress)}
         </p>
       </div>
 
@@ -120,7 +121,11 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
               wordBreak: 'break-all',
             }}
           >
-            {storageKeyDiffs ? <HighlightedText diffs={storageKeyDiffs} /> : storageKey}
+            {storageKeyDiffs ? (
+              <HighlightedText diffs={storageKeyDiffs} />
+            ) : (
+              checksummizeAddressesInText(storageKey)
+            )}
           </div>
         </div>
 
@@ -149,7 +154,11 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
                 wordBreak: 'break-all',
               }}
             >
-              {beforeValueDiffs ? <HighlightedText diffs={beforeValueDiffs} /> : beforeValue}
+              {beforeValueDiffs ? (
+                <HighlightedText diffs={beforeValueDiffs} />
+              ) : (
+                checksummizeAddressesInText(beforeValue)
+              )}
             </div>
           </div>
         )}
@@ -178,7 +187,11 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
               wordBreak: 'break-all',
             }}
           >
-            {afterValueDiffs ? <HighlightedText diffs={afterValueDiffs} /> : afterValue}
+            {afterValueDiffs ? (
+              <HighlightedText diffs={afterValueDiffs} />
+            ) : (
+              checksummizeAddressesInText(afterValue)
+            )}
           </div>
         </div>
       </div>

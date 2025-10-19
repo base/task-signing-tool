@@ -66,7 +66,10 @@ export interface StateDiffResult {
   task_name: string;
   script_name: string;
   signature: string;
+  sender: string;
   args: string;
+  ['ledger-id']: number;
+  rpc_url: string;
   expected_domain_and_message_hashes: {
     address: string;
     domain_hash: string;

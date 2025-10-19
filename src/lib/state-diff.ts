@@ -105,7 +105,10 @@ export class StateDiffClient {
       task_name: '',
       script_name: '',
       signature: '',
+      sender: '',
       args: '',
+      ['ledger-id']: 0,
+      rpc_url: rpcUrl,
       expected_domain_and_message_hashes: {
         address: parsed.targetSafe,
         domain_hash: domainHash,
