@@ -2,9 +2,8 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { createPublicClient, http, decodeAbiParameters, Hex, Address } from 'viem';
-import YAML from 'yaml';
 import { StateChange, StateDiffResult, StateOverride } from './types/index';
-import { CONTRACTS_YAML } from './state-diff-config';
+import contractsCfg from './config/contracts.json';
 
 type ParsedInput = {
   targetSafe: string;
@@ -55,12 +54,9 @@ type VmSafeAccountAccess = {
 
 type ParentPreimage = { slot: Hex; parent: Hex; key: Hex };
 
-type SlotCfg = { type: string; summary: string; 'override-meaning': string };
+type SlotCfg = { type: string; summary: string; overrideMeaning: string };
 type ContractCfg = { name: string; slots: Record<string, SlotCfg> };
-type ConfigRoot = {
-  contracts: Record<string, Record<string, { name: string; slots: any }>>;
-  'storage-layouts': Record<string, Record<string, SlotCfg>>;
-};
+type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> };
 
 export class StateDiffClient {
   async simulate(
@@ -198,8 +194,8 @@ export class StateDiffClient {
     }
     try {
       fs.unlinkSync(p);
-    } catch (err: any) {
-      const message = err?.message || String(err);
+    } catch (err) {
+      const message = String(err);
       throw new Error(`Failed to delete stateDiff.json at ${p}: ${message}`);
     }
   }
@@ -296,7 +292,7 @@ export class StateDiffClient {
     return accesses;
   }
 
-  private decodePreimages(encoded: string): ParentPreimage[] {
+  private decodePreimages(encoded: string): readonly ParentPreimage[] {
     const [arr] = decodeAbiParameters(
       [
         {
@@ -309,38 +305,64 @@ export class StateDiffClient {
         },
       ],
       encoded as Hex
-    ) as unknown as any[];
-    return (arr as any[]).map(p => ({ slot: p[0] as Hex, parent: p[1] as Hex, key: p[2] as Hex }));
+    );
+    return arr;
   }
 
   private loadAndResolveConfig(): { contracts: Record<string, Record<string, ContractCfg>> } {
-    const parsed = YAML.parse(CONTRACTS_YAML) as ConfigRoot;
+    const parsed = contractsCfg as unknown as {
+      contracts: Record<string, Record<string, RawContractCfg>>;
+      storageLayouts: Record<string, Record<string, SlotCfg>>;
+    };
+
     const out: { contracts: Record<string, Record<string, ContractCfg>> } = { contracts: {} };
-    const layouts = parsed['storage-layouts'] || {};
+
+    // Normalize storage layouts: ensure lowercase slot keys
+    const normalizedLayouts: Record<string, Record<string, SlotCfg>> = {};
+    for (const [layoutName, slots] of Object.entries(parsed.storageLayouts || {})) {
+      const layoutSlots: Record<string, SlotCfg> = {};
+      for (const [slotKey, slotVal] of Object.entries(slots || {})) {
+        layoutSlots[slotKey.toLowerCase()] = slotVal;
+      }
+      normalizedLayouts[layoutName] = layoutSlots;
+    }
+
     for (const [chainId, contracts] of Object.entries(parsed.contracts || {})) {
       const lowerChain = chainId.trim();
       out.contracts[lowerChain] = {};
       for (const [addr, def] of Object.entries(contracts || {})) {
         const lowerAddr = addr.toLowerCase();
-        let slots: Record<string, SlotCfg> = {};
         const rawSlots = def.slots;
+        let slots: Record<string, SlotCfg> = {};
+
         if (typeof rawSlots === 'string') {
-          const m = rawSlots.match(/^\$\{\{storage-layouts\.(.+)\}\}$/);
-          if (!m)
+          // Expect pattern: "{{storageLayouts.NAME}}"
+          const m = rawSlots.match(/^\{\{storageLayouts\.(.+)\}\}$/);
+          if (!m) {
             throw new Error(`Invalid slots reference for ${addr} on chain ${chainId}: ${rawSlots}`);
-          const layout = layouts[m[1]];
-          if (!layout) throw new Error(`Missing storage-layouts.${m[1]} for ${addr} on ${chainId}`);
+          }
+          const layout = normalizedLayouts[m[1]];
+          if (!layout) {
+            throw new Error(`Missing storageLayouts.${m[1]} for ${addr} on ${chainId}`);
+          }
           slots = layout;
         } else if (rawSlots && typeof rawSlots === 'object') {
-          slots = rawSlots as Record<string, SlotCfg>;
+          // Inline slots, normalize keys and field names
+          const inline: Record<string, SlotCfg> = {};
+          for (const [k, v] of Object.entries(rawSlots as Record<string, SlotCfg>)) {
+            inline[k.toLowerCase()] = v;
+          }
+          slots = inline;
         } else {
           slots = {};
         }
+
         const normalizedSlots: Record<string, SlotCfg> = {};
         for (const [k, v] of Object.entries(slots)) normalizedSlots[k.toLowerCase()] = v;
         out.contracts[lowerChain][lowerAddr] = { name: def.name, slots: normalizedSlots };
       }
     }
+
     return out;
   }
 
@@ -405,7 +427,7 @@ export class StateDiffClient {
         return {
           key: this.n(s.key),
           value: this.n(s.value),
-          description: slotCfg['override-meaning'],
+          description: slotCfg.overrideMeaning,
         };
       });
       result.push({ name, address: addrLower, overrides: jsonOverrides });
@@ -450,7 +472,7 @@ export class StateDiffClient {
     const DEFAULT: SlotCfg = {
       type: '<<DecodedKind>>',
       summary: '<<Summary>>',
-      'override-meaning': '<<OverrideMeaning>>',
+      overrideMeaning: '<<OverrideMeaning>>',
     };
     let current = slot;
     while (true) {
