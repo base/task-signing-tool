@@ -72,58 +72,68 @@
       "0x0000000000000000000000000000000000000000000000000000000000000065": {
         "type": "address",
         "summary": "Updates the `X` implementation address.",
-        "overrideMeaning": ""
+        "overrideMeaning": "",
+        "allowDifference": false
       }
     },
     "feeDisburser": {
       "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103": {
         "type": "address",
         "summary": "Updates the proxy admin",
-        "overrideMeaning": ""
+        "overrideMeaning": "",
+        "allowDifference": false
       }
     },
     "gnosisSafe": {
       "0x0000000000000000000000000000000000000000000000000000000000000002": {
         "type": "address",
         "summary": "Updates the owners mapping",
-        "overrideMeaning": ""
+        "overrideMeaning": "",
+        "allowDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000003": {
         "type": "uint256",
         "summary": "Updates the owner count",
-        "overrideMeaning": "Sets the owner count to 1 so the transaction simulation can occur."
+        "overrideMeaning": "Sets the owner count to 1 so the transaction simulation can occur.",
+        "allowDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000004": {
         "type": "uint256",
         "summary": "Updates the execution threshold",
-        "overrideMeaning": "Override the threshold to 1 so the transaction simulation can occur."
+        "overrideMeaning": "Override the threshold to 1 so the transaction simulation can occur.",
+        "allowDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000005": {
         "type": "uint256",
         "summary": "Increments the nonce",
-        "overrideMeaning": ""
+        "overrideMeaning": "",
+        "allowDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000008": {
         "type": "uint256",
         "summary": "Sets an approval for this transaction",
-        "overrideMeaning": "Simulates an approval from msg.sender in order for the task simulation to succeed."
+        "overrideMeaning": "Simulates an approval from msg.sender in order for the task simulation to succeed.",
+        "allowDifference": false
       },
       "0xe90b7bceb6e7df5418fb78d8ee546e97c83a08bbccc01a0644d599ccd2a7c2e0": {
         "type": "address",
         "summary": "Sets the head of the owners linked list",
-        "overrideMeaning": "This is owners[1] -> 0xca11bde05977b3631167028862be2a173976ca11, so the key can be derived from `cast index address 0x0000000000000000000000000000000000000001 2`."
+        "overrideMeaning": "This is owners[1] -> 0xca11bde05977b3631167028862be2a173976ca11, so the key can be derived from `cast index address 0x0000000000000000000000000000000000000001 2`.",
+        "allowDifference": false
       },
       "0x316a0aac0d94f5824f0b66f5bbe94a8c360a17699a1d3a233aafcf7146e9f11c": {
         "type": "uint256",
         "summary": "Sets the tail of the owners linked list",
-        "overrideMeaning": "This is owners[0xca11bde05977b3631167028862be2a173976ca11] -> 1, so the key can be derived from `cast index address 0xca11bde05977b3631167028862be2a173976ca11 2`."
+        "overrideMeaning": "This is owners[0xca11bde05977b3631167028862be2a173976ca11] -> 1, so the key can be derived from `cast index address 0xca11bde05977b3631167028862be2a173976ca11 2`.",
+        "allowDifference": false
       }
     },
     "systemConfig": {
       "0x000000000000000000000000000000000000000000000000000000000000006a": {
         "type": "hybrid",
         "summary": "Updates EIP 1559 params for the chain",
-        "overrideMeaning": ""
+        "overrideMeaning": "",
+        "allowDifference": false
       }
     }
   }

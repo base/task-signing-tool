@@ -249,16 +249,15 @@ export class ValidationService {
         scriptPath
       );
 
-      // Parse both state overrides and state changes from state-diff output
-      const stateOverrides = this.stateDiffClient.parseStateOverrides(stateDiffResult.result);
-      const stateChanges = this.stateDiffClient.parseStateChanges(stateDiffResult.result);
-
       console.log(
-        `✅ State-diff simulation completed: ${stateOverrides.length} state overrides, ${stateChanges.length} state changes found`
+        `✅ State-diff simulation completed: ${stateDiffResult.result.state_overrides.length} state overrides, ${stateDiffResult.result.state_changes.length} state changes found`
       );
 
       return {
-        data: { stateOverrides, stateChanges },
+        data: {
+          stateOverrides: stateDiffResult.result.state_overrides,
+          stateChanges: stateDiffResult.result.state_changes,
+        },
         domainAndMessageHashes: stateDiffResult.result.expected_domain_and_message_hashes,
         stateDiffOutput: stateDiffResult.output,
       };
