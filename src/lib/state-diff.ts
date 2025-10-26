@@ -102,25 +102,25 @@ export class StateDiffClient {
     const diffsList = Array.from(diffsMap.values());
 
     const result: TaskConfig = {
-      task_name: '',
-      script_name: '',
+      taskName: '',
+      scriptName: '',
       signature: '',
       sender: '',
       args: '',
-      ['ledger-id']: 0,
-      rpc_url: rpcUrl,
-      expected_domain_and_message_hashes: {
+      ledgerId: 0,
+      rpcUrl: rpcUrl,
+      expectedDomainAndMessageHashes: {
         address: parsed.targetSafe,
-        domain_hash: domainHash,
-        message_hash: messageHash,
+        domainHash: domainHash,
+        messageHash: messageHash,
       },
-      state_overrides: this.convertOverridesToJSON(
+      stateOverrides: this.convertOverridesToJSON(
         config,
         chainIdStr,
         payload.stateOverrides,
         parentMap
       ),
-      state_changes: this.convertDiffsToJSON(config, chainIdStr, diffsList, parentMap),
+      stateChanges: this.convertDiffsToJSON(config, chainIdStr, diffsList, parentMap),
     };
 
     const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;

@@ -64,7 +64,7 @@ Key requirements and notes:
   - "Base SC" → `base-sc.json`
   - "Coinbase" → `coinbase.json`
   - "OP" → `op.json`
-- **Script execution**: The tool executes Foundry from the task directory root (`<network>/<task>/`). Ensure your Foundry project or script context is available under that path; the tool will run `forge script` with fields from your validation config (`script_name`, optional `signature` and `args`, and `sender`). Temporary outputs like `temp-script-output.txt` will be written there.
+- **Script execution**: The tool executes Foundry from the task directory root (`<network>/<task>/`). Ensure your Foundry project or script context is available under that path; the tool will run `forge script` with fields from your validation config (`scriptName`, optional `signature` and `args`, and `sender`). Temporary outputs like `temp-script-output.txt` will be written there.
 - **Optional README parsing**: If `<network>/<task>/README.md` exists, the tool may parse it to display status and execution links.
 
 ### Task README structure
@@ -149,22 +149,22 @@ Validation configs live under each task directory at `<network>/<YYYY-MM-DD-slug
 
 These files must be valid JSON and conform to the schema enforced by the app. Required fields and constraints:
 
-- **task_name** (string): Human‑readable task identifier.
-- **script_name** (string): Foundry script to run (e.g., `simulate`).
+- **taskName** (string): Human‑readable task identifier.
+- **scriptName** (string): Foundry script to run (e.g., `simulate`).
 - **signature** (string): Function signature for the script entrypoint (e.g., `run()` or `run(address,uint256)`).
 - **sender** (string): 0x‑prefixed Ethereum address used as the sender for extraction/simulation.
 - **args** (string): Optional, arguments for the script signature. No spaces; use commas and/or brackets as needed (e.g., `0xabc...,1` or `[0xabc...,1]`). Use an empty string `""` if none.
-- **ledger-id** (number): Non‑negative integer Ledger account index.
-- **rpc_url** (string): HTTPS RPC endpoint to use for simulation.
-- **expected_domain_and_message_hashes** (object):
+- **ledgerId** (number): Non‑negative integer Ledger account index.
+- **rpcUrl** (string): HTTPS RPC endpoint to use for simulation.
+- **expectedDomainAndMessageHashes** (object):
   - **address** (0x40 hex string)
-  - **domain_hash** (0x64 hex string)
-  - **message_hash** (0x64 hex string)
-- **state_overrides** (array): Each entry:
+  - **domainHash** (0x64 hex string)
+  - **messageHash** (0x64 hex string)
+- **stateOverrides** (array): Each entry:
   - **name** (string)
   - **address** (0x40 hex string)
   - **overrides** (array of objects): each with **key** (0x64), **value** (0x64), **description** (string)
-- **state_changes** (array): Each entry:
+- **stateChanges** (array): Each entry:
   - **name** (string)
   - **address** (0x40 hex string)
   - **changes** (array of objects): each with **key** (0x64), **before** (0x64), **after** (0x64), **description** (string)
@@ -172,25 +172,25 @@ These files must be valid JSON and conform to the schema enforced by the app. Re
 Notes:
 
 - Sorting is not required; the tool sorts by address and storage slot for comparison.
-- The tool reads `rpc_url`, `sender`, and `ledger-id` directly from this file.
+- The tool reads `rpcUrl`, `sender`, and `ledgerId` directly from this file.
 
 Minimal example (`validations/base-sc.json`):
 
 ```json
 {
-  "task_name": "mainnet-upgrade-system-config",
-  "script_name": "simulate",
+  "taskName": "mainnet-upgrade-system-config",
+  "scriptName": "simulate",
   "signature": "run()",
   "sender": "0x1234567890123456789012345678901234567890",
   "args": "",
-  "ledger-id": 0,
-  "rpc_url": "https://mainnet.example.com",
-  "expected_domain_and_message_hashes": {
+  "ledgerId": 0,
+  "rpcUrl": "https://mainnet.example.com",
+  "expectedDomainAndMessageHashes": {
     "address": "0x9C4a57Feb77e294Fd7BF5EBE9AB01CAA0a90A110",
-    "domain_hash": "0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b",
-    "message_hash": "0x9ef8cce91c002602265fd0d330b1295dc002966e87cd9dc90e2a76efef2517dc"
+    "domainHash": "0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b",
+    "messageHash": "0x9ef8cce91c002602265fd0d330b1295dc002966e87cd9dc90e2a76efef2517dc"
   },
-  "state_overrides": [
+  "stateOverrides": [
     {
       "name": "Base Multisig",
       "address": "0x9855054731540A48b28990B63DcF4f33d8AE46A1",
@@ -203,7 +203,7 @@ Minimal example (`validations/base-sc.json`):
       ]
     }
   ],
-  "state_changes": [
+  "stateChanges": [
     {
       "name": "System Config",
       "address": "0x73a79Fab69143498Ed3712e519A88a918e1f4072",

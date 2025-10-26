@@ -67,8 +67,8 @@ export default function Home() {
 
   const handleLedgerSigningComplete = (signature: string) => {
     // Extract domain and message hash from validation data
-    const domainHash = validationData?.expected?.domainAndMessageHashes?.domain_hash || '';
-    const messageHash = validationData?.expected?.domainAndMessageHashes?.message_hash || '';
+    const domainHash = validationData?.expected?.domainAndMessageHashes?.domainHash || '';
+    const messageHash = validationData?.expected?.domainAndMessageHashes?.messageHash || '';
 
     setSigningData({
       signature,
@@ -210,8 +210,8 @@ export default function Home() {
 
         {currentStep === 'ledger' && validationData && (
           <LedgerSigning
-            domainHash={validationData.expected?.domainAndMessageHashes?.domain_hash || ''}
-            messageHash={validationData.expected?.domainAndMessageHashes?.message_hash || ''}
+            domainHash={validationData.expected?.domainAndMessageHashes?.domainHash || ''}
+            messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
             ledgerAccount={userLedgerAccount}
             onSigningComplete={handleLedgerSigningComplete}
             onCancel={handleBackToValidation}
