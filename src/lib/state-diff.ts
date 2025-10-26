@@ -54,7 +54,7 @@ type VmSafeAccountAccess = {
 
 type ParentPreimage = { slot: Hex; parent: Hex; key: Hex };
 
-type SlotCfg = { type: string; summary: string; overrideMeaning: string };
+type SlotCfg = { type: string; summary: string; overrideMeaning: string; allowDifference: boolean };
 type ContractCfg = { name: string; slots: Record<string, SlotCfg> };
 type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> };
 
@@ -126,32 +126,6 @@ export class StateDiffClient {
     const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;
     console.log('✅ State-diff transformation completed');
     return { result, output };
-  }
-
-  // Convert JSON to app types
-  parseStateChanges(result: TaskConfig): StateChange[] {
-    return result.state_changes.map(change => ({
-      name: change.name,
-      address: change.address,
-      changes: change.changes.map(c => ({
-        key: c.key,
-        before: c.before,
-        after: c.after,
-        description: c.description,
-      })),
-    }));
-  }
-
-  parseStateOverrides(result: TaskConfig): StateOverride[] {
-    return result.state_overrides.map(override => ({
-      name: override.name,
-      address: override.address,
-      overrides: override.overrides.map(o => ({
-        key: o.key,
-        value: o.value,
-        description: o.description,
-      })),
-    }));
   }
 
   private normalizeForgeCmd(forgeCmdParts: string[]): [string, string[]] {
@@ -464,6 +438,7 @@ export class StateDiffClient {
             before: this.n(s.before),
             after: this.n(s.after),
             description: slotCfg.summary,
+            allowDifference: slotCfg.allowDifference,
           };
         });
       if (changes.length > 0) result.push({ name, address: d.address, changes });
@@ -476,6 +451,7 @@ export class StateDiffClient {
       type: '<<DecodedKind>>',
       summary: '<<Summary>>',
       overrideMeaning: '<<OverrideMeaning>>',
+      allowDifference: false,
     };
     let current = slot;
     while (true) {

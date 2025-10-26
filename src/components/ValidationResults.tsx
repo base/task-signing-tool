@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StringDiff, Override, Change, ValidationData } from '@/lib/types/index';
+import {
+  StringDiff,
+  ValidationData,
+  SigningDataComparison,
+  OverrideComparison,
+  StateChangeComparison,
+} from '@/lib/types/index';
 import { ComparisonCard } from './index';
 
 interface ValidationResultsProps {
@@ -13,54 +19,10 @@ interface ValidationResultsProps {
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
 
-type ValidationItemBase = {
-  step: 1 | 2 | 3;
-  stepName: string;
-  contractName: string;
-  contractAddress?: string;
-  stateChangeIndex?: number;
-  changeIndex?: number;
-  stateOverrideIndex?: number;
-  overrideIndex?: number;
-};
-
-type SigningDataItem = ValidationItemBase & {
-  type: 'signing-data';
-  expected: {
-    dataToSign: string;
-    address: string;
-    domainHash: string;
-    messageHash: string;
-    // Optional to allow safe access patterns used in the UI
-    description?: string;
-  };
-  actual?: {
-    dataToSign: string;
-    address: string;
-    domainHash: string;
-    messageHash: string;
-    // Optional to allow safe access patterns used in the UI
-    description?: string;
-  };
-};
-
-type OverrideItem = ValidationItemBase & {
-  type: 'override';
-  stateOverrideIndex: number;
-  overrideIndex: number;
-  expected: Override;
-  actual?: Override;
-};
-
-type ChangeItem = ValidationItemBase & {
-  type: 'change';
-  stateChangeIndex: number;
-  changeIndex: number;
-  expected: Change;
-  actual?: Change;
-};
-
-type ValidationItem = SigningDataItem | OverrideItem | ChangeItem;
+type NavEntry =
+  | { kind: 'signing'; index: number }
+  | { kind: 'override'; index: number }
+  | { kind: 'change'; index: number };
 
 export const ValidationResults: React.FC<ValidationResultsProps> = ({
   userType,
@@ -76,7 +38,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const [isInstallingDeps, setIsInstallingDeps] = useState(false);
   const isRunningRef = useRef(false);
 
-  const createStringDiffs = (expected: string, actual: string): StringDiff[] => {
+  // Helper function to get highlighted diffs for a specific field comparison
+  const getFieldDiffs = (expected: string, actual: string): StringDiff[] => {
     if (expected === actual) {
       return [{ type: 'unchanged', value: expected }];
     }
@@ -147,87 +110,68 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     return diffs;
   };
 
-  // Helper function to get highlighted diffs for a specific field comparison
-  const getFieldDiffs = (expectedValue: string, actualValue: string): StringDiff[] => {
-    return createStringDiffs(expectedValue, actualValue);
-  };
+  const getValidationItemsByStep = (): {
+    signing: SigningDataComparison[];
+    overrides: OverrideComparison[];
+    changes: StateChangeComparison[];
+  } => {
+    if (!validationResult) return { signing: [], overrides: [], changes: [] };
 
-  const getAllValidationItems = (): ValidationItem[] => {
-    if (!validationResult) return [];
-
-    const items: ValidationItem[] = [];
-
-    // Step 1: Domain and Message Hash Validation
-    const expectedDomainAndMessageHashes = validationResult.expected.domainAndMessageHashes;
-    const actualSigningData = validationResult.actual.domainAndMessageHashes;
-
-    if (expectedDomainAndMessageHashes && actualSigningData) {
-      // Combine domain and message hash with EIP-712 prefix (0x1901)
-      const expectedDataToSign = `0x1901${expectedDomainAndMessageHashes.domain_hash.replace(
+    const signing: SigningDataComparison[] = [];
+    const expectedHashes = validationResult.expected.domainAndMessageHashes;
+    const actualHashes = validationResult.actual.domainAndMessageHashes;
+    if (expectedHashes && actualHashes) {
+      const expectedDataToSign = `0x1901${expectedHashes.domain_hash.replace(
         '0x',
         ''
-      )}${expectedDomainAndMessageHashes.message_hash.replace('0x', '')}`;
-      const actualDataToSign = `0x1901${actualSigningData.domain_hash.replace(
+      )}${expectedHashes.message_hash.replace('0x', '')}`;
+      const actualDataToSign = `0x1901${actualHashes.domain_hash.replace(
         '0x',
         ''
-      )}${actualSigningData.message_hash.replace('0x', '')}`;
-
-      items.push({
-        step: 1,
-        stepName: 'Domain/Message Hash',
-        type: 'signing-data' as const,
+      )}${actualHashes.message_hash.replace('0x', '')}`;
+      signing.push({
+        contractName: 'EIP-712 Signing Data',
+        contractAddress: expectedHashes.address,
         expected: {
           dataToSign: expectedDataToSign,
-          address: expectedDomainAndMessageHashes.address,
-          domainHash: expectedDomainAndMessageHashes.domain_hash,
-          messageHash: expectedDomainAndMessageHashes.message_hash,
+          address: expectedHashes.address,
+          domainHash: expectedHashes.domain_hash,
+          messageHash: expectedHashes.message_hash,
         },
         actual: {
           dataToSign: actualDataToSign,
-          address: actualSigningData.address,
-          domainHash: actualSigningData.domain_hash,
-          messageHash: actualSigningData.message_hash,
+          address: actualHashes.address,
+          domainHash: actualHashes.domain_hash,
+          messageHash: actualHashes.message_hash,
         },
-        contractName: 'EIP-712 Signing Data',
-        contractAddress: expectedDomainAndMessageHashes.address,
       });
     }
 
-    // Step 2: State Overrides validation
+    const overrides: OverrideComparison[] = [];
     validationResult.expected.stateOverrides.forEach((stateOverride, soIndex) => {
       stateOverride.overrides.forEach((override, oIndex) => {
-        items.push({
-          step: 2,
-          stepName: 'State Overrides',
-          type: 'override' as const,
-          stateOverrideIndex: soIndex,
-          overrideIndex: oIndex,
-          expected: override,
-          actual: validationResult.actual.stateOverrides[soIndex]?.overrides[oIndex],
+        overrides.push({
           contractName: stateOverride.name,
           contractAddress: stateOverride.address,
+          expected: override,
+          actual: validationResult.actual.stateOverrides[soIndex]?.overrides[oIndex],
         });
       });
     });
 
-    // Step 3: State Changes validation
+    const changes: StateChangeComparison[] = [];
     validationResult.expected.stateChanges.forEach((stateChange, scIndex) => {
       stateChange.changes.forEach((change, cIndex) => {
-        items.push({
-          step: 3,
-          stepName: 'State Changes',
-          type: 'change' as const,
-          stateChangeIndex: scIndex,
-          changeIndex: cIndex,
-          expected: change,
-          actual: validationResult.actual.stateChanges[scIndex]?.changes[cIndex],
+        changes.push({
           contractName: stateChange.name,
           contractAddress: stateChange.address,
+          expected: change,
+          actual: validationResult.actual.stateChanges[scIndex]?.changes[cIndex],
         });
       });
     });
 
-    return items;
+    return { signing, overrides, changes };
   };
 
   const handleRunValidation = useCallback(async () => {
@@ -323,77 +267,93 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     handleRunValidation();
   }, [handleRunValidation]);
 
-  const allValidationItems = getAllValidationItems();
-  const currentValidationItem = allValidationItems[currentChangeIndex];
-  const totalValidationItems = allValidationItems.length;
+  const itemsByStep = getValidationItemsByStep();
+  const buildNavList = (items: {
+    signing: SigningDataComparison[];
+    overrides: OverrideComparison[];
+    changes: StateChangeComparison[];
+  }): NavEntry[] => {
+    const nav: NavEntry[] = [];
+    for (let i = 0; i < items.signing.length; i++) nav.push({ kind: 'signing', index: i });
+    for (let i = 0; i < items.overrides.length; i++) nav.push({ kind: 'override', index: i });
+    for (let i = 0; i < items.changes.length; i++) nav.push({ kind: 'change', index: i });
+    return nav;
+  };
+  const navList = buildNavList(itemsByStep);
+  const currentEntry = navList[currentChangeIndex];
+  const totalValidationItems = navList.length;
 
   // Check if there are any blocking validation errors
   const hasBlockingErrors = () => {
     if (!validationResult) return false;
 
-    return allValidationItems.some(item => {
-      // Missing actual data is a blocking error
-      if (!item.actual) {
-        return true;
-      }
+    // Signing
+    for (const s of itemsByStep.signing) {
+      if (!s.actual) return true;
+      if (s.expected.dataToSign !== s.actual.dataToSign) return true;
+    }
 
-      // Check for mismatch that is NOT an expected difference
-      if (item.type === 'signing-data') {
-        return item.expected.dataToSign !== item.actual.dataToSign;
-      } else if (item.type === 'override') {
-        const match =
-          item.expected.key === item.actual.key && item.expected.value === item.actual.value;
-        const isExpectedDifference =
-          item.expected.description &&
-          item.expected.description.toLowerCase().includes('difference is expected');
-        return !match && !isExpectedDifference;
-      } else if (item.type === 'change') {
-        return !(
-          item.expected.key === item.actual.key &&
-          item.expected.before === item.actual.before &&
-          item.expected.after === item.actual.after
-        );
-      }
-      return false;
-    });
+    // Overrides
+    for (const o of itemsByStep.overrides) {
+      if (!o.actual) return true;
+      const match = o.expected.key === o.actual.key && o.expected.value === o.actual.value;
+      const isExpectedDifference =
+        o.expected.description &&
+        o.expected.description.toLowerCase().includes('difference is expected');
+      if (!match && !isExpectedDifference) return true;
+    }
+
+    // Changes
+    for (const c of itemsByStep.changes) {
+      if (!c.actual) return true;
+      const match =
+        c.expected.key === c.actual.key &&
+        c.expected.before === c.actual.before &&
+        c.expected.after === c.actual.after;
+      const isExpectedDifference =
+        c.expected.description &&
+        c.expected.description.toLowerCase().includes('difference is expected');
+      if (!match && !isExpectedDifference) return true;
+    }
+
+    return false;
   };
 
   const blockingErrorsExist = hasBlockingErrors();
 
   // Get step-specific counts and current step info
   const getStepInfo = () => {
-    const step1Items = allValidationItems.filter(item => item.step === 1);
-    const step2Items = allValidationItems.filter(item => item.step === 2);
-    const step3Items = allValidationItems.filter(item => item.step === 3);
+    const step1Count = itemsByStep.signing.length;
+    const step2Count = itemsByStep.overrides.length;
+    const step3Count = itemsByStep.changes.length;
 
-    let currentStepItems: typeof allValidationItems = [];
+    let currentStep = 1;
+    let currentStepItems = 0;
     let currentStepIndex = 0;
 
-    if (currentValidationItem?.step === 1) {
-      currentStepItems = step1Items;
-      currentStepIndex = step1Items.findIndex(item => item === currentValidationItem) + 1;
-    } else if (currentValidationItem?.step === 2) {
-      currentStepItems = step2Items;
-      currentStepIndex = step2Items.findIndex(item => item === currentValidationItem) + 1;
-    } else if (currentValidationItem?.step === 3) {
-      currentStepItems = step3Items;
-      currentStepIndex = step3Items.findIndex(item => item === currentValidationItem) + 1;
+    if (currentEntry) {
+      if (currentEntry.kind === 'signing') {
+        currentStep = 1;
+        currentStepItems = step1Count;
+        currentStepIndex = currentEntry.index + 1;
+      } else if (currentEntry.kind === 'override') {
+        currentStep = 2;
+        currentStepItems = step2Count;
+        currentStepIndex = currentEntry.index + 1;
+      } else {
+        currentStep = 3;
+        currentStepItems = step3Count;
+        currentStepIndex = currentEntry.index + 1;
+      }
     }
 
-    return {
-      step1Count: step1Items.length,
-      step2Count: step2Items.length,
-      step3Count: step3Items.length,
-      currentStepItems: currentStepItems.length,
-      currentStepIndex,
-      currentStep: currentValidationItem?.step || 1,
-    };
+    return { step1Count, step2Count, step3Count, currentStepItems, currentStepIndex, currentStep };
   };
 
   const stepInfo = getStepInfo();
 
   const getMatchStatus = () => {
-    if (!currentValidationItem || !currentValidationItem.actual) {
+    if (!currentEntry) {
       return {
         status: 'missing',
         color: '#3B82F6',
@@ -402,10 +362,17 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       };
     }
 
-    if (currentValidationItem.type === 'signing-data') {
-      // Step 1: Compare EIP-712 data to sign
-      const match =
-        currentValidationItem.expected.dataToSign === currentValidationItem.actual!.dataToSign;
+    if (currentEntry.kind === 'signing') {
+      const item = itemsByStep.signing[currentEntry.index];
+      if (!item || !item.actual) {
+        return {
+          status: 'missing',
+          color: '#3B82F6',
+          icon: '❌',
+          text: 'Missing - Not found in actual results',
+        };
+      }
+      const match = item.expected.dataToSign === item.actual.dataToSign;
       return match
         ? {
             status: 'match',
@@ -419,17 +386,21 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             icon: '❌',
             text: 'Mismatch - EIP-712 data does not match expected',
           };
-    } else if (currentValidationItem.type === 'override') {
-      // Step 2: Compare state override (only key and value)
+    } else if (currentEntry.kind === 'override') {
+      const item = itemsByStep.overrides[currentEntry.index];
+      if (!item || !item.actual) {
+        return {
+          status: 'missing',
+          color: '#3B82F6',
+          icon: '❌',
+          text: 'Missing - Not found in actual results',
+        };
+      }
       const match =
-        currentValidationItem.expected.key === currentValidationItem.actual!.key &&
-        currentValidationItem.expected.value === currentValidationItem.actual!.value;
-
-      // Check if description indicates this difference is expected
+        item.expected.key === item.actual.key && item.expected.value === item.actual.value;
       const isExpectedDifference =
-        currentValidationItem.expected.description &&
-        currentValidationItem.expected.description.toLowerCase().includes('difference is expected');
-
+        item.expected.description &&
+        item.expected.description.toLowerCase().includes('difference is expected');
       if (match) {
         return {
           status: 'match',
@@ -453,17 +424,22 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         };
       }
     } else {
-      // Step 3: Compare state change (key, before, and after values)
+      const item = itemsByStep.changes[currentEntry.index];
+      if (!item || !item.actual) {
+        return {
+          status: 'missing',
+          color: '#3B82F6',
+          icon: '❌',
+          text: 'Missing - Not found in actual results',
+        };
+      }
       const match =
-        currentValidationItem.expected.key === currentValidationItem.actual!.key &&
-        currentValidationItem.expected.before === currentValidationItem.actual!.before &&
-        currentValidationItem.expected.after === currentValidationItem.actual!.after;
-
-      // Check if description indicates this difference is expected
+        item.expected.key === item.actual.key &&
+        item.expected.before === item.actual.before &&
+        item.expected.after === item.actual.after;
       const isExpectedDifference =
-        currentValidationItem.expected.description &&
-        currentValidationItem.expected.description.toLowerCase().includes('difference is expected');
-
+        item.expected.description &&
+        item.expected.description.toLowerCase().includes('difference is expected');
       if (match) {
         return {
           status: 'match',
@@ -648,7 +624,13 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         >
           <div style={{ marginBottom: '4px' }}>
             <strong>
-              Step {stepInfo.currentStep}: {currentValidationItem?.stepName}
+              Step {stepInfo.currentStep}:{' '}
+              {(() => {
+                if (!currentEntry) return '';
+                if (currentEntry.kind === 'signing') return 'Domain/Message Hash';
+                if (currentEntry.kind === 'override') return 'State Overrides';
+                return 'State Changes';
+              })()}
             </strong>{' '}
             • Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
           </div>
@@ -695,7 +677,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             fontWeight: '600',
           }}
         >
-          {currentValidationItem?.contractName || 'Unknown Contract'}
+          {(() => {
+            if (!currentEntry) return 'Unknown Contract';
+            if (currentEntry.kind === 'signing') {
+              return itemsByStep.signing[currentEntry.index]?.contractName || 'Unknown Contract';
+            }
+            if (currentEntry.kind === 'override') {
+              return itemsByStep.overrides[currentEntry.index]?.contractName || 'Unknown Contract';
+            }
+            return itemsByStep.changes[currentEntry.index]?.contractName || 'Unknown Contract';
+          })()}
         </div>
 
         <button
@@ -719,7 +710,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       </div>
 
       {/* Comparison Cards */}
-      {currentValidationItem && (
+      {currentEntry && (
         <div
           style={{
             display: 'grid',
@@ -729,38 +720,39 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           }}
         >
           {(() => {
-            // Handle different types of validation
-            if (currentValidationItem.type === 'signing-data') {
+            if (currentEntry.kind === 'signing') {
+              const item = itemsByStep.signing[currentEntry.index]!;
               // Step 1: Domain/Message Hash validation
-              const expectedData = currentValidationItem.expected.dataToSign;
-              const actualData = currentValidationItem.actual?.dataToSign || 'Not found';
+              const expectedData = item.expected.dataToSign;
+              const actualData = item.actual?.dataToSign || 'Not found';
               const dataDiffs = getFieldDiffs(expectedData, actualData);
 
               return (
                 <>
                   <ComparisonCard
                     type="expected"
-                    contractName={currentValidationItem.contractName}
-                    contractAddress={currentValidationItem.contractAddress || 'Unknown Address'}
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
                     storageKey="EIP-712 Data to Sign"
                     afterValue={expectedData}
                   />
                   <ComparisonCard
                     type="actual"
-                    contractName={currentValidationItem.contractName}
-                    contractAddress={currentValidationItem.contractAddress || 'Unknown Address'}
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
                     storageKey="EIP-712 Data to Sign"
                     afterValue={actualData}
                     afterValueDiffs={dataDiffs}
                   />
                 </>
               );
-            } else if (currentValidationItem.type === 'override') {
+            } else if (currentEntry.kind === 'override') {
+              const item = itemsByStep.overrides[currentEntry.index]!;
               // Step 2: State Override validation (no before/after, just key/value)
-              const expectedKey = currentValidationItem.expected.key;
-              const expectedValue = currentValidationItem.expected.value;
-              const actualKey = currentValidationItem.actual?.key || 'Not found';
-              const actualValue = currentValidationItem.actual?.value || 'Not found';
+              const expectedKey = item.expected.key;
+              const expectedValue = item.expected.value;
+              const actualKey = item.actual?.key || 'Not found';
+              const actualValue = item.actual?.value || 'Not found';
 
               const keyDiffs = getFieldDiffs(expectedKey, actualKey);
               const valueDiffs = getFieldDiffs(expectedValue, actualValue);
@@ -769,15 +761,15 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 <>
                   <ComparisonCard
                     type="expected"
-                    contractName={currentValidationItem.contractName}
-                    contractAddress={currentValidationItem.contractAddress || 'Unknown Address'}
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
                     storageKey={expectedKey}
                     afterValue={expectedValue}
                   />
                   <ComparisonCard
                     type="actual"
-                    contractName={currentValidationItem.contractName}
-                    contractAddress={currentValidationItem.contractAddress || 'Unknown Address'}
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
                     storageKey={actualKey}
                     storageKeyDiffs={keyDiffs}
                     afterValue={actualValue}
@@ -786,14 +778,15 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 </>
               );
             } else {
+              const item = itemsByStep.changes[currentEntry.index]!;
               // Step 3: State Change validation (has before/after values)
-              const expectedKey = currentValidationItem.expected.key;
-              const actualKey = currentValidationItem.actual?.key || 'Not found';
+              const expectedKey = item.expected.key;
+              const actualKey = item.actual?.key || 'Not found';
 
-              const expectedBefore = currentValidationItem.expected.before;
-              const expectedAfter = currentValidationItem.expected.after;
-              const actualBefore = currentValidationItem.actual?.before || 'Not found';
-              const actualAfter = currentValidationItem.actual?.after || 'Not found';
+              const expectedBefore = item.expected.before;
+              const expectedAfter = item.expected.after;
+              const actualBefore = item.actual?.before || 'Not found';
+              const actualAfter = item.actual?.after || 'Not found';
 
               // Generate diffs only for actual card (comparing actual vs expected)
               const keyDiffs = getFieldDiffs(expectedKey, actualKey);
@@ -804,16 +797,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 <>
                   <ComparisonCard
                     type="expected"
-                    contractName={currentValidationItem.contractName}
-                    contractAddress={currentValidationItem.contractAddress || 'Unknown Address'}
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
                     storageKey={expectedKey}
                     beforeValue={expectedBefore}
                     afterValue={expectedAfter}
                   />
                   <ComparisonCard
                     type="actual"
-                    contractName={currentValidationItem.contractName}
-                    contractAddress={currentValidationItem.contractAddress || 'Unknown Address'}
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
                     storageKey={actualKey}
                     storageKeyDiffs={keyDiffs}
                     beforeValue={actualBefore}
@@ -829,19 +822,32 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       {/* Description Box - show when available */}
-      {currentValidationItem && currentValidationItem.expected.description && (
+      {(() => {
+        if (!currentEntry) return false;
+        const desc =
+          currentEntry.kind === 'signing'
+            ? itemsByStep.signing[currentEntry.index]?.expected.description
+            : currentEntry.kind === 'override'
+            ? itemsByStep.overrides[currentEntry.index]?.expected.description
+            : itemsByStep.changes[currentEntry.index]?.expected.description;
+        return !!desc;
+      })() && (
         <div
           style={{
-            background: currentValidationItem.expected.description
-              .toLowerCase()
-              .includes('difference is expected')
-              ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'
-              : 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
-            border: currentValidationItem.expected.description
-              .toLowerCase()
-              .includes('difference is expected')
-              ? '2px solid #10B981'
-              : '2px solid #7DD3FC',
+            background: (() => {
+              const isExpected =
+                currentEntry.kind === 'change' &&
+                itemsByStep.changes[currentEntry.index]?.expected.allowDifference;
+              return isExpected
+                ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'
+                : 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)';
+            })(),
+            border: (() => {
+              const isExpected =
+                currentEntry.kind === 'change' &&
+                itemsByStep.changes[currentEntry.index]?.expected.allowDifference;
+              return isExpected ? '2px solid #10B981' : '2px solid #7DD3FC';
+            })(),
             borderRadius: '16px',
             padding: '24px',
             marginBottom: '32px',
@@ -861,47 +867,59 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 marginTop: '2px',
               }}
             >
-              {currentValidationItem.expected.description
-                .toLowerCase()
-                .includes('difference is expected')
-                ? '✅'
-                : '💡'}
+              {(() => {
+                return currentEntry.kind === 'change' &&
+                  itemsByStep.changes[currentEntry.index]?.expected.allowDifference
+                  ? '✅'
+                  : '💡';
+              })()}
             </span>
             <div style={{ flex: 1 }}>
               <h4
                 style={{
                   fontSize: '16px',
                   fontWeight: '700',
-                  color: currentValidationItem.expected.description
-                    .toLowerCase()
-                    .includes('difference is expected')
-                    ? '#059669'
-                    : '#0369A1',
+                  color: (() => {
+                    return currentEntry.kind === 'change' &&
+                      itemsByStep.changes[currentEntry.index]?.expected.allowDifference
+                      ? '#059669'
+                      : '#0369A1';
+                  })(),
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   margin: '0 0 8px 0',
                 }}
               >
-                {currentValidationItem.expected.description
-                  .toLowerCase()
-                  .includes('difference is expected')
-                  ? 'Expected Difference - This is Fine'
-                  : 'What this does'}
+                {(() => {
+                  return currentEntry.kind === 'change' &&
+                    itemsByStep.changes[currentEntry.index]?.expected.allowDifference
+                    ? 'Expected Difference - This is Fine'
+                    : 'What this does';
+                })()}
               </h4>
               <p
                 style={{
                   fontSize: '16px',
-                  color: currentValidationItem.expected.description
-                    .toLowerCase()
-                    .includes('difference is expected')
-                    ? '#064E3B'
-                    : '#0C4A6E',
+                  color: (() => {
+                    return currentEntry.kind === 'change' &&
+                      itemsByStep.changes[currentEntry.index]?.expected.allowDifference
+                      ? '#064E3B'
+                      : '#0C4A6E';
+                  })(),
                   margin: 0,
                   lineHeight: '1.6',
                   fontWeight: '500',
                 }}
               >
-                {currentValidationItem.expected.description}
+                {(() => {
+                  const desc =
+                    currentEntry?.kind === 'signing'
+                      ? itemsByStep.signing[currentEntry.index]?.expected.description
+                      : currentEntry?.kind === 'override'
+                      ? itemsByStep.overrides[currentEntry.index]?.expected.description
+                      : itemsByStep.changes[currentEntry.index]?.expected.description;
+                  return desc;
+                })()}
               </p>
             </div>
           </div>

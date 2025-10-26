@@ -28,6 +28,7 @@ const ChangeSchema = z.object({
   before: HashSchema,
   after: HashSchema,
   description: z.string(),
+  allowDifference: z.boolean(),
 });
 
 const StateChangeSchema = z.object({

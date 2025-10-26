@@ -41,6 +41,7 @@ export interface Change {
   before: string;
   after: string;
   description: string;
+  allowDifference: boolean;
 }
 
 export interface ParseResult {
@@ -74,6 +75,46 @@ export interface ValidationData {
     domainAndMessageHashes?: ExpectedHashes;
   };
   stateDiffOutput?: string;
+}
+
+// ------------------------------- UI Comparison Types -------------------------------
+export interface SigningDataComparison {
+  contractName: string;
+  contractAddress?: string;
+  expected: {
+    dataToSign: string;
+    address: string;
+    domainHash: string;
+    messageHash: string;
+    description?: string;
+  };
+  actual?: {
+    dataToSign: string;
+    address: string;
+    domainHash: string;
+    messageHash: string;
+    description?: string;
+  };
+}
+
+export interface OverrideComparison {
+  contractName: string;
+  contractAddress?: string;
+  expected: Override;
+  actual?: Override;
+}
+
+export interface StateChangeComparison {
+  contractName: string;
+  contractAddress?: string;
+  expected: Change;
+  actual?: Change;
+}
+
+export interface ValidationItemsByStep {
+  signing: SigningDataComparison[];
+  overrides: OverrideComparison[];
+  changes: StateChangeComparison[];
 }
 
 // ------------------------------------------ Shared Types ------------------------------------------
