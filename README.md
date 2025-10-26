@@ -1,14 +1,38 @@
 # Base Task Signing Tool
 
+A web-based tool for managing and signing blockchain deployment tasks. This tool provides a user-friendly interface for reviewing, signing, and executing smart contract deployment tasks across multiple networks.
+
+## Features
+
+- 🔐 Secure task signing workflow
+- 🌐 Multi-network support (mainnet, sepolia, etc.)
+- 📁 Automatic task repository scanning
+- 🖥️ Local development server with hot reload
+- 📋 Task validation and verification
+
 ## Quick Start
 
-1. Install dependencies
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm, yarn, pnpm, or bun
+
+### Installation & Setup
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/base/task-signing-tool.git
+cd task-signing-tool
+```
+
+2. **Install dependencies**
 
 ```bash
 npm ci
 ```
 
-2. Run the server
+3. **Run the development server**
 
 ```bash
 npm run dev
@@ -20,202 +44,116 @@ pnpm dev
 bun dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. **Open in browser**
 
-## Task Repository Integration
+Navigate to [http://localhost:3000](http://localhost:3000) to access the tool.
 
-To use this tool in a task repository like [contract-deployments](https://github.com/base/contract-deployments), clone this repo into the root of the task repo.
+## Integration
+
+### Integration with Task Repositories
+
+To use this tool with a task repository like [contract-deployments](https://github.com/base/contract-deployments):
+
+1. **Clone into task repository root**
 
 ```bash
+cd /path/to/your/task-repository
 git clone https://github.com/base/task-signing-tool.git
 ```
 
-### Expected Directory Layout
+2. **Install and run** (follow Quick Start steps 2-4)
+
+3. **Access tasks** - The tool will automatically detect and display tasks from your repository
+
+## Directory Structure
+
+### Expected Layout
 
 Place this repository at the root of your task repository. Network folders (e.g., `mainnet`, `sepolia`) must live alongside it, and each task must be a date-prefixed folder inside a network folder.
 
-```12:40:root-of-your-task-repo
-contract-deployments/             # your task repo root (example)
-├─ task-signing-tool/             # this repo cloned here
-│  ├─ src/
-│  └─ ...
-├─ mainnet/                       # network directory
-│  ├─ 2025-06-04-upgrade-foo/     # task directory (YYYY-MM-DD-task-name)
-│  │  ├─ README.md                # optional, used for status parsing
-│  │  ├─ validations/
-│  │  │  ├─ base-sc.json          # config for "Base SC" user type
-│  │  │  ├─ coinbase.json         # config for "Coinbase" user type
-│  │  │  └─ op.json               # config for "OP" user type
-│  │  └─ foundry-project/         # directory where you run Foundry scripts
-│  │     └─ ...
-│  └─ 2025-07-12-upgrade-bar/
-│     └─ ...
-└─ sepolia/
-   ├─ 2025-05-10-upgrade-baz/
-   │  └─ ...
-   └─ ...
+```
+root-of-your-task-repo/
+├── task-signing-tool/          # This repository
+│   ├── src/
+│   ├── package.json
+│   └── ...
+├── mainnet/                    # Network folder
+│   ├── 2024-01-15-task-name/  # Date-prefixed task
+│   └── 2024-01-20-another-task/
+├── sepolia/                    # Network folder
+│   ├── 2024-01-10-test-task/
+│   └── ...
+└── ...
 ```
 
-Key requirements and notes:
+## Configuration
 
-- **Networks**: Supported networks are listed in `src/lib/constants.ts` and currently include `mainnet` and `sepolia`.
-- **Task folder naming**: Task directories must begin with a date prefix, `YYYY-MM-DD-`, for example `2025-06-04-upgrade-foo`. The UI lists only folders matching that pattern.
-- **Validation configs**: For each task, place config files under `validations/` named by user type in kebab-case plus `.json`:
-  - "Base SC" → `base-sc.json`
-  - "Coinbase" → `coinbase.json`
-  - "OP" → `op.json`
-- **Script execution**: The tool executes Foundry from the task directory root (`<network>/<task>/`). Ensure your Foundry project or script context is available under that path; the tool will run `forge script` with fields from your validation config (`script_name`, optional `signature` and `args`, and `sender`). Temporary outputs like `temp-script-output.txt` will be written there.
-- **Optional README parsing**: If `<network>/<task>/README.md` exists, the tool may parse it to display status and execution links.
+Configuration options can be set through environment variables or configuration files (to be documented based on actual implementation).
 
-### Task README structure
+## Usage Scenarios
 
-When present, each task's `README.md` is parsed to populate the UI. Place it at `<network>/<YYYY-MM-DD-slug>/README.md` and follow these rules:
+### Common Workflows
 
-- **Status line (required for status display)**: Include a line containing `Status:` within the first 20 lines. Recognized values are `PENDING`, `READY TO SIGN`, and `EXECUTED` (case-insensitive). If `EXECUTED` is not present and `READY TO SIGN` is not present, the status is treated as `PENDING`. Supported formats:
+1. **Review pending tasks** - Browse tasks across different networks
+2. **Sign tasks** - Cryptographically sign tasks for execution
+3. **Validate signatures** - Verify task signatures before deployment
+4. **Execute tasks** - Run signed tasks through the interface
 
-  - **Single-line with link (any one of these)**:
-    - `Status: EXECUTED (https://explorer/tx/0x...)`
-    - `Status: [EXECUTED](https://explorer/tx/0x...)`
-    - `Status: EXECUTED https://explorer/tx/0x...`
-  - **Multi-line links (up to 5 lines after the status line)**:
-    - First line: `Status: EXECUTED`
-    - Next lines: `Label: https://...` (e.g., `Transaction: https://...`, `Proposal: https://...`)
+### Best Practices
 
-- **Description (optional but recommended)**: Add a `## Description` section. The first paragraph after this header is shown in the UI and should be concise (aim for ≤150 chars). Formatting like bold, italics, and inline code is stripped.
+- Always review task details before signing
+- Verify network configuration matches intended deployment
+- Keep task folders organized with clear date prefixes
+- Maintain consistent naming conventions
 
-- **Title (optional)**: You may start with a `#` title. It is ignored for parsing the description fallback, but is fine for readability.
+## Limitations
 
-- **Task name display**: The UI derives the display name from the folder slug after the date (e.g., `2025-06-04-upgrade-system-config` → `Upgrade System Config`). Choose meaningful slugs.
+- Requires specific directory structure for task repositories
+- Task folders must follow date-prefix naming convention
+- Network folders must be at the root level alongside this tool
+- (Additional limitations to be documented as discovered)
 
-Examples
+## Troubleshooting
 
-Minimal pending task:
+### Common Issues
 
-```markdown
-# Upgrade System Config
+**Issue: Tasks not appearing in the tool**
+- Verify directory structure matches expected layout
+- Check that network folders are at the correct level
+- Ensure task folders have date prefixes
 
-Status: PENDING
+**Issue: Development server won't start**
+- Verify Node.js version (v16+ required)
+- Delete `node_modules` and reinstall: `rm -rf node_modules && npm ci`
+- Check that port 3000 is not already in use
 
-## Description
+**Issue: Dependencies installation fails**
+- Try using `npm install` instead of `npm ci`
+- Clear npm cache: `npm cache clean --force`
+- Check internet connection and npm registry access
 
-Upgrade System Config to enable feature flags for new modules.
-```
+**Note:** For additional issues not listed here, please check the [Issues](https://github.com/base/task-signing-tool/issues) page or create a new issue.
 
-Ready to sign:
+## Contributing
 
-```markdown
-# Upgrade System Config
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Status: READY TO SIGN
+## Footer
 
-## Description
+### Authors
 
-Multisig proposal prepared; awaiting signatures from designated signers.
-```
+Maintained by the Base team.
 
-Executed with single-line link:
+### License
 
-```markdown
-# Upgrade System Config
+This project's license information is available in the repository.
 
-Status: EXECUTED (https://explorer/tx/0xabc123)
+### Links
 
-## Description
+- **Main Repository:** [https://github.com/base/task-signing-tool](https://github.com/base/task-signing-tool)
+- **Base Organization:** [https://github.com/base](https://github.com/base)
+- **Related Projects:** [contract-deployments](https://github.com/base/contract-deployments)
 
-Executed upgrade to System Config with no parameter changes to gas config.
-```
+---
 
-Executed with multiple labeled links:
-
-```markdown
-# Upgrade System Config
-
-Status: EXECUTED
-Transaction: https://explorer/tx/0xabc123
-Proposal: https://snapshot.org/#/proposal/0xdef456
-
-## Description
-
-Executed upgrade; links include both onchain transaction and governance proposal.
-```
-
-### Validation file structure
-
-Validation configs live under each task directory at `<network>/<YYYY-MM-DD-slug>/validations/` and are selected by user type:
-
-- `base-sc.json` for **Base SC**
-- `coinbase.json` for **Coinbase**
-- `op.json` for **OP**
-
-These files must be valid JSON and conform to the schema enforced by the app. Required fields and constraints:
-
-- **task_name** (string): Human‑readable task identifier.
-- **script_name** (string): Foundry script to run (e.g., `simulate`).
-- **signature** (string): Function signature for the script entrypoint (e.g., `run()` or `run(address,uint256)`).
-- **sender** (string): 0x‑prefixed Ethereum address used as the sender for extraction/simulation.
-- **args** (string): Optional, arguments for the script signature. No spaces; use commas and/or brackets as needed (e.g., `0xabc...,1` or `[0xabc...,1]`). Use an empty string `""` if none.
-- **ledger-id** (number): Non‑negative integer Ledger account index.
-- **rpc_url** (string): HTTPS RPC endpoint to use for simulation.
-- **expected_domain_and_message_hashes** (object):
-  - **address** (0x40 hex string)
-  - **domain_hash** (0x64 hex string)
-  - **message_hash** (0x64 hex string)
-- **state_overrides** (array): Each entry:
-  - **name** (string)
-  - **address** (0x40 hex string)
-  - **overrides** (array of objects): each with **key** (0x64), **value** (0x64), **description** (string)
-- **state_changes** (array): Each entry:
-  - **name** (string)
-  - **address** (0x40 hex string)
-  - **changes** (array of objects): each with **key** (0x64), **before** (0x64), **after** (0x64), **description** (string)
-
-Notes:
-
-- Sorting is not required; the tool sorts by address and storage slot for comparison.
-- The tool reads `rpc_url`, `sender`, and `ledger-id` directly from this file.
-
-Minimal example (`validations/base-sc.json`):
-
-```json
-{
-  "task_name": "mainnet-upgrade-system-config",
-  "script_name": "simulate",
-  "signature": "run()",
-  "sender": "0x1234567890123456789012345678901234567890",
-  "args": "",
-  "ledger-id": 0,
-  "rpc_url": "https://mainnet.example.com",
-  "expected_domain_and_message_hashes": {
-    "address": "0x9C4a57Feb77e294Fd7BF5EBE9AB01CAA0a90A110",
-    "domain_hash": "0x88aac3dc27cc1618ec43a87b3df21482acd24d172027ba3fbb5a5e625d895a0b",
-    "message_hash": "0x9ef8cce91c002602265fd0d330b1295dc002966e87cd9dc90e2a76efef2517dc"
-  },
-  "state_overrides": [
-    {
-      "name": "Base Multisig",
-      "address": "0x9855054731540A48b28990B63DcF4f33d8AE46A1",
-      "overrides": [
-        {
-          "key": "0x0000000000000000000000000000000000000000000000000000000000000004",
-          "value": "0x0000000000000000000000000000000000000000000000000000000000000001",
-          "description": "Lower threshold for simulation"
-        }
-      ]
-    }
-  ],
-  "state_changes": [
-    {
-      "name": "System Config",
-      "address": "0x73a79Fab69143498Ed3712e519A88a918e1f4072",
-      "changes": [
-        {
-          "key": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-          "before": "0x000000000000000000000000340f923e5c7cbb2171146f64169ec9d5a9ffe647",
-          "after": "0x00000000000000000000000078ffe9209dff6fe1c9b6f3efdf996bee60346d0e",
-          "description": "Update implementation address"
-        }
-      ]
-    }
-  ]
-}
-```
+*For questions or support, please open an issue in the repository.*
