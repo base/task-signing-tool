@@ -1,21 +1,21 @@
 // ------------------------------- Validation Task Configs -------------------------------
 export interface TaskConfig {
-  task_name: string;
-  script_name: string;
+  taskName: string;
+  scriptName: string;
   signature: string;
   sender: string;
   args: string;
-  'ledger-id': number;
-  rpc_url: string;
-  expected_domain_and_message_hashes: ExpectedHashes;
-  state_overrides: StateOverride[];
-  state_changes: StateChange[];
+  ledgerId: number;
+  rpcUrl: string;
+  expectedDomainAndMessageHashes: ExpectedHashes;
+  stateOverrides: StateOverride[];
+  stateChanges: StateChange[];
 }
 
 export interface ExpectedHashes {
   address: string;
-  domain_hash: string;
-  message_hash: string;
+  domainHash: string;
+  messageHash: string;
 }
 
 export interface StateOverride {

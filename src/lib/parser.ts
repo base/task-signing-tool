@@ -7,8 +7,8 @@ const HashSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid hash format'
 
 const ExpectedHashesSchema = z.object({
   address: AddressSchema,
-  domain_hash: HashSchema,
-  message_hash: HashSchema,
+  domainHash: HashSchema,
+  messageHash: HashSchema,
 });
 
 const OverrideSchema = z.object({
@@ -38,16 +38,16 @@ const StateChangeSchema = z.object({
 });
 
 const TaskConfigSchema = z.object({
-  task_name: z.string().min(1),
-  script_name: z.string().min(1),
+  taskName: z.string().min(1),
+  scriptName: z.string().min(1),
   signature: z.string().regex(/^[xX0-9a-zA-Z\[\](),]+$/, 'Invalid signature format'),
   sender: z.string().regex(/^[xX0-9a-fA-F\[\](),]+$/, 'Invalid sender format'),
   args: z.string().regex(/^[xX0-9a-zA-Z\[\](),]*$/, 'Invalid args format'), // Allow empty string for scripts with no arguments
-  'ledger-id': z.number().int().nonnegative(), // Required ledger account index
-  rpc_url: z.string().url().min(1), // The actual RPC URL to use
-  expected_domain_and_message_hashes: ExpectedHashesSchema,
-  state_overrides: z.array(StateOverrideSchema),
-  state_changes: z.array(StateChangeSchema),
+  ledgerId: z.number().int().nonnegative(), // Required ledger account index
+  rpcUrl: z.string().url().min(1), // The actual RPC URL to use
+  expectedDomainAndMessageHashes: ExpectedHashesSchema,
+  stateOverrides: z.array(StateOverrideSchema),
+  stateChanges: z.array(StateChangeSchema),
 });
 
 export class ConfigParser {
@@ -138,16 +138,16 @@ export class ConfigParser {
 
   private static getDefaultConfig(): TaskConfig {
     return {
-      task_name: '',
-      script_name: '',
+      taskName: '',
+      scriptName: '',
       signature: '',
       sender: '',
       args: '',
-      'ledger-id': 0,
-      rpc_url: 'https://eth-mainnet.public.blastapi.io',
-      expected_domain_and_message_hashes: { address: '', domain_hash: '', message_hash: '' },
-      state_overrides: [],
-      state_changes: [],
+      ledgerId: 0,
+      rpcUrl: 'https://eth-mainnet.public.blastapi.io',
+      expectedDomainAndMessageHashes: { address: '', domainHash: '', messageHash: '' },
+      stateOverrides: [],
+      stateChanges: [],
     };
   }
 }

@@ -121,28 +121,28 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     const expectedHashes = validationResult.expected.domainAndMessageHashes;
     const actualHashes = validationResult.actual.domainAndMessageHashes;
     if (expectedHashes && actualHashes) {
-      const expectedDataToSign = `0x1901${expectedHashes.domain_hash.replace(
+      const expectedDataToSign = `0x1901${expectedHashes.domainHash.replace(
         '0x',
         ''
-      )}${expectedHashes.message_hash.replace('0x', '')}`;
-      const actualDataToSign = `0x1901${actualHashes.domain_hash.replace(
+      )}${expectedHashes.messageHash.replace('0x', '')}`;
+      const actualDataToSign = `0x1901${actualHashes.domainHash.replace(
         '0x',
         ''
-      )}${actualHashes.message_hash.replace('0x', '')}`;
+      )}${actualHashes.messageHash.replace('0x', '')}`;
       signing.push({
         contractName: 'EIP-712 Signing Data',
         contractAddress: expectedHashes.address,
         expected: {
           dataToSign: expectedDataToSign,
           address: expectedHashes.address,
-          domainHash: expectedHashes.domain_hash,
-          messageHash: expectedHashes.message_hash,
+          domainHash: expectedHashes.domainHash,
+          messageHash: expectedHashes.messageHash,
         },
         actual: {
           dataToSign: actualDataToSign,
           address: actualHashes.address,
-          domainHash: actualHashes.domain_hash,
-          messageHash: actualHashes.message_hash,
+          domainHash: actualHashes.domainHash,
+          messageHash: actualHashes.messageHash,
         },
       });
     }
@@ -1012,8 +1012,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           {/* Ledger Signing Button - Only show when no blocking errors */}
           {!blockingErrorsExist &&
             validationResult?.expected?.domainAndMessageHashes &&
-            validationResult?.expected?.domainAndMessageHashes?.domain_hash &&
-            validationResult?.expected?.domainAndMessageHashes?.message_hash && (
+            validationResult?.expected?.domainAndMessageHashes?.domainHash &&
+            validationResult?.expected?.domainAndMessageHashes?.messageHash && (
               <button
                 onClick={() => onProceedToLedgerSigning(validationResult)}
                 style={{
@@ -1051,8 +1051,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
           {/* Show message if signing is not available */}
           {(!validationResult?.expected?.domainAndMessageHashes ||
-            !validationResult?.expected?.domainAndMessageHashes?.domain_hash ||
-            !validationResult?.expected?.domainAndMessageHashes?.message_hash) && (
+            !validationResult?.expected?.domainAndMessageHashes?.domainHash ||
+            !validationResult?.expected?.domainAndMessageHashes?.messageHash) && (
             <div
               style={{
                 background: '#FEF3C7',

@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 
-      // Parse JSON file to extract ledger-id
+      // Parse JSON file to extract ledgerId
       let ledgerId = 0; // Default fallback
       try {
         const filePath = path.join(validationsPath, fileName);
@@ -54,12 +54,12 @@ export async function GET(req: NextRequest) {
         const parsedConfig = ConfigParser.parseFromString(configContent);
 
         if (parsedConfig.result.success) {
-          ledgerId = parsedConfig.config['ledger-id'];
+          ledgerId = parsedConfig.config.ledgerId;
         } else {
-          console.warn(`Failed to parse ${fileName}, using default ledger-id: 0`);
+          console.warn(`Failed to parse ${fileName}, using default ledgerId: 0`);
         }
       } catch (error) {
-        console.warn(`Error reading ${fileName}, using default ledger-id: 0`, error);
+        console.warn(`Error reading ${fileName}, using default ledgerId: 0`, error);
       }
 
       configOptions.push({

@@ -68,7 +68,7 @@ export class ValidationService {
           upgradeId: baseOptions.upgradeId,
           network: baseOptions.network as NetworkType,
           userType: baseOptions.userType as 'Base SC' | 'Coinbase' | 'OP',
-          rpcUrl: parsedConfig.config.rpc_url,
+          rpcUrl: parsedConfig.config.rpcUrl,
           sender: parsedConfig.config.sender,
         },
         parsedConfig: parsedConfig.config,
@@ -171,8 +171,8 @@ export class ValidationService {
     stateChanges: StateChange[];
     domainAndMessageHashes?: {
       address: string;
-      domain_hash: string;
-      message_hash: string;
+      domainHash: string;
+      messageHash: string;
     };
     ledgerId: number;
     scriptParams: {
@@ -182,12 +182,12 @@ export class ValidationService {
     };
   } {
     return {
-      stateOverrides: parsedConfig.state_overrides,
-      stateChanges: parsedConfig.state_changes,
-      domainAndMessageHashes: parsedConfig.expected_domain_and_message_hashes,
-      ledgerId: parsedConfig['ledger-id'],
+      stateOverrides: parsedConfig.stateOverrides,
+      stateChanges: parsedConfig.stateChanges,
+      domainAndMessageHashes: parsedConfig.expectedDomainAndMessageHashes,
+      ledgerId: parsedConfig.ledgerId,
       scriptParams: {
-        scriptName: parsedConfig.script_name,
+        scriptName: parsedConfig.scriptName,
         signature: parsedConfig.signature,
         args: parsedConfig.args,
       },
@@ -211,8 +211,8 @@ export class ValidationService {
     };
     domainAndMessageHashes: {
       address: string;
-      domain_hash: string;
-      message_hash: string;
+      domainHash: string;
+      messageHash: string;
     };
     stateDiffOutput?: string;
   }> {
@@ -250,15 +250,15 @@ export class ValidationService {
       );
 
       console.log(
-        `✅ State-diff simulation completed: ${stateDiffResult.result.state_overrides.length} state overrides, ${stateDiffResult.result.state_changes.length} state changes found`
+        `✅ State-diff simulation completed: ${stateDiffResult.result.stateOverrides.length} state overrides, ${stateDiffResult.result.stateChanges.length} state changes found`
       );
 
       return {
         data: {
-          stateOverrides: stateDiffResult.result.state_overrides,
-          stateChanges: stateDiffResult.result.state_changes,
+          stateOverrides: stateDiffResult.result.stateOverrides,
+          stateChanges: stateDiffResult.result.stateChanges,
         },
-        domainAndMessageHashes: stateDiffResult.result.expected_domain_and_message_hashes,
+        domainAndMessageHashes: stateDiffResult.result.expectedDomainAndMessageHashes,
         stateDiffOutput: stateDiffResult.output,
       };
     } catch (error) {
