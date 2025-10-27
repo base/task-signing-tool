@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Task Signer Tool',
   description: 'A utility for improving the signer UX in Base smart contract ops processes',
+  icons: {
+    icon: '/base.jpg',
+    shortcut: '/base.jpg',
+    apple: '/base.jpg',
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
