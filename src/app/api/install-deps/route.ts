@@ -1,15 +1,33 @@
 import { exec } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+const INSTALL_CACHE_ROOT = path.join(os.tmpdir(), 'task-signing-tool', 'install-deps');
+const INSTALL_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
+
+interface InstallCacheEntry {
+  installedAt?: string;
+  source?: string;
+  libExistsAfterInstall?: boolean;
+}
+
+const ensureDirectoryExists = (dirPath: string) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+};
+
+const sanitizeForFilename = (value: string) => value.replace(/[^a-zA-Z0-9-_]/g, '_');
+
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { network, upgradeId } = json;
+    const { network, upgradeId, forceInstall } = json;
 
     if (!network || !upgradeId) {
       return NextResponse.json(
@@ -19,6 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     const actualNetwork = network.toLowerCase();
+    const shouldForceInstall = Boolean(forceInstall);
 
     // Construct the path to the upgrade folder and lib subdirectory
     const contractDeploymentsPath = path.join(process.cwd(), '..');
@@ -33,7 +52,137 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log('Installing dependencies...');
+    ensureDirectoryExists(INSTALL_CACHE_ROOT);
+    const networkCacheDir = path.join(INSTALL_CACHE_ROOT, sanitizeForFilename(actualNetwork));
+    ensureDirectoryExists(networkCacheDir);
+    const installCachePath = path.join(networkCacheDir, `${sanitizeForFilename(upgradeId)}.json`);
+
+    const libExistsBeforeInstall = fs.existsSync(libPath);
+    const cacheFileExisted = fs.existsSync(installCachePath);
+    let hasSuccessfulInstallCache = false;
+
+    if (cacheFileExisted) {
+      try {
+        const rawCache = await fs.promises.readFile(installCachePath, 'utf8');
+        const cacheEntry = JSON.parse(rawCache) as InstallCacheEntry;
+        const installedAt = cacheEntry?.installedAt ? new Date(cacheEntry.installedAt) : null;
+        const installedAtMs = installedAt ? installedAt.getTime() : Number.NaN;
+
+        if (!Number.isNaN(installedAtMs)) {
+          const cacheAgeMs = Date.now() - installedAtMs;
+          if (cacheAgeMs <= INSTALL_CACHE_TTL_MS) {
+            hasSuccessfulInstallCache = true;
+          } else {
+            const cacheAgeMinutes = Math.round(cacheAgeMs / 60000);
+            const ttlMinutes = Math.round(INSTALL_CACHE_TTL_MS / 60000);
+            console.log(
+              `Install cache expired for ${actualNetwork}/${upgradeId}: ${cacheAgeMinutes} minutes old (TTL ${ttlMinutes} minutes).`
+            );
+            await fs.promises.unlink(installCachePath).catch(unlinkError => {
+              if ((unlinkError as NodeJS.ErrnoException).code !== 'ENOENT') {
+                console.warn(
+                  `⚠️ Warning: Failed to delete expired install cache for ${actualNetwork}/${upgradeId}:`,
+                  unlinkError
+                );
+              }
+            });
+          }
+        } else {
+          console.warn(
+            `⚠️ Warning: Install cache for ${actualNetwork}/${upgradeId} has an invalid installedAt value. Ignoring cache.`
+          );
+          await fs.promises.unlink(installCachePath).catch(unlinkError => {
+            if ((unlinkError as NodeJS.ErrnoException).code !== 'ENOENT') {
+              console.warn(
+                `⚠️ Warning: Failed to delete invalid install cache for ${actualNetwork}/${upgradeId}:`,
+                unlinkError
+              );
+            }
+          });
+        }
+      } catch (cacheError) {
+        console.warn(
+          `⚠️ Warning: Could not parse install cache for ${actualNetwork}/${upgradeId}, ignoring cache.`,
+          cacheError
+        );
+        await fs.promises.unlink(installCachePath).catch(unlinkError => {
+          if ((unlinkError as NodeJS.ErrnoException).code !== 'ENOENT') {
+            console.warn(
+              `⚠️ Warning: Failed to delete unreadable install cache for ${actualNetwork}/${upgradeId}:`,
+              unlinkError
+            );
+          }
+        });
+      }
+    }
+
+    if (!shouldForceInstall && hasSuccessfulInstallCache && libExistsBeforeInstall) {
+      console.log(
+        `Skipping dependency installation for ${actualNetwork}/${upgradeId}: cached successful install found.`
+      );
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
+          libExists: libExistsBeforeInstall,
+          depsInstalled: true,
+          installationSkipped: true,
+          alreadyInstalled: true,
+          stdout: 'make deps skipped - cached successful install',
+          stderr: '',
+        },
+        { status: 200 }
+      );
+    }
+
+    if (!shouldForceInstall && libExistsBeforeInstall && !cacheFileExisted) {
+      console.log(
+        `Skipping dependency installation for ${actualNetwork}/${upgradeId}: lib directory already exists.`
+      );
+
+      if (!hasSuccessfulInstallCache) {
+        try {
+          await fs.promises.writeFile(
+            installCachePath,
+            JSON.stringify(
+              {
+                installedAt: new Date().toISOString(),
+                source: 'lib-detected',
+              },
+              null,
+              2
+            ),
+            'utf8'
+          );
+        } catch (cacheError) {
+          console.warn(
+            `⚠️ Warning: Failed to write install cache for ${actualNetwork}/${upgradeId}:`,
+            cacheError
+          );
+        }
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
+          libExists: true,
+          depsInstalled: true,
+          installationSkipped: true,
+          alreadyInstalled: true,
+          stdout: 'make deps skipped - lib directory already present',
+          stderr: '',
+        },
+        { status: 200 }
+      );
+    }
+
+    console.log(
+      `Installing dependencies${
+        shouldForceInstall ? ' (force reinstall requested)' : ''
+      } for ${actualNetwork}/${upgradeId}...`
+    );
     console.log(`Working directory: ${upgradePath}`);
 
     // Run make deps in the upgrade folder
@@ -56,6 +205,27 @@ export async function POST(req: NextRequest) {
     // Verify that lib folder was created
     const libExistsAfterInstall = fs.existsSync(libPath);
 
+    try {
+      await fs.promises.writeFile(
+        installCachePath,
+        JSON.stringify(
+          {
+            installedAt: new Date().toISOString(),
+            source: shouldForceInstall ? 'force-install' : 'fresh-install',
+            libExistsAfterInstall,
+          },
+          null,
+          2
+        ),
+        'utf8'
+      );
+    } catch (cacheError) {
+      console.warn(
+        `⚠️ Warning: Failed to write install cache for ${actualNetwork}/${upgradeId}:`,
+        cacheError
+      );
+    }
+
     if (!libExistsAfterInstall) {
       console.warn(`⚠️ Warning: lib folder still doesn't exist after running make deps`);
     }
@@ -66,6 +236,8 @@ export async function POST(req: NextRequest) {
         message: `Dependencies installed successfully for ${actualNetwork}/${upgradeId}`,
         libExists: libExistsAfterInstall,
         depsInstalled: true,
+        installationSkipped: false,
+        alreadyInstalled: false,
         stdout: stdout || '',
         stderr: stderr || '',
       },
