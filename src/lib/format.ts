@@ -20,3 +20,8 @@ export function checksummizeAddressesInText(text: string | null | undefined): st
     }
   });
 }
+
+export function stripHexPrefix(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace(/^0x/i, '');
+}
