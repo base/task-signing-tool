@@ -136,48 +136,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!shouldForceInstall && libExistsBeforeInstall && !cacheFileExisted) {
-      console.log(
-        `Skipping dependency installation for ${actualNetwork}/${upgradeId}: lib directory already exists.`
-      );
-
-      if (!hasSuccessfulInstallCache) {
-        try {
-          await fs.promises.writeFile(
-            installCachePath,
-            JSON.stringify(
-              {
-                installedAt: new Date().toISOString(),
-                source: 'lib-detected',
-              },
-              null,
-              2
-            ),
-            'utf8'
-          );
-        } catch (cacheError) {
-          console.warn(
-            `⚠️ Warning: Failed to write install cache for ${actualNetwork}/${upgradeId}:`,
-            cacheError
-          );
-        }
-      }
-
-      return NextResponse.json(
-        {
-          success: true,
-          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
-          libExists: true,
-          depsInstalled: true,
-          installationSkipped: true,
-          alreadyInstalled: true,
-          stdout: 'make deps skipped - lib directory already present',
-          stderr: '',
-        },
-        { status: 200 }
-      );
-    }
-
     console.log(
       `Installing dependencies${
         shouldForceInstall ? ' (force reinstall requested)' : ''
