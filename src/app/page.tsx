@@ -119,16 +119,6 @@ export default function Home() {
 
   return (
     <>
-      <Head>
-        <title>Contract Deployment Verification Tool</title>
-        <meta
-          name="description"
-          content="Streamline your smart contract deployment verification process"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
       <Layout
         maxWidth={
           currentStep === 'validation'
