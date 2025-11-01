@@ -21,9 +21,7 @@ export const Header: React.FC = () => {
           margin: 0,
         }}
       >
-        Contract Upgrade
-        <br />
-        Verification Tool
+        Base Task Signer Tool
       </h1>
     </div>
   );
