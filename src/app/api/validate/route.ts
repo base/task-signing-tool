@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const validationResult = await validationService.validateUpgrade({
       upgradeId,
       network: actualNetwork,
-      userType,
+      taskConfigFileName: userType,
     });
 
     return NextResponse.json({ success: true, data: validationResult }, { status: 200 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { stripHexPrefix, toChecksumAddressSafe } from '@/lib/format';
+import { toChecksumAddressSafe } from '@/lib/format';
 
 interface SigningData {
   signature: string;
@@ -31,7 +31,7 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
   onBackToSetup,
 }) => {
   const [copied, setCopied] = useState(false);
-  const displaySignature = signingData?.signature ? stripHexPrefix(signingData.signature) : '';
+  const displaySignature = signingData?.signature ?? '';
 
   const handleCopySignature = () => {
     if (signingData?.signature) {

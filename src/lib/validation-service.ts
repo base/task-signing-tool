@@ -4,10 +4,10 @@ import { ConfigParser } from './parser';
 import { StateDiffClient } from './state-diff';
 import { NetworkType, StateChange, StateOverride, TaskConfig, ValidationData } from './types/index';
 
-type BaseOptions = {
+type ValidationServiceOpts = {
   upgradeId: string;
   network: NetworkType;
-  userType: string;
+  taskConfigFileName: string;
 };
 
 export class ValidationService {
@@ -18,18 +18,14 @@ export class ValidationService {
   }
 
   private async getConfigData(
-    baseOptions: BaseOptions
+    opts: ValidationServiceOpts
   ): Promise<{ cfg: TaskConfig; scriptPath: string }> {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
-    const upgradePath = path.join(
-      contractDeploymentsPath,
-      baseOptions.network,
-      baseOptions.upgradeId
-    );
+    const upgradePath = path.join(contractDeploymentsPath, opts.network, opts.upgradeId);
 
     // Look for validation config files based on user type in validations subdirectory
-    const configFileName = this.getConfigFileName(baseOptions.userType);
+    const configFileName = opts.taskConfigFileName + '.json';
     const configPath = path.join(upgradePath, 'validations', configFileName);
 
     if (!fs.existsSync(configPath)) {
@@ -59,11 +55,11 @@ export class ValidationService {
   /**
    * Main validation flow that orchestrates script extraction, simulation, and config parsing
    */
-  async validateUpgrade(baseOptions: BaseOptions): Promise<ValidationData> {
-    console.log(`🚀 Starting validation for ${baseOptions.upgradeId} on ${baseOptions.network}`);
+  async validateUpgrade(opts: ValidationServiceOpts): Promise<ValidationData> {
+    console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
 
     // 1. Get complete config data including rpcUrl from validation file
-    const { cfg, scriptPath } = await this.getConfigData(baseOptions);
+    const { cfg, scriptPath } = await this.getConfigData(opts);
 
     // 2. Get expected data from parsed config
     const expected = this.getExpectedData(cfg);
@@ -129,19 +125,5 @@ export class ValidationService {
       console.error('❌ State-diff simulation failed:', error);
       throw error;
     }
-  }
-
-  /**
-   * Get config file name based on user type (now supports dynamic user types)
-   */
-  private getConfigFileName(userType: string): string {
-    // Convert display name back to filename
-    // "Base Sc" → "base-sc.json"
-    // "Op" → "op.json"
-    // "Coinbase" → "coinbase.json"
-    console.log('getConfigFileName input:', userType);
-    const fileName = userType.toLowerCase().replace(/\s+/g, '-') + '.json';
-    console.log(`🗂️ Mapping user type "${userType}" to config file: ${fileName}`);
-    return fileName;
   }
 }

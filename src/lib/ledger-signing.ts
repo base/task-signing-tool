@@ -48,24 +48,15 @@ export class LedgerSigner {
         // Parse the output to extract signature and signer address
         const signatureMatch = result.output.match(/Signature:\s*([a-fA-F0-9]+)/);
         const signerMatch = result.output.match(/Signer:\s*(0x[a-fA-F0-9]{40})/);
+        const dataMatch = result.output.match(/Data:\s*(0x[a-fA-F0-9]+)/);
+
+        console.log({ signatureMatch, signerMatch, dataMatch });
 
         if (signatureMatch && signerMatch) {
           return {
             success: true,
-            signature: `0x${signatureMatch[1]}`,
+            signature: signatureMatch[1],
             signerAddress: signerMatch[1],
-          };
-        }
-
-        // Alternative parsing - look for any hex string that looks like a signature (130 chars)
-        const altSignatureMatch = result.output.match(/(0x[a-fA-F0-9]{130})/);
-        const altSignerMatch = result.output.match(/(0x[a-fA-F0-9]{40})/);
-
-        if (altSignatureMatch && altSignerMatch) {
-          return {
-            success: true,
-            signature: altSignatureMatch[1],
-            signerAddress: altSignerMatch[1],
           };
         }
       }

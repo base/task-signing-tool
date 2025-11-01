@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { stripHexPrefix } from '@/lib/format';
 
 interface LedgerSigningProps {
   domainHash: string;
@@ -22,7 +21,6 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [signature, setSignature] = useState<string>('');
-  const displaySignature = stripHexPrefix(signature);
 
   // Validate required fields
   useEffect(() => {
@@ -472,7 +470,7 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                   wordBreak: 'break-all',
                 }}
               >
-                {displaySignature}
+                {signature}
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(signature)}
