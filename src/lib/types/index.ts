@@ -1,10 +1,6 @@
 // ------------------------------- Validation Task Configs -------------------------------
 export interface TaskConfig {
-  taskName: string;
-  scriptName: string;
-  signature: string;
-  sender: string;
-  args: string;
+  cmd: string;
   ledgerId: number;
   rpcUrl: string;
   expectedDomainAndMessageHashes: ExpectedHashes;
@@ -74,7 +70,6 @@ export interface ValidationData {
     stateChanges: StateChange[];
     domainAndMessageHashes?: ExpectedHashes;
   };
-  stateDiffOutput?: string;
 }
 
 // ------------------------------- UI Comparison Types -------------------------------

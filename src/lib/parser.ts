@@ -38,13 +38,9 @@ const StateChangeSchema = z.object({
 });
 
 const TaskConfigSchema = z.object({
-  taskName: z.string().min(1),
-  scriptName: z.string().min(1),
-  signature: z.string().regex(/^[xX0-9a-zA-Z\[\](),]+$/, 'Invalid signature format'),
-  sender: z.string().regex(/^[xX0-9a-fA-F\[\](),]+$/, 'Invalid sender format'),
-  args: z.string().regex(/^[xX0-9a-zA-Z\[\](),]*$/, 'Invalid args format'), // Allow empty string for scripts with no arguments
-  ledgerId: z.number().int().nonnegative(), // Required ledger account index
-  rpcUrl: z.string().url().min(1), // The actual RPC URL to use
+  cmd: z.string(),
+  ledgerId: z.number().int().nonnegative(),
+  rpcUrl: z.string().url().min(1),
   expectedDomainAndMessageHashes: ExpectedHashesSchema,
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
@@ -138,13 +134,9 @@ export class ConfigParser {
 
   private static getDefaultConfig(): TaskConfig {
     return {
-      taskName: '',
-      scriptName: '',
-      signature: '',
-      sender: '',
-      args: '',
+      cmd: '',
       ledgerId: 0,
-      rpcUrl: 'https://eth-mainnet.public.blastapi.io',
+      rpcUrl: '',
       expectedDomainAndMessageHashes: { address: '', domainHash: '', messageHash: '' },
       stateOverrides: [],
       stateChanges: [],

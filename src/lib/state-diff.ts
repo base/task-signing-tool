@@ -67,10 +67,15 @@ export class StateDiffClient {
     result: TaskConfig;
     output: string;
   }> {
-    const [cmd, cmdArgs] = this.normalizeForgeCmd(forgeCmdParts);
-    console.log(`🔧 Running forge in ${workdir}: ${cmd} ${cmdArgs.join(' ')}`);
+    const cmd = forgeCmdParts.join(' ');
+    console.log(`🔧 Running forge in ${workdir}: ${cmd}`);
 
-    const { stdout, stderr, code } = await this.runCommand(cmd, cmdArgs, workdir, 120000);
+    const { stdout, stderr, code } = await this.runCommand(
+      forgeCmdParts[0],
+      forgeCmdParts.slice(1),
+      workdir,
+      120000
+    );
     if (code !== 0) {
       throw new Error(
         `StateDiffClient::simulate: forge command failed with exit code ${code}.\nStdout: ${stdout}\nStderr: ${stderr}`
@@ -102,11 +107,7 @@ export class StateDiffClient {
     const diffsList = Array.from(diffsMap.values());
 
     const result: TaskConfig = {
-      taskName: '',
-      scriptName: '',
-      signature: '',
-      sender: '',
-      args: '',
+      cmd,
       ledgerId: 0,
       rpcUrl: rpcUrl,
       expectedDomainAndMessageHashes: {
@@ -126,12 +127,6 @@ export class StateDiffClient {
     const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;
     console.log('✅ State-diff transformation completed');
     return { result, output };
-  }
-
-  private normalizeForgeCmd(forgeCmdParts: string[]): [string, string[]] {
-    if (forgeCmdParts.length === 0) throw new Error('forgeCmdParts must not be empty');
-    if (forgeCmdParts[0] === 'forge') return ['forge', forgeCmdParts.slice(1)];
-    return [forgeCmdParts[0], forgeCmdParts.slice(1)];
   }
 
   private runCommand(
