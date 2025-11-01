@@ -21,22 +21,8 @@ export const Header: React.FC = () => {
           margin: 0,
         }}
       >
-        Contract Upgrade
-        <br />
-        Verification Tool
+        Base Task Signer Tool
       </h1>
-      <p
-        style={{
-          color: '#6B7280',
-          fontSize: '18px',
-          lineHeight: '1.6',
-          margin: '16px 0 0 0',
-        }}
-      >
-        Streamline your smart contract deployment
-        <br />
-        verification process with our comprehensive tool.
-      </p>
     </div>
   );
 };

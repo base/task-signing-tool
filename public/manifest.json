@@ -1,6 +1,6 @@
 {
-  "short_name": "Contract Verification Tool",
-  "name": "Contract Deployment Verification Tool",
+  "short_name": "Task Signer",
+  "name": "Base Task Signer Tool",
   "icons": [
     {
       "src": "base.jpg",
