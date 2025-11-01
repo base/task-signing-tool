@@ -45,12 +45,13 @@ export async function POST(req: NextRequest) {
     const result = await ledgerSigner.signDomainAndMessageHash(signingOptions);
 
     if (result.success) {
-      console.log(`✅ Successfully signed with Ledger. Signer: ${result.signerAddress}`);
+      console.log(`✅ Successfully signed with Ledger. Signer: ${result.signer}`);
       return NextResponse.json(
         {
           success: true,
           signature: result.signature,
-          signerAddress: result.signerAddress,
+          signer: result.signer,
+          data: result.data,
         },
         { status: 200 }
       );

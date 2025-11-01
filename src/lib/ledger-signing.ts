@@ -10,8 +10,9 @@ export interface LedgerSigningOptions {
 
 export interface LedgerSigningResult {
   success: boolean;
+  data?: string;
   signature?: string;
-  signerAddress?: string;
+  signer?: string;
   error?: string;
 }
 
@@ -52,20 +53,9 @@ export class LedgerSigner {
         if (signatureMatch && signerMatch) {
           return {
             success: true,
-            signature: `0x${signatureMatch[1]}`,
-            signerAddress: signerMatch[1],
-          };
-        }
-
-        // Alternative parsing - look for any hex string that looks like a signature (130 chars)
-        const altSignatureMatch = result.output.match(/(0x[a-fA-F0-9]{130})/);
-        const altSignerMatch = result.output.match(/(0x[a-fA-F0-9]{40})/);
-
-        if (altSignatureMatch && altSignerMatch) {
-          return {
-            success: true,
-            signature: altSignatureMatch[1],
-            signerAddress: altSignerMatch[1],
+            data: dataToSign,
+            signer: signerMatch[1],
+            signature: signatureMatch[1],
           };
         }
       }

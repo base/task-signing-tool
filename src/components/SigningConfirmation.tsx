@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-import { stripHexPrefix, toChecksumAddressSafe } from '@/lib/format';
-
-interface SigningData {
-  signature: string;
-  signerAddress: string;
-  domainHash: string;
-  messageHash: string;
-}
+import { toChecksumAddressSafe, toDisplaySignature } from '@/lib/format';
+import { LedgerSigningResult } from '@/lib/ledger-signing';
 
 interface SigningConfirmationProps {
   userType: string;
@@ -15,7 +9,7 @@ interface SigningConfirmationProps {
     id: string;
     name: string;
   };
-  signingData?: SigningData | null;
+  signingData?: LedgerSigningResult | null;
   onBackToValidation: () => void;
   onBackToLedger?: () => void;
   onBackToSetup: () => void;
@@ -31,11 +25,10 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
   onBackToSetup,
 }) => {
   const [copied, setCopied] = useState(false);
-  const displaySignature = signingData?.signature ? stripHexPrefix(signingData.signature) : '';
 
   const handleCopySignature = () => {
-    if (signingData?.signature) {
-      navigator.clipboard.writeText(signingData.signature);
+    if (signingData) {
+      navigator.clipboard.writeText(toDisplaySignature(signingData));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -132,7 +125,7 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
                   fontSize: '14px',
                 }}
               >
-                {toChecksumAddressSafe(signingData.signerAddress)}
+                {toChecksumAddressSafe(signingData.signer)}
               </span>
             </div>
           )}
@@ -188,8 +181,9 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
                 position: 'relative',
               }}
             >
-              {displaySignature}
-
+              Data: {signingData.data} <br></br>
+              Signer: {signingData.signer} <br></br>
+              Signature: {signingData.signature}
               <button
                 onClick={handleCopySignature}
                 style={{
@@ -210,78 +204,6 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
               >
                 {copied ? '✓ Copied!' : 'Copy'}
               </button>
-            </div>
-          </div>
-
-          {/* EIP-712 Data Details */}
-          <div
-            style={{
-              background: '#EBF8FF',
-              border: '1px solid #90CDF4',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '24px',
-            }}
-          >
-            <h4
-              style={{
-                margin: '0 0 12px 0',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#1E40AF',
-              }}
-            >
-              EIP-712 Signing Details:
-            </h4>
-            <div style={{ marginBottom: '12px' }}>
-              <p
-                style={{
-                  margin: '0 0 4px 0',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#1E40AF',
-                }}
-              >
-                Domain Hash:
-              </p>
-              <div
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: '13px',
-                  color: '#312E81',
-                  background: 'white',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  wordBreak: 'break-all',
-                }}
-              >
-                {signingData.domainHash}
-              </div>
-            </div>
-            <div>
-              <p
-                style={{
-                  margin: '0 0 4px 0',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#1E40AF',
-                }}
-              >
-                Message Hash:
-              </p>
-              <div
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: '13px',
-                  color: '#312E81',
-                  background: 'white',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  wordBreak: 'break-all',
-                }}
-              >
-                {signingData.messageHash}
-              </div>
             </div>
           </div>
 

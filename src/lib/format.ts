@@ -1,4 +1,5 @@
 import { getAddress, isAddress } from 'viem';
+import { LedgerSigningResult } from './ledger-signing';
 
 export function toChecksumAddressSafe(address: string | null | undefined): string {
   if (!address) return '';
@@ -21,7 +22,6 @@ export function checksummizeAddressesInText(text: string | null | undefined): st
   });
 }
 
-export function stripHexPrefix(value: string | null | undefined): string {
-  if (!value) return '';
-  return value.replace(/^0x/i, '');
+export function toDisplaySignature(res: LedgerSigningResult): string {
+  return `Data: ${res.data}\nSigner: ${res.signer}\nSignature: ${res.signature}`;
 }

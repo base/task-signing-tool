@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { stripHexPrefix } from '@/lib/format';
+import { LedgerSigningResult } from '@/lib/ledger-signing';
+import { toDisplaySignature } from '@/lib/format';
 
 interface LedgerSigningProps {
   domainHash: string;
   messageHash: string;
   ledgerAccount: number;
-  onSigningComplete: (signature: string) => void;
+  onSigningComplete: (res: LedgerSigningResult) => void;
   onCancel: () => void;
 }
 
@@ -21,8 +22,7 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   const [currentStep, setCurrentStep] = useState<LedgerSigningStep>('connect');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [signature, setSignature] = useState<string>('');
-  const displaySignature = stripHexPrefix(signature);
+  const [result, setResult] = useState<LedgerSigningResult>();
 
   // Validate required fields
   useEffect(() => {
@@ -74,14 +74,14 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
         }),
       });
 
-      const result = await response.json();
+      const res = await response.json();
 
-      if (result.success) {
-        setSignature(result.signature);
+      if (res.success) {
+        setResult(res);
         setCurrentStep('complete');
       } else {
         setError(
-          `LedgerSigning::handleSign: api error: ${result.error}` || 'Failed to sign transaction'
+          `LedgerSigning::handleSign: api error: ${res.error}` || 'Failed to sign transaction'
         );
       }
     } catch (err) {
@@ -96,7 +96,9 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   };
 
   const handleComplete = () => {
-    onSigningComplete(signature);
+    if (result) {
+      onSigningComplete(result);
+    }
   };
 
   const renderStepContent = () => {
@@ -421,93 +423,97 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
 
       case 'complete':
         return (
-          <div
-            style={{
-              background: '#F9FAFB',
-              border: '1px solid #E5E7EB',
-              borderRadius: '12px',
-              padding: '24px',
-            }}
-          >
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '16px',
-                margin: '0 0 16px 0',
-              }}
-            >
-              Step 3: Signature Complete
-            </h3>
-
+          result && (
             <div
               style={{
-                background: '#D1FAE5',
-                border: '1px solid #6EE7B7',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '20px',
+                background: '#F9FAFB',
+                border: '1px solid #E5E7EB',
+                borderRadius: '12px',
+                padding: '24px',
               }}
             >
-              <p
+              <h3
                 style={{
-                  margin: '0 0 8px 0',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#065F46',
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '16px',
+                  margin: '0 0 16px 0',
                 }}
               >
-                ✅ Transaction Signed Successfully!
-              </p>
+                Step 3: Signature Complete
+              </h3>
+
               <div
                 style={{
-                  fontFamily: 'monospace',
-                  fontSize: '12px',
-                  color: '#14532D',
-                  background: '#F0FDF4',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  border: '1px solid #BBF7D0',
-                  wordBreak: 'break-all',
+                  background: '#D1FAE5',
+                  border: '1px solid #6EE7B7',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '20px',
                 }}
               >
-                {displaySignature}
+                <p
+                  style={{
+                    margin: '0 0 8px 0',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#065F46',
+                  }}
+                >
+                  ✅ Transaction Signed Successfully!
+                </p>
+                <div
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: '12px',
+                    color: '#14532D',
+                    background: '#F0FDF4',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #BBF7D0',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  Data: {result.data} <br></br>
+                  Signer: {result.signer} <br></br>
+                  Signature: {result.signature}
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(toDisplaySignature(result))}
+                  style={{
+                    background: '#10B981',
+                    color: 'white',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    fontSize: '12px',
+                    marginTop: '8px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Copy Signature
+                </button>
               </div>
+
               <button
-                onClick={() => navigator.clipboard.writeText(signature)}
+                onClick={handleComplete}
                 style={{
                   background: '#10B981',
                   color: 'white',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
                   border: 'none',
-                  fontSize: '12px',
-                  marginTop: '8px',
+                  fontWeight: '600',
                   cursor: 'pointer',
+                  fontSize: '16px',
+                  width: '100%',
                 }}
               >
-                Copy Signature
+                Complete Signing Process
               </button>
             </div>
-
-            <button
-              onClick={handleComplete}
-              style={{
-                background: '#10B981',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: '600',
-                cursor: 'pointer',
-                fontSize: '16px',
-                width: '100%',
-              }}
-            >
-              Complete Signing Process
-            </button>
-          </div>
+          )
         );
 
       default:
