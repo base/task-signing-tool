@@ -10,8 +10,9 @@ export interface LedgerSigningOptions {
 
 export interface LedgerSigningResult {
   success: boolean;
+  data?: string;
   signature?: string;
-  signerAddress?: string;
+  signer?: string;
   error?: string;
 }
 
@@ -48,15 +49,13 @@ export class LedgerSigner {
         // Parse the output to extract signature and signer address
         const signatureMatch = result.output.match(/Signature:\s*([a-fA-F0-9]+)/);
         const signerMatch = result.output.match(/Signer:\s*(0x[a-fA-F0-9]{40})/);
-        const dataMatch = result.output.match(/Data:\s*(0x[a-fA-F0-9]+)/);
-
-        console.log({ signatureMatch, signerMatch, dataMatch });
 
         if (signatureMatch && signerMatch) {
           return {
             success: true,
+            data: dataToSign,
+            signer: signerMatch[1],
             signature: signatureMatch[1],
-            signerAddress: signerMatch[1],
           };
         }
       }

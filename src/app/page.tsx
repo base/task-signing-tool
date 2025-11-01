@@ -15,16 +15,16 @@ import {
 } from '@/components';
 import { NetworkType, ValidationData } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
+import { LedgerSigningResult } from '@/lib/ledger-signing';
 
 type UserType = string | null;
 type UpgradeType = string | null;
 type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing';
 
-interface SigningData {
+export interface SigningData {
   signature: string;
-  signerAddress: string;
-  domainHash: string;
-  messageHash: string;
+  signer: string;
+  data: string;
 }
 
 export default function Home() {
@@ -34,7 +34,6 @@ export default function Home() {
   const [selectedUpgrade, setSelectedUpgrade] = useState<UpgradeType>(null);
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<SigningData | null>(null);
-  const [userLedgerAddress, setUserLedgerAddress] = useState<string>('');
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
   const handleNetworkSelection = (network: NetworkType) => {
@@ -64,16 +63,11 @@ export default function Home() {
     setCurrentStep('ledger');
   };
 
-  const handleLedgerSigningComplete = (signature: string) => {
-    // Extract domain and message hash from validation data
-    const domainHash = validationData?.expected?.domainAndMessageHashes?.domainHash || '';
-    const messageHash = validationData?.expected?.domainAndMessageHashes?.messageHash || '';
-
+  const handleLedgerSigningComplete = (res: LedgerSigningResult) => {
     setSigningData({
-      signature,
-      signerAddress: userLedgerAddress,
-      domainHash,
-      messageHash,
+      signature: res.signature ?? '',
+      signer: res.signer ?? '',
+      data: res.data ?? '',
     });
     setCurrentStep('signing');
   };
@@ -93,7 +87,6 @@ export default function Home() {
     setSelectedUpgrade(null);
     setValidationData(null);
     setSigningData(null);
-    setUserLedgerAddress('');
     setUserLedgerAccount(0);
   };
 
@@ -103,7 +96,6 @@ export default function Home() {
     setSelectedUser(null);
     setValidationData(null);
     setSigningData(null);
-    setUserLedgerAddress('');
     setUserLedgerAccount(0);
   };
 
@@ -112,7 +104,6 @@ export default function Home() {
     setSelectedUser(null);
     setValidationData(null);
     setSigningData(null);
-    setUserLedgerAddress('');
     setUserLedgerAccount(0);
   };
 
