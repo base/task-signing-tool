@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         {
           success: true,
           signature: result.signature,
-          signerAddress: result.signer,
+          signer: result.signer,
           data: result.data,
         },
         { status: 200 }
