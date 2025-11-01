@@ -4,14 +4,6 @@ import { ConfigParser } from './parser';
 import { StateDiffClient } from './state-diff';
 import { NetworkType, StateChange, StateOverride, TaskConfig, ValidationData } from './types/index';
 
-export interface ValidationOptions {
-  upgradeId: string; // e.g., "2025-06-04-upgrade-system-config"
-  network: NetworkType;
-  userType: 'Base SC' | 'Coinbase' | 'OP';
-  rpcUrl: string;
-  sender: string;
-}
-
 type BaseOptions = {
   upgradeId: string;
   network: NetworkType;
@@ -25,13 +17,9 @@ export class ValidationService {
     this.stateDiffClient = new StateDiffClient();
   }
 
-  /**
-   * Parse validation config file and return both ValidationOptions and parsed config
-   */
-  private async getConfigData(baseOptions: BaseOptions): Promise<{
-    options: ValidationOptions;
-    parsedConfig: TaskConfig;
-  }> {
+  private async getConfigData(
+    baseOptions: BaseOptions
+  ): Promise<{ cfg: TaskConfig; scriptPath: string }> {
     const contractDeploymentsPath = path.join(process.cwd(), '..');
 
     const upgradePath = path.join(
@@ -61,18 +49,7 @@ export class ValidationService {
       }
 
       console.log(`✅ Loaded config data from ${configFileName}`);
-
-      // Return complete ValidationOptions with rpcUrl from config and the parsed config
-      return {
-        options: {
-          upgradeId: baseOptions.upgradeId,
-          network: baseOptions.network as NetworkType,
-          userType: baseOptions.userType as 'Base SC' | 'Coinbase' | 'OP',
-          rpcUrl: parsedConfig.config.rpcUrl,
-          sender: parsedConfig.config.sender,
-        },
-        parsedConfig: parsedConfig.config,
-      };
+      return { cfg: parsedConfig.config, scriptPath: upgradePath };
     } catch (error) {
       console.error(`❌ Error reading config file: ${error}`);
       throw error;
@@ -86,84 +63,15 @@ export class ValidationService {
     console.log(`🚀 Starting validation for ${baseOptions.upgradeId} on ${baseOptions.network}`);
 
     // 1. Get complete config data including rpcUrl from validation file
-    const { options, parsedConfig } = await this.getConfigData(baseOptions);
+    const { cfg, scriptPath } = await this.getConfigData(baseOptions);
 
     // 2. Get expected data from parsed config
-    const expected = this.getExpectedData(parsedConfig);
+    const expected = this.getExpectedData(cfg);
 
     // 3. Get actual data by running scripts and simulation
-    const actual = await this.runStateDiffSimulation(options, expected.scriptParams);
+    const actual = await this.runStateDiffSimulation(scriptPath, cfg);
 
-    // 4. Sort state overrides and changes for consistent comparison
-    const sortedExpectedData = this.sortValidationData({
-      stateOverrides: expected.stateOverrides,
-      stateChanges: expected.stateChanges,
-    });
-    const sortedActualData = this.sortValidationData(actual.data);
-
-    const sortedExpected = {
-      ...sortedExpectedData,
-      domainAndMessageHashes: expected.domainAndMessageHashes,
-    };
-    const sortedActual = {
-      ...sortedActualData,
-      domainAndMessageHashes: actual.domainAndMessageHashes,
-    };
-
-    console.log(
-      `📊 Sorted data for comparison: ${sortedExpected.stateChanges.length} state changes, ${sortedExpected.stateOverrides.length} state overrides`
-    );
-
-    return {
-      expected: sortedExpected,
-      actual: sortedActual,
-      stateDiffOutput: actual.stateDiffOutput,
-    };
-  }
-
-  /**
-   * Sort validation data for consistent comparison
-   * Sorts by contract address first, then by storage slot (key)
-   */
-  private sortValidationData(data: {
-    stateOverrides: StateOverride[];
-    stateChanges: StateChange[];
-  }): {
-    stateOverrides: StateOverride[];
-    stateChanges: StateChange[];
-  } {
-    // Sort state overrides by address only (storage slots sorted within each contract)
-    const sortedStateOverrides = [...data.stateOverrides]
-      .sort((a, b) => {
-        // Sort by contract address (case-insensitive)
-        return a.address.toLowerCase().localeCompare(b.address.toLowerCase());
-      })
-      .map(stateOverride => ({
-        ...stateOverride,
-        // Sort overrides within each contract by storage slot (key)
-        overrides: [...stateOverride.overrides].sort((a, b) =>
-          a.key.toLowerCase().localeCompare(b.key.toLowerCase())
-        ),
-      }));
-
-    // Sort state changes by address only (storage slots sorted within each contract)
-    const sortedStateChanges = [...data.stateChanges]
-      .sort((a, b) => {
-        // Sort by contract address (case-insensitive)
-        return a.address.toLowerCase().localeCompare(b.address.toLowerCase());
-      })
-      .map(stateChange => ({
-        ...stateChange,
-        // Sort changes within each contract by storage slot (key)
-        changes: [...stateChange.changes].sort((a, b) =>
-          a.key.toLowerCase().localeCompare(b.key.toLowerCase())
-        ),
-      }));
-
-    return {
-      stateOverrides: sortedStateOverrides,
-      stateChanges: sortedStateChanges,
-    };
+    return { expected, actual };
   }
 
   private getExpectedData(parsedConfig: TaskConfig): {
@@ -174,23 +82,11 @@ export class ValidationService {
       domainHash: string;
       messageHash: string;
     };
-    ledgerId: number;
-    scriptParams: {
-      scriptName: string;
-      signature: string;
-      args: string;
-    };
   } {
     return {
       stateOverrides: parsedConfig.stateOverrides,
       stateChanges: parsedConfig.stateChanges,
       domainAndMessageHashes: parsedConfig.expectedDomainAndMessageHashes,
-      ledgerId: parsedConfig.ledgerId,
-      scriptParams: {
-        scriptName: parsedConfig.scriptName,
-        signature: parsedConfig.signature,
-        args: parsedConfig.args,
-      },
     };
   }
 
@@ -198,23 +94,16 @@ export class ValidationService {
    * Run simulation using state-diff tool
    */
   private async runStateDiffSimulation(
-    options: ValidationOptions,
-    scriptParams: {
-      scriptName: string;
-      signature: string;
-      args: string;
-    }
+    scriptPath: string,
+    cfg: TaskConfig
   ): Promise<{
-    data: {
-      stateOverrides: StateOverride[];
-      stateChanges: StateChange[];
-    };
+    stateOverrides: StateOverride[];
+    stateChanges: StateChange[];
     domainAndMessageHashes: {
       address: string;
       domainHash: string;
       messageHash: string;
     };
-    stateDiffOutput?: string;
   }> {
     if (!this.stateDiffClient) {
       throw new Error(
@@ -223,43 +112,18 @@ export class ValidationService {
     }
 
     try {
-      console.log('🔧 Running state-diff simulation with extracted data...');
-      const contractDeploymentsPath = path.join(process.cwd(), '..');
-      const scriptPath = path.join(contractDeploymentsPath, options.network, options.upgradeId);
-      const opts = {
-        scriptPath,
-        rpcUrl: options.rpcUrl,
-        scriptName: scriptParams.scriptName,
-        signature: scriptParams.signature,
-        args: scriptParams.args ? [scriptParams.args] : [], // Handle empty args
-        sender: options.sender,
-        saveOutput: path.join(scriptPath, 'temp-script-output.txt'),
-      };
-      const forgeArgs = this.buildForgeArgs({
-        rpcUrl: opts.rpcUrl,
-        scriptName: opts.scriptName,
-        signature: opts.signature,
-        args: opts.args,
-        sender: opts.sender,
-      });
-      const forgeCmdParts = ['forge', ...forgeArgs];
-      const stateDiffResult = await this.stateDiffClient.simulate(
-        options.rpcUrl,
-        forgeCmdParts,
-        scriptPath
-      );
+      console.log('Running state-diff simulation...');
+      const forgeCmd = cfg.cmd.split(' ');
+      const stateDiffResult = await this.stateDiffClient.simulate(cfg.rpcUrl, forgeCmd, scriptPath);
 
       console.log(
         `✅ State-diff simulation completed: ${stateDiffResult.result.stateOverrides.length} state overrides, ${stateDiffResult.result.stateChanges.length} state changes found`
       );
 
       return {
-        data: {
-          stateOverrides: stateDiffResult.result.stateOverrides,
-          stateChanges: stateDiffResult.result.stateChanges,
-        },
+        stateOverrides: stateDiffResult.result.stateOverrides,
+        stateChanges: stateDiffResult.result.stateChanges,
         domainAndMessageHashes: stateDiffResult.result.expectedDomainAndMessageHashes,
-        stateDiffOutput: stateDiffResult.output,
       };
     } catch (error) {
       console.error('❌ State-diff simulation failed:', error);
@@ -275,33 +139,9 @@ export class ValidationService {
     // "Base Sc" → "base-sc.json"
     // "Op" → "op.json"
     // "Coinbase" → "coinbase.json"
+    console.log('getConfigFileName input:', userType);
     const fileName = userType.toLowerCase().replace(/\s+/g, '-') + '.json';
     console.log(`🗂️ Mapping user type "${userType}" to config file: ${fileName}`);
     return fileName;
-  }
-
-  private buildForgeArgs(options: {
-    rpcUrl: string;
-    scriptName: string;
-    signature?: string;
-    args?: string[];
-    sender?: string;
-  }): string[] {
-    const { rpcUrl, scriptName, signature, args = [], sender } = options;
-
-    const forgeArgs: string[] = ['script', '--rpc-url', rpcUrl, scriptName];
-
-    if (signature) {
-      forgeArgs.push('--sig', signature);
-      for (const arg of args) {
-        forgeArgs.push(arg);
-      }
-    }
-
-    if (sender) {
-      forgeArgs.push('--sender', sender);
-    }
-
-    return forgeArgs;
   }
 }
