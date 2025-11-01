@@ -38,9 +38,9 @@ const StateChangeSchema = z.object({
 });
 
 const TaskConfigSchema = z.object({
-  cmd: z.string().regex(/^[xX0-9a-zA-Z\[\](),]+$/, 'Invalid cmd format'),
-  ledgerId: z.number().int().nonnegative(), // Required ledger account index
-  rpcUrl: z.string().url().min(1), // The actual RPC URL to use
+  cmd: z.string(),
+  ledgerId: z.number().int().nonnegative(),
+  rpcUrl: z.string().url().min(1),
   expectedDomainAndMessageHashes: ExpectedHashesSchema,
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
