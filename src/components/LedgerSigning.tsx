@@ -475,7 +475,9 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                     wordBreak: 'break-all',
                   }}
                 >
-                  {toDisplaySignature(result)}
+                  Data: {result.data} <br></br>
+                  Signer: {result.signer} <br></br>
+                  Signature: {result.signature}
                 </div>
                 <button
                   onClick={() => navigator.clipboard.writeText(toDisplaySignature(result))}

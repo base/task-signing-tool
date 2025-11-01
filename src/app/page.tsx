@@ -21,19 +21,13 @@ type UserType = string | null;
 type UpgradeType = string | null;
 type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing';
 
-export interface SigningData {
-  signature: string;
-  signer: string;
-  data: string;
-}
-
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('network');
   const [selectedUser, setSelectedUser] = useState<UserType>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<UpgradeType>(null);
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
-  const [signingData, setSigningData] = useState<SigningData | null>(null);
+  const [signingData, setSigningData] = useState<LedgerSigningResult | null>(null);
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
   const handleNetworkSelection = (network: NetworkType) => {
@@ -64,11 +58,7 @@ export default function Home() {
   };
 
   const handleLedgerSigningComplete = (res: LedgerSigningResult) => {
-    setSigningData({
-      signature: res.signature ?? '',
-      signer: res.signer ?? '',
-      data: res.data ?? '',
-    });
+    setSigningData(res);
     setCurrentStep('signing');
   };
 

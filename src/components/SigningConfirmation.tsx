@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { toChecksumAddressSafe } from '@/lib/format';
-import { SigningData } from '@/app/page';
+import { toChecksumAddressSafe, toDisplaySignature } from '@/lib/format';
+import { LedgerSigningResult } from '@/lib/ledger-signing';
 
 interface SigningConfirmationProps {
   userType: string;
@@ -9,7 +9,7 @@ interface SigningConfirmationProps {
     id: string;
     name: string;
   };
-  signingData?: SigningData | null;
+  signingData?: LedgerSigningResult | null;
   onBackToValidation: () => void;
   onBackToLedger?: () => void;
   onBackToSetup: () => void;
@@ -25,11 +25,10 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
   onBackToSetup,
 }) => {
   const [copied, setCopied] = useState(false);
-  const displaySignature = `Data: ${signingData?.data}\nSigner: ${signingData?.signer}\nSignature: ${signingData?.signature}`;
 
   const handleCopySignature = () => {
-    if (signingData?.signature) {
-      navigator.clipboard.writeText(displaySignature);
+    if (signingData) {
+      navigator.clipboard.writeText(toDisplaySignature(signingData));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -182,8 +181,9 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
                 position: 'relative',
               }}
             >
-              {displaySignature}
-
+              Data: {signingData.data} <br></br>
+              Signer: {signingData.signer} <br></br>
+              Signature: {signingData.signature}
               <button
                 onClick={handleCopySignature}
                 style={{
