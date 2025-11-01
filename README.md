@@ -219,3 +219,62 @@ Minimal example (`validations/base-sc.json`):
   ]
 }
 ```
+
+### Generate a validation file from a Foundry run
+
+Use `scripts/genValidationFile.ts` to transform a Foundry run (which emits a `stateDiff.json` file in your task directory) into the validation JSON the app consumes.
+
+Requirements:
+
+- **Foundry** installed (`forge` on PATH)
+- **RPC URL** for the target L1 network
+- Your Foundry script must write `stateDiff.json` into the provided `--workdir`
+
+Flags:
+
+- `--rpc-url, -r`: HTTPS RPC URL. Used to resolve `chainId` for decoding
+- `--workdir, -w`: Directory where `stateDiff.json` is produced and where the forge command will run
+- `--forge-cmd, -f`: Full forge command to execute (quoted as a single string)
+- `--out, -o` (optional): Output file for the resulting JSON (defaults to stdout)
+- `--help, -h`: Show help
+
+General usage (tsx):
+
+```bash
+# From the task-signing-tool repo root
+npm ci
+npx tsx scripts/genValidationFile.ts \
+  --rpc-url https://mainnet.example \
+  --workdir <network>/<YYYY-MM-DD-task> \
+  --forge-cmd "forge script <path>:<Contract> --sig 'run()' --sender 0xabc..." \
+  --out <network>/<YYYY-MM-DD-task>/validations/<user-type>.json
+```
+
+Alternative (bun):
+
+```bash
+# From the task-signing-tool repo root
+npm ci
+bun run scripts/genValidationFile.ts \
+  --rpc-url https://mainnet.example \
+  --workdir <network>/<YYYY-MM-DD-task> \
+  --forge-cmd "forge script <path>:<Contract> --sig 'run()' --sender 0xabc..." \
+  --out <network>/<YYYY-MM-DD-task>/validations/<user-type>.json
+```
+
+Example from a Makefile (variables expanded in your environment):
+
+```bash
+cd "$SIGNER_TOOL_PATH" && \
+  npm ci && \
+  bun run scripts/genValidationFile.ts --rpc-url "$L1_RPC_URL" \
+    --workdir .. \
+    --forge-cmd 'forge script --rpc-url "$L1_RPC_URL" SwapOwner --sig "sign()" --sender "$SENDER"' \
+    --out ../validations/test.json
+```
+
+Notes:
+
+- Quote the entire `--forge-cmd` so that inner quotes for `--sig` are preserved by your shell. On macOS/Linux, prefer single quotes around the whole command and double quotes inside for signatures/addresses.
+- `--workdir` typically points to the task directory (e.g., `mainnet/2025-06-04-upgrade-foo`). If you keep this repo inside the task repo root, `..` will refer to the task directory when running from `task-signing-tool/`.
+- If `--out` is omitted, the JSON is printed to stdout.
