@@ -37,6 +37,16 @@ const StateChangeSchema = z.object({
   changes: z.array(ChangeSchema),
 });
 
+const BalanceChangeSchema = z.object({
+  name: z.string().min(1),
+  address: AddressSchema,
+  field: z.string().min(1),
+  before: HashSchema,
+  after: HashSchema,
+  description: z.string(),
+  allowDifference: z.boolean(),
+});
+
 const TaskConfigSchema = z.object({
   cmd: z.string(),
   ledgerId: z.number().int().nonnegative(),
@@ -44,6 +54,7 @@ const TaskConfigSchema = z.object({
   expectedDomainAndMessageHashes: ExpectedHashesSchema,
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
+  balanceChanges: z.array(BalanceChangeSchema).optional(),
 });
 
 export class ConfigParser {
@@ -140,6 +151,7 @@ export class ConfigParser {
       expectedDomainAndMessageHashes: { address: '', domainHash: '', messageHash: '' },
       stateOverrides: [],
       stateChanges: [],
+      balanceChanges: [],
     };
   }
 }

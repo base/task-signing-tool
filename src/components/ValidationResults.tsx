@@ -5,7 +5,9 @@ import {
   SigningDataComparison,
   OverrideComparison,
   StateChangeComparison,
+  BalanceChangeComparison,
 } from '@/lib/types/index';
+import { formatEther } from 'viem';
 import { ComparisonCard } from './index';
 
 interface ValidationResultsProps {
@@ -22,7 +24,8 @@ interface ValidationResultsProps {
 type NavEntry =
   | { kind: 'signing'; index: number }
   | { kind: 'override'; index: number }
-  | { kind: 'change'; index: number };
+  | { kind: 'change'; index: number }
+  | { kind: 'balance'; index: number };
 
 export const ValidationResults: React.FC<ValidationResultsProps> = ({
   userType,
@@ -37,6 +40,36 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const [validationResult, setValidationResult] = useState<ValidationData | null>(null);
   const [isInstallingDeps, setIsInstallingDeps] = useState(false);
   const isRunningRef = useRef(false);
+
+  const formatBalanceValue = (hex: string): string => {
+    try {
+      const value = BigInt(hex);
+      const wei = value.toString();
+      const eth = formatEther(value);
+      const normalizedHex = hex.startsWith('0x') ? hex : `0x${hex}`;
+      return `${eth} ETH (${wei} wei)\nHex: ${normalizedHex}`;
+    } catch {
+      return hex;
+    }
+  };
+
+  const formatBalanceDelta = (beforeHex: string, afterHex: string): string => {
+    try {
+      const before = BigInt(beforeHex);
+      const after = BigInt(afterHex);
+      const delta = after - before;
+      if (delta === BigInt(0)) {
+        return '0 ETH (0 wei)';
+      }
+      const abs = delta >= BigInt(0) ? delta : -delta;
+      const sign = delta >= BigInt(0) ? '+' : '-';
+      const wei = abs.toString();
+      const eth = formatEther(abs);
+      return `${sign}${eth} ETH (${sign}${wei} wei)`;
+    } catch {
+      return `${afterHex} - ${beforeHex}`;
+    }
+  };
 
   // Helper function to get highlighted diffs for a specific field comparison
   const getFieldDiffs = (expected: string, actual: string): StringDiff[] => {
@@ -114,8 +147,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     signing: SigningDataComparison[];
     overrides: OverrideComparison[];
     changes: StateChangeComparison[];
+    balance: BalanceChangeComparison[];
   } => {
-    if (!validationResult) return { signing: [], overrides: [], changes: [] };
+    if (!validationResult) return { signing: [], overrides: [], changes: [], balance: [] };
 
     const signing: SigningDataComparison[] = [];
     const expectedHashes = validationResult.expected.domainAndMessageHashes;
@@ -171,7 +205,17 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       });
     });
 
-    return { signing, overrides, changes };
+    const balance: BalanceChangeComparison[] = [];
+    (validationResult.expected.balanceChanges ?? []).forEach((balanceChange, bcIndex) => {
+      balance.push({
+        contractName: balanceChange.name,
+        contractAddress: balanceChange.address,
+        expected: balanceChange,
+        actual: validationResult.actual.balanceChanges?.[bcIndex],
+      });
+    });
+
+    return { signing, overrides, changes, balance };
   };
 
   const handleRunValidation = useCallback(async () => {
@@ -272,11 +316,13 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     signing: SigningDataComparison[];
     overrides: OverrideComparison[];
     changes: StateChangeComparison[];
+    balance: BalanceChangeComparison[];
   }): NavEntry[] => {
     const nav: NavEntry[] = [];
     for (let i = 0; i < items.signing.length; i++) nav.push({ kind: 'signing', index: i });
     for (let i = 0; i < items.overrides.length; i++) nav.push({ kind: 'override', index: i });
     for (let i = 0; i < items.changes.length; i++) nav.push({ kind: 'change', index: i });
+    for (let i = 0; i < items.balance.length; i++) nav.push({ kind: 'balance', index: i });
     return nav;
   };
   const navList = buildNavList(itemsByStep);
@@ -316,6 +362,20 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (!match && !isExpectedDifference) return true;
     }
 
+    // Balance changes
+    for (const b of itemsByStep.balance) {
+      if (!b.actual) return true;
+      const match =
+        b.expected.field === b.actual.field &&
+        b.expected.before === b.actual.before &&
+        b.expected.after === b.actual.after;
+      const isExpectedDifference =
+        b.expected.allowDifference ||
+        (b.expected.description &&
+          b.expected.description.toLowerCase().includes('difference is expected'));
+      if (!match && !isExpectedDifference) return true;
+    }
+
     return false;
   };
 
@@ -326,6 +386,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     const step1Count = itemsByStep.signing.length;
     const step2Count = itemsByStep.overrides.length;
     const step3Count = itemsByStep.changes.length;
+    const step4Count = itemsByStep.balance.length;
 
     let currentStep = 1;
     let currentStepItems = 0;
@@ -340,14 +401,26 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         currentStep = 2;
         currentStepItems = step2Count;
         currentStepIndex = currentEntry.index + 1;
-      } else {
+      } else if (currentEntry.kind === 'change') {
         currentStep = 3;
         currentStepItems = step3Count;
+        currentStepIndex = currentEntry.index + 1;
+      } else {
+        currentStep = 4;
+        currentStepItems = step4Count;
         currentStepIndex = currentEntry.index + 1;
       }
     }
 
-    return { step1Count, step2Count, step3Count, currentStepItems, currentStepIndex, currentStep };
+    return {
+      step1Count,
+      step2Count,
+      step3Count,
+      step4Count,
+      currentStepItems,
+      currentStepIndex,
+      currentStep,
+    };
   };
 
   const stepInfo = getStepInfo();
@@ -386,7 +459,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             icon: '❌',
             text: 'Mismatch - EIP-712 data does not match expected',
           };
-    } else if (currentEntry.kind === 'override') {
+    }
+
+    if (currentEntry.kind === 'override') {
       const item = itemsByStep.overrides[currentEntry.index];
       if (!item || !item.actual) {
         return {
@@ -408,22 +483,24 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           icon: '✅',
           text: 'Match - This override is correct',
         };
-      } else if (isExpectedDifference) {
+      }
+      if (isExpectedDifference) {
         return {
           status: 'expected-difference',
           color: '#059669',
           icon: '✅',
           text: 'Expected Difference - This mismatch is acceptable and expected',
         };
-      } else {
-        return {
-          status: 'mismatch',
-          color: '#DC2626',
-          icon: '❌',
-          text: 'Mismatch - Override values do not match expected',
-        };
       }
-    } else {
+      return {
+        status: 'mismatch',
+        color: '#DC2626',
+        icon: '❌',
+        text: 'Mismatch - Override values do not match expected',
+      };
+    }
+
+    if (currentEntry.kind === 'change') {
       const item = itemsByStep.changes[currentEntry.index];
       if (!item || !item.actual) {
         return {
@@ -447,22 +524,66 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           icon: '✅',
           text: 'Match - This change is correct',
         };
-      } else if (isExpectedDifference) {
+      }
+      if (isExpectedDifference) {
         return {
           status: 'expected-difference',
           color: '#059669',
           icon: '✅',
           text: 'Expected Difference - This mismatch is acceptable and expected',
         };
-      } else {
-        return {
-          status: 'mismatch',
-          color: '#DC2626',
-          icon: '❌',
-          text: 'Mismatch - Change values do not match expected',
-        };
       }
+      return {
+        status: 'mismatch',
+        color: '#DC2626',
+        icon: '❌',
+        text: 'Mismatch - Change values do not match expected',
+      };
     }
+
+    const item = itemsByStep.balance[currentEntry.index];
+    if (!item || !item.actual) {
+      return {
+        status: 'missing',
+        color: '#3B82F6',
+        icon: '❌',
+        text: 'Missing - Not found in actual results',
+      };
+    }
+
+    const match =
+      item.expected.field === item.actual.field &&
+      item.expected.before === item.actual.before &&
+      item.expected.after === item.actual.after;
+    const isExpectedDifference =
+      item.expected.allowDifference ||
+      (item.expected.description &&
+        item.expected.description.toLowerCase().includes('difference is expected'));
+
+    if (match) {
+      return {
+        status: 'match',
+        color: '#1D4ED8',
+        icon: '✅',
+        text: 'Match - Balance change matches expected',
+      };
+    }
+
+    if (isExpectedDifference) {
+      return {
+        status: 'expected-difference',
+        color: '#059669',
+        icon: '✅',
+        text: 'Expected Difference - This mismatch is acceptable and expected',
+      };
+    }
+
+    return {
+      status: 'mismatch',
+      color: '#DC2626',
+      icon: '❌',
+      text: 'Mismatch - Balance change does not match expected',
+    };
   };
 
   if (loading) {
@@ -593,6 +714,80 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   const matchStatus = getMatchStatus();
 
+  const descriptionContent: {
+    variant: 'info' | 'expected-difference';
+    icon: string;
+    title: string;
+    headingColor: string;
+    textColor: string;
+    text: string;
+  } | null = (() => {
+    if (!currentEntry) return null;
+
+    if (currentEntry.kind === 'signing') {
+      const item = itemsByStep.signing[currentEntry.index];
+      if (!item?.expected.description) return null;
+      return {
+        variant: 'info',
+        icon: '💡',
+        title: 'What this does',
+        headingColor: '#0369A1',
+        textColor: '#0C4A6E',
+        text: item.expected.description,
+      };
+    }
+
+    if (currentEntry.kind === 'override') {
+      const item = itemsByStep.overrides[currentEntry.index];
+      if (!item?.expected.description) return null;
+      return {
+        variant: 'info',
+        icon: '💡',
+        title: 'What this does',
+        headingColor: '#0369A1',
+        textColor: '#0C4A6E',
+        text: item.expected.description,
+      };
+    }
+
+    if (currentEntry.kind === 'change') {
+      const item = itemsByStep.changes[currentEntry.index];
+      if (!item?.expected.description) return null;
+      const allowDifference = item.expected.allowDifference;
+      return {
+        variant: allowDifference ? 'expected-difference' : 'info',
+        icon: allowDifference ? '✅' : '💡',
+        title: allowDifference ? 'Expected Difference - This is Fine' : 'What this does',
+        headingColor: allowDifference ? '#059669' : '#0369A1',
+        textColor: allowDifference ? '#064E3B' : '#0C4A6E',
+        text: item.expected.description,
+      };
+    }
+
+    const item = itemsByStep.balance[currentEntry.index];
+    if (!item) return null;
+    const expectedDelta = formatBalanceDelta(item.expected.before, item.expected.after);
+    const actualDelta = item.actual
+      ? formatBalanceDelta(item.actual.before, item.actual.after)
+      : 'Not found';
+    const details = [`Expected delta: ${expectedDelta}`, `Actual delta: ${actualDelta}`];
+    if (item.expected.description) {
+      details.push(item.expected.description);
+    }
+    if (item.expected.allowDifference) {
+      details.push('Differences for this balance change are allowed.');
+    }
+    const allowDifference = item.expected.allowDifference;
+    return {
+      variant: allowDifference ? 'expected-difference' : 'info',
+      icon: allowDifference ? '✅' : '💰',
+      title: allowDifference ? 'Expected Difference - Balance Change OK' : 'Balance Change Details',
+      headingColor: allowDifference ? '#059669' : '#0369A1',
+      textColor: allowDifference ? '#064E3B' : '#0C4A6E',
+      text: details.join('\n\n'),
+    };
+  })();
+
   return (
     <div>
       <div
@@ -629,14 +824,15 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 if (!currentEntry) return '';
                 if (currentEntry.kind === 'signing') return 'Domain/Message Hash';
                 if (currentEntry.kind === 'override') return 'State Overrides';
-                return 'State Changes';
+                if (currentEntry.kind === 'change') return 'State Changes';
+                return 'Balance Changes';
               })()}
             </strong>{' '}
             • Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
           </div>
           <div style={{ fontSize: '14px', opacity: 0.8 }}>
             Step 1: {stepInfo.step1Count} items • Step 2: {stepInfo.step2Count} items • Step 3:{' '}
-            {stepInfo.step3Count} items
+            {stepInfo.step3Count} items • Step 4: {stepInfo.step4Count} items
           </div>
         </div>
       </div>
@@ -685,7 +881,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             if (currentEntry.kind === 'override') {
               return itemsByStep.overrides[currentEntry.index]?.contractName || 'Unknown Contract';
             }
-            return itemsByStep.changes[currentEntry.index]?.contractName || 'Unknown Contract';
+            if (currentEntry.kind === 'change') {
+              return itemsByStep.changes[currentEntry.index]?.contractName || 'Unknown Contract';
+            }
+            return itemsByStep.balance[currentEntry.index]?.contractName || 'Unknown Contract';
           })()}
         </div>
 
@@ -777,7 +976,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                   />
                 </>
               );
-            } else {
+            } else if (currentEntry.kind === 'change') {
               const item = itemsByStep.changes[currentEntry.index]!;
               // Step 3: State Change validation (has before/after values)
               const expectedKey = item.expected.key;
@@ -816,38 +1015,63 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                   />
                 </>
               );
+            } else {
+              const item = itemsByStep.balance[currentEntry.index]!;
+              // Step 4: Balance change validation (ETH transfers)
+              const expectedField = item.expected.field;
+              const actualField = item.actual?.field || 'Not found';
+
+              const expectedBefore = formatBalanceValue(item.expected.before);
+              const expectedAfter = formatBalanceValue(item.expected.after);
+              const actualBefore = item.actual
+                ? formatBalanceValue(item.actual.before)
+                : 'Not found';
+              const actualAfter = item.actual ? formatBalanceValue(item.actual.after) : 'Not found';
+
+              const keyDiffs = getFieldDiffs(expectedField, actualField);
+              const beforeDiffs = getFieldDiffs(expectedBefore, actualBefore);
+              const afterDiffs = getFieldDiffs(expectedAfter, actualAfter);
+
+              return (
+                <>
+                  <ComparisonCard
+                    type="expected"
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
+                    storageKey={expectedField}
+                    beforeValue={expectedBefore}
+                    afterValue={expectedAfter}
+                  />
+                  <ComparisonCard
+                    type="actual"
+                    contractName={item.contractName}
+                    contractAddress={item.contractAddress || 'Unknown Address'}
+                    storageKey={actualField}
+                    storageKeyDiffs={keyDiffs}
+                    beforeValue={actualBefore}
+                    beforeValueDiffs={beforeDiffs}
+                    afterValue={actualAfter}
+                    afterValueDiffs={afterDiffs}
+                  />
+                </>
+              );
             }
           })()}
         </div>
       )}
 
       {/* Description Box - show when available */}
-      {(() => {
-        if (!currentEntry) return false;
-        const desc =
-          currentEntry.kind === 'signing'
-            ? itemsByStep.signing[currentEntry.index]?.expected.description
-            : currentEntry.kind === 'override'
-            ? itemsByStep.overrides[currentEntry.index]?.expected.description
-            : itemsByStep.changes[currentEntry.index]?.expected.description;
-        return !!desc;
-      })() && (
+      {descriptionContent && (
         <div
           style={{
-            background: (() => {
-              const isExpected =
-                currentEntry.kind === 'change' &&
-                itemsByStep.changes[currentEntry.index]?.expected.allowDifference;
-              return isExpected
+            background:
+              descriptionContent.variant === 'expected-difference'
                 ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'
-                : 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)';
-            })(),
-            border: (() => {
-              const isExpected =
-                currentEntry.kind === 'change' &&
-                itemsByStep.changes[currentEntry.index]?.expected.allowDifference;
-              return isExpected ? '2px solid #10B981' : '2px solid #7DD3FC';
-            })(),
+                : 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+            border:
+              descriptionContent.variant === 'expected-difference'
+                ? '2px solid #10B981'
+                : '2px solid #7DD3FC',
             borderRadius: '16px',
             padding: '24px',
             marginBottom: '32px',
@@ -867,59 +1091,32 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 marginTop: '2px',
               }}
             >
-              {(() => {
-                return currentEntry.kind === 'change' &&
-                  itemsByStep.changes[currentEntry.index]?.expected.allowDifference
-                  ? '✅'
-                  : '💡';
-              })()}
+              {descriptionContent.icon}
             </span>
             <div style={{ flex: 1 }}>
               <h4
                 style={{
                   fontSize: '16px',
                   fontWeight: '700',
-                  color: (() => {
-                    return currentEntry.kind === 'change' &&
-                      itemsByStep.changes[currentEntry.index]?.expected.allowDifference
-                      ? '#059669'
-                      : '#0369A1';
-                  })(),
+                  color: descriptionContent.headingColor,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   margin: '0 0 8px 0',
                 }}
               >
-                {(() => {
-                  return currentEntry.kind === 'change' &&
-                    itemsByStep.changes[currentEntry.index]?.expected.allowDifference
-                    ? 'Expected Difference - This is Fine'
-                    : 'What this does';
-                })()}
+                {descriptionContent.title}
               </h4>
               <p
                 style={{
                   fontSize: '16px',
-                  color: (() => {
-                    return currentEntry.kind === 'change' &&
-                      itemsByStep.changes[currentEntry.index]?.expected.allowDifference
-                      ? '#064E3B'
-                      : '#0C4A6E';
-                  })(),
+                  color: descriptionContent.textColor,
                   margin: 0,
                   lineHeight: '1.6',
                   fontWeight: '500',
+                  whiteSpace: 'pre-wrap',
                 }}
               >
-                {(() => {
-                  const desc =
-                    currentEntry?.kind === 'signing'
-                      ? itemsByStep.signing[currentEntry.index]?.expected.description
-                      : currentEntry?.kind === 'override'
-                      ? itemsByStep.overrides[currentEntry.index]?.expected.description
-                      : itemsByStep.changes[currentEntry.index]?.expected.description;
-                  return desc;
-                })()}
+                {descriptionContent.text}
               </p>
             </div>
           </div>

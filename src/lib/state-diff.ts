@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { createPublicClient, http, decodeAbiParameters, Hex, Address } from 'viem';
-import { StateChange, StateOverride, TaskConfig } from './types/index';
+import { BalanceChange, StateChange, StateOverride, TaskConfig } from './types/index';
 import contractsCfg from './config/contracts.json';
 
 type ParsedInput = {
@@ -106,6 +106,8 @@ export class StateDiffClient {
     const diffsMap = this.buildDiffsMap(decodedDiff);
     const diffsList = Array.from(diffsMap.values());
 
+    const balanceChanges = this.extractBalanceChanges(config, chainIdStr, decodedDiff);
+
     const result: TaskConfig = {
       cmd,
       ledgerId: 0,
@@ -122,6 +124,7 @@ export class StateDiffClient {
         parentMap
       ),
       stateChanges: this.convertDiffsToJSON(config, chainIdStr, diffsList, parentMap),
+      balanceChanges,
     };
 
     const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;
@@ -441,6 +444,60 @@ export class StateDiffClient {
     return result;
   }
 
+  private extractBalanceChanges(
+    cfg: { contracts: Record<string, Record<string, ContractCfg>> },
+    chainId: string,
+    decoded: readonly VmSafeAccountAccess[]
+  ): BalanceChange[] {
+    const chainContracts = cfg.contracts[chainId] || {};
+    type BalanceAccumulator = {
+      delta: bigint;
+      lastNew: bigint;
+    };
+
+    const accMap = new Map<string, BalanceAccumulator>();
+
+    for (const access of decoded) {
+      const delta = access.newBalance - access.oldBalance;
+      if (delta === BigInt(0)) continue;
+      const addr = access.account.toLowerCase();
+      const existing = accMap.get(addr);
+      if (!existing) {
+        accMap.set(addr, { delta, lastNew: access.newBalance });
+      } else {
+        existing.delta += delta;
+        existing.lastNew = access.newBalance;
+      }
+    }
+
+    const result: BalanceChange[] = [];
+
+    for (const [addr, value] of accMap) {
+      if (value.delta === BigInt(0)) continue;
+      const contract = chainContracts[addr];
+      const name = contract?.name ?? '<<ContractName>>';
+      const after = value.lastNew;
+      const before = after - value.delta;
+      if (before < BigInt(0)) {
+        throw new Error(`Negative balance calculated for ${addr}`);
+      }
+      const beforeHex = normalize32(bigintToHex(before));
+      const afterHex = normalize32(bigintToHex(after));
+      result.push({
+        name,
+        address: addr,
+        field: 'ETH Balance (wei)',
+        before: beforeHex,
+        after: afterHex,
+        description: 'ETH balance change for this account',
+        allowDifference: false,
+      });
+    }
+
+    result.sort((a, b) => a.address.localeCompare(b.address));
+    return result;
+  }
+
   private getSlot(contract: ContractCfg | undefined, slot: Hex, parentMap: Map<Hex, Hex>): SlotCfg {
     const DEFAULT: SlotCfg = {
       type: '<<DecodedKind>>',
@@ -484,4 +541,9 @@ function normalize32(h: string): Hex {
   const v = (h || '').toLowerCase();
   const body = v.startsWith('0x') ? v.slice(2) : v;
   return ('0x' + body.padStart(64, '0')) as Hex;
+}
+
+function bigintToHex(value: bigint): Hex {
+  if (value < BigInt(0)) throw new Error('Negative bigint cannot be converted to hex');
+  return ('0x' + value.toString(16)) as Hex;
 }
