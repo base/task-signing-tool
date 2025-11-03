@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { toChecksumAddressSafe, toDisplaySignature } from '@/lib/format';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
+import { ConfigOption } from './UserSelection';
 
 interface SigningConfirmationProps {
-  userType: string;
+  user?: ConfigOption;
   network: string;
   selectedUpgrade: {
     id: string;
@@ -16,7 +17,7 @@ interface SigningConfirmationProps {
 }
 
 export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
-  userType,
+  user,
   network,
   selectedUpgrade,
   signingData,
@@ -89,7 +90,7 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
         <div style={{ display: 'grid', gap: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: '#6B7280' }}>User Type:</span>
-            <span style={{ fontWeight: '500', color: '#1F2937' }}>{userType}</span>
+            <span style={{ fontWeight: '500', color: '#1F2937' }}>{user?.displayName ?? ''}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: '#6B7280' }}>Network:</span>
