@@ -119,6 +119,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
               fontSize: '11px',
               color: '#1F2937',
               wordBreak: 'break-all',
+              whiteSpace: 'pre-wrap',
             }}
           >
             {storageKeyDiffs ? (
@@ -152,6 +153,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
                 fontSize: '11px',
                 color: '#D97706',
                 wordBreak: 'break-all',
+                whiteSpace: 'pre-wrap',
               }}
             >
               {beforeValueDiffs ? (
@@ -185,6 +187,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
               fontSize: '11px',
               color: '#1D4ED8',
               wordBreak: 'break-all',
+              whiteSpace: 'pre-wrap',
             }}
           >
             {afterValueDiffs ? (

@@ -6,6 +6,7 @@ export interface TaskConfig {
   expectedDomainAndMessageHashes: ExpectedHashes;
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
+  balanceChanges?: BalanceChange[];
 }
 
 export interface ExpectedHashes {
@@ -40,6 +41,16 @@ export interface Change {
   allowDifference: boolean;
 }
 
+export interface BalanceChange {
+  name: string;
+  address: string;
+  field: string;
+  before: string;
+  after: string;
+  description: string;
+  allowDifference: boolean;
+}
+
 export interface ParseResult {
   success: boolean;
   zodError?: import('zod').ZodError;
@@ -63,11 +74,13 @@ export interface ValidationData {
   expected: {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
+    balanceChanges?: BalanceChange[];
     domainAndMessageHashes?: ExpectedHashes;
   };
   actual: {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
+    balanceChanges?: BalanceChange[];
     domainAndMessageHashes?: ExpectedHashes;
   };
 }
@@ -106,10 +119,18 @@ export interface StateChangeComparison {
   actual?: Change;
 }
 
+export interface BalanceChangeComparison {
+  contractName: string;
+  contractAddress?: string;
+  expected: BalanceChange;
+  actual?: BalanceChange;
+}
+
 export interface ValidationItemsByStep {
   signing: SigningDataComparison[];
   overrides: OverrideComparison[];
   changes: StateChangeComparison[];
+  balance: BalanceChangeComparison[];
 }
 
 // ------------------------------------------ Shared Types ------------------------------------------

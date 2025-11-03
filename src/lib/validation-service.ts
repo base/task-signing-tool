@@ -2,7 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { ConfigParser } from './parser';
 import { StateDiffClient } from './state-diff';
-import { NetworkType, StateChange, StateOverride, TaskConfig, ValidationData } from './types/index';
+import {
+  BalanceChange,
+  NetworkType,
+  StateChange,
+  StateOverride,
+  TaskConfig,
+  ValidationData,
+} from './types/index';
 
 type ValidationServiceOpts = {
   upgradeId: string;
@@ -73,6 +80,7 @@ export class ValidationService {
   private getExpectedData(parsedConfig: TaskConfig): {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
+    balanceChanges: BalanceChange[];
     domainAndMessageHashes?: {
       address: string;
       domainHash: string;
@@ -82,6 +90,7 @@ export class ValidationService {
     return {
       stateOverrides: parsedConfig.stateOverrides,
       stateChanges: parsedConfig.stateChanges,
+      balanceChanges: parsedConfig.balanceChanges ?? [],
       domainAndMessageHashes: parsedConfig.expectedDomainAndMessageHashes,
     };
   }
@@ -95,6 +104,7 @@ export class ValidationService {
   ): Promise<{
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
+    balanceChanges: BalanceChange[];
     domainAndMessageHashes: {
       address: string;
       domainHash: string;
@@ -113,12 +123,13 @@ export class ValidationService {
       const stateDiffResult = await this.stateDiffClient.simulate(cfg.rpcUrl, forgeCmd, scriptPath);
 
       console.log(
-        `✅ State-diff simulation completed: ${stateDiffResult.result.stateOverrides.length} state overrides, ${stateDiffResult.result.stateChanges.length} state changes found`
+        `✅ State-diff simulation completed: ${stateDiffResult.result.stateOverrides.length} state overrides, ${stateDiffResult.result.stateChanges.length} state changes, ${stateDiffResult.result.balanceChanges?.length ?? 0} balance changes found`
       );
 
       return {
         stateOverrides: stateDiffResult.result.stateOverrides,
         stateChanges: stateDiffResult.result.stateChanges,
+        balanceChanges: stateDiffResult.result.balanceChanges ?? [],
         domainAndMessageHashes: stateDiffResult.result.expectedDomainAndMessageHashes,
       };
     } catch (error) {
