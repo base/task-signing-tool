@@ -458,9 +458,8 @@ export class StateDiffClient {
     const accMap = new Map<string, BalanceAccumulator>();
 
     for (const access of decoded) {
-      console.log({ access });
       const delta = access.newBalance - access.oldBalance;
-      if (delta === BigInt(0)) continue;
+      if (delta === BigInt(0) || access.kind === 1) continue;
       const addr = access.account.toLowerCase();
       const existing = accMap.get(addr);
       if (!existing) {
