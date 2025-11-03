@@ -110,10 +110,6 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
             <span style={{ color: '#6B7280' }}>Upgrade:</span>
             <span style={{ fontWeight: '500', color: '#1F2937' }}>{selectedUpgrade.name}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#6B7280' }}>Simulation Method:</span>
-            <span style={{ fontWeight: '500', color: '#1F2937' }}>⚡ State-Diff</span>
-          </div>
           {signingData && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#6B7280' }}>Signer Address:</span>
