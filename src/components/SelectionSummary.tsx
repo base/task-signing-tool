@@ -1,7 +1,8 @@
 import React from 'react';
+import { ConfigOption } from './UserSelection';
 
 interface SelectionSummaryProps {
-  selectedUser: string | null;
+  selectedUser?: ConfigOption;
   selectedNetwork: string | null;
   selectedWallet: string | null;
   onUserClick?: () => void;
@@ -18,14 +19,6 @@ export const SelectionSummary: React.FC<SelectionSummaryProps> = ({
   onWalletClick,
 }) => {
   if (!selectedUser && !selectedNetwork && !selectedWallet) return null;
-
-  // Format user display name from filename (base-nested -> Base Nested)
-  const formatUserDisplayName = (fileName: string) => {
-    return fileName
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
 
   const badgeBaseStyle = {
     color: 'white',
@@ -162,10 +155,10 @@ export const SelectionSummary: React.FC<SelectionSummaryProps> = ({
               }}
               title="Click to change user selection"
             >
-              {formatUserDisplayName(selectedUser)}
+              {selectedUser.displayName}
             </button>
           ) : (
-            <span style={nonClickableBadgeStyle}>{formatUserDisplayName(selectedUser)}</span>
+            <span style={nonClickableBadgeStyle}>{selectedUser.displayName}</span>
           ))}
       </div>
     </div>

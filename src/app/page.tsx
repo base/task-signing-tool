@@ -17,13 +17,12 @@ import { NetworkType, ValidationData } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 
-type UserType = string | null;
 type UpgradeType = string | null;
 type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing';
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('network');
-  const [selectedUser, setSelectedUser] = useState<UserType>(null);
+  const [selectedUser, setSelectedUser] = useState<ConfigOption>();
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<UpgradeType>(null);
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
@@ -41,7 +40,7 @@ export default function Home() {
   };
 
   const handleUserSelection = (cfg: ConfigOption) => {
-    setSelectedUser(cfg.fileName);
+    setSelectedUser(cfg);
     setUserLedgerAccount(cfg.ledgerId);
     setCurrentStep('validation');
   };
@@ -72,7 +71,7 @@ export default function Home() {
 
   const handleGoToNetworkSelection = () => {
     setCurrentStep('network');
-    setSelectedUser(null);
+    setSelectedUser(undefined);
     setSelectedNetwork(null);
     setSelectedUpgrade(null);
     setValidationData(null);
@@ -83,7 +82,7 @@ export default function Home() {
   const handleGoToUpgradeSelection = () => {
     setCurrentStep('upgrade');
     setSelectedUpgrade(null);
-    setSelectedUser(null);
+    setSelectedUser(undefined);
     setValidationData(null);
     setSigningData(null);
     setUserLedgerAccount(0);
@@ -91,7 +90,7 @@ export default function Home() {
 
   const handleGoToUserSelection = () => {
     setCurrentStep('user');
-    setSelectedUser(null);
+    setSelectedUser(undefined);
     setValidationData(null);
     setSigningData(null);
     setUserLedgerAccount(0);
@@ -167,7 +166,7 @@ export default function Home() {
 
         {currentStep === 'validation' && (
           <ValidationResults
-            userType={selectedUser || ''}
+            userType={selectedUser?.fileName || ''}
             network={selectedNetwork || ''}
             selectedUpgrade={{
               id: selectedUpgrade || '',
@@ -190,7 +189,7 @@ export default function Home() {
 
         {currentStep === 'signing' && (
           <SigningConfirmation
-            userType={selectedUser || ''}
+            user={selectedUser}
             network={selectedNetwork || ''}
             selectedUpgrade={{
               id: selectedUpgrade || '',
