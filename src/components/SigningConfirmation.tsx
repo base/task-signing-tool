@@ -63,17 +63,6 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
         >
           Signing Complete!
         </h2>
-        <p
-          style={{
-            color: '#6B7280',
-            fontSize: '16px',
-            margin: 0,
-          }}
-        >
-          {signingData
-            ? 'Your transaction has been signed with Ledger'
-            : 'No signature data available'}
-        </p>
       </div>
 
       {/* Summary Card */}
