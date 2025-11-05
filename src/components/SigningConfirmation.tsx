@@ -219,13 +219,7 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
               }}
             >
               <li style={{ marginBottom: '8px' }}>
-                Copy the signature above using the copy button
-              </li>
-              <li style={{ marginBottom: '8px' }}>
-                Share this signature with other signers if this is a multisig transaction
-              </li>
-              <li style={{ marginBottom: '8px' }}>
-                Once all required signatures are collected, execute the transaction
+                Copy the signature above using the copy button and send to your facilitator
               </li>
             </ol>
           </div>
