@@ -287,6 +287,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
       if (result.success) {
         setValidationResult(result.data);
+        setCurrentChangeIndex(0);
         console.log('Validation completed successfully');
       } else {
         setError(
