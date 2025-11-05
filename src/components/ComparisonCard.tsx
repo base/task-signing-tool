@@ -15,15 +15,59 @@ interface ComparisonCardProps {
   afterValueDiffs?: StringDiff[];
 }
 
+const HEX_SEGMENT_WRAP_THRESHOLD = 66;
+
 const baseValueStyle: React.CSSProperties = {
   borderRadius: '8px',
   padding: '12px',
   marginTop: '4px',
   fontFamily: 'monospace',
   fontSize: '11px',
+  display: 'block',
+  maxWidth: '100%',
   overflowX: 'auto',
-  whiteSpace: 'pre',
+  whiteSpace: 'pre-wrap',
   wordBreak: 'normal',
+  overflowWrap: 'normal',
+};
+
+const combineContent = (value?: string, diffs?: StringDiff[]): string => {
+  if (diffs && diffs.length > 0) {
+    return diffs.map(diff => diff.value).join('');
+  }
+  return value ?? '';
+};
+
+const shouldEnableHexWrapping = (value?: string, diffs?: StringDiff[]): boolean => {
+  const combined = combineContent(value, diffs);
+  if (!combined) return false;
+
+  const segments = combined.split(/\r?\n/);
+  const longestHexSegment = segments.reduce((max, segment) => {
+    const trimmed = segment.trim();
+    if (/^0x[0-9a-fA-F]+$/.test(trimmed)) {
+      return Math.max(max, trimmed.length);
+    }
+    return max;
+  }, 0);
+
+  return longestHexSegment > HEX_SEGMENT_WRAP_THRESHOLD;
+};
+
+const buildValueStyle = (
+  value: string | undefined,
+  diffs: StringDiff[] | undefined,
+  overrides: React.CSSProperties
+): React.CSSProperties => {
+  const allowHexWrapping = shouldEnableHexWrapping(value, diffs);
+
+  return {
+    ...baseValueStyle,
+    overflowWrap: allowHexWrapping ? 'anywhere' : 'normal',
+    wordBreak: allowHexWrapping ? 'break-word' : 'normal',
+    overflowX: allowHexWrapping ? 'hidden' : 'auto',
+    ...overrides,
+  };
 };
 
 export const ComparisonCard: React.FC<ComparisonCardProps> = ({
@@ -121,11 +165,10 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
             Storage Key
           </label>
           <div
-            style={{
-              ...baseValueStyle,
+            style={buildValueStyle(storageKey, storageKeyDiffs, {
               background: '#F9FAFB',
               color: '#1F2937',
-            }}
+            })}
           >
             {storageKeyDiffs ? (
               <HighlightedText diffs={storageKeyDiffs} />
@@ -149,11 +192,10 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
               Before
             </label>
             <div
-              style={{
-                ...baseValueStyle,
+              style={buildValueStyle(beforeValue, beforeValueDiffs, {
                 background: '#FEF3C7',
                 color: '#D97706',
-              }}
+              })}
             >
               {beforeValueDiffs ? (
                 <HighlightedText diffs={beforeValueDiffs} />
@@ -177,11 +219,10 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
             {beforeValue ? 'After' : 'Value'}
           </label>
           <div
-            style={{
-              ...baseValueStyle,
+            style={buildValueStyle(afterValue, afterValueDiffs, {
               background: '#EFF6FF',
               color: '#1D4ED8',
-            }}
+            })}
           >
             {afterValueDiffs ? (
               <HighlightedText diffs={afterValueDiffs} />
