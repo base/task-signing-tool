@@ -15,6 +15,17 @@ interface ComparisonCardProps {
   afterValueDiffs?: StringDiff[];
 }
 
+const baseValueStyle: React.CSSProperties = {
+  borderRadius: '8px',
+  padding: '12px',
+  marginTop: '4px',
+  fontFamily: 'monospace',
+  fontSize: '11px',
+  overflowX: 'auto',
+  whiteSpace: 'pre',
+  wordBreak: 'normal',
+};
+
 export const ComparisonCard: React.FC<ComparisonCardProps> = ({
   type,
   contractName,
@@ -111,15 +122,9 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
           </label>
           <div
             style={{
+              ...baseValueStyle,
               background: '#F9FAFB',
-              borderRadius: '8px',
-              padding: '12px',
-              marginTop: '4px',
-              fontFamily: 'monospace',
-              fontSize: '11px',
               color: '#1F2937',
-              wordBreak: 'break-all',
-              whiteSpace: 'pre-wrap',
             }}
           >
             {storageKeyDiffs ? (
@@ -145,15 +150,9 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
             </label>
             <div
               style={{
+                ...baseValueStyle,
                 background: '#FEF3C7',
-                borderRadius: '8px',
-                padding: '12px',
-                marginTop: '4px',
-                fontFamily: 'monospace',
-                fontSize: '11px',
                 color: '#D97706',
-                wordBreak: 'break-all',
-                whiteSpace: 'pre-wrap',
               }}
             >
               {beforeValueDiffs ? (
@@ -179,15 +178,9 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
           </label>
           <div
             style={{
+              ...baseValueStyle,
               background: '#EFF6FF',
-              borderRadius: '8px',
-              padding: '12px',
-              marginTop: '4px',
-              fontFamily: 'monospace',
-              fontSize: '11px',
               color: '#1D4ED8',
-              wordBreak: 'break-all',
-              whiteSpace: 'pre-wrap',
             }}
           >
             {afterValueDiffs ? (
