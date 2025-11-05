@@ -45,12 +45,6 @@ export default function Home() {
     setCurrentStep('validation');
   };
 
-  const handleBackToSetup = () => {
-    setCurrentStep('simulation');
-    setValidationData(null);
-    setSigningData(null);
-  };
-
   const handleProceedToLedgerSigning = (validationResult: ValidationData) => {
     setValidationData(validationResult);
     setCurrentStep('ledger');
@@ -172,7 +166,7 @@ export default function Home() {
               id: selectedUpgrade || '',
               name: selectedUpgrade || '',
             }}
-            onBackToSetup={handleBackToSetup}
+            onBackToSetup={handleGoToNetworkSelection}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
         )}
@@ -198,7 +192,7 @@ export default function Home() {
             signingData={signingData}
             onBackToValidation={handleBackToValidation}
             onBackToLedger={signingData ? handleBackToLedger : undefined}
-            onBackToSetup={handleBackToSetup}
+            onBackToSetup={handleGoToNetworkSelection}
           />
         )}
       </Layout>
