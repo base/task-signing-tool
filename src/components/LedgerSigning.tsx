@@ -246,13 +246,16 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                 <div
                   style={{
                     fontFamily: 'monospace',
-                    fontSize: '12px',
+                    fontSize: '0.875rem',
                     color: '#92400E',
                     background: '#FEF3C7',
                     padding: '4px 8px',
                     borderRadius: '4px',
                     marginTop: '4px',
-                    wordBreak: 'break-all',
+                    whiteSpace: 'nowrap',
+                    width: '100%',
+                    display: 'block',
+                    boxSizing: 'border-box',
                   }}
                 >
                   {domainHash}
@@ -263,13 +266,16 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                 <div
                   style={{
                     fontFamily: 'monospace',
-                    fontSize: '12px',
+                    fontSize: '0.875rem',
                     color: '#92400E',
                     background: '#FEF3C7',
                     padding: '4px 8px',
                     borderRadius: '4px',
                     marginTop: '4px',
-                    wordBreak: 'break-all',
+                    whiteSpace: 'nowrap',
+                    width: '100%',
+                    display: 'block',
+                    boxSizing: 'border-box',
                   }}
                 >
                   {messageHash}
@@ -420,9 +426,11 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   return (
     <div
       style={{
-        maxWidth: '600px',
+        width: '100%',
+        maxWidth: 'min(100%, 960px)',
         margin: '0 auto',
         padding: '20px',
+        boxSizing: 'border-box',
       }}
     >
       {/* Error Display for Missing Required Fields */}
