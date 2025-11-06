@@ -252,7 +252,8 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                     padding: '4px 8px',
                     borderRadius: '4px',
                     marginTop: '4px',
-                    wordBreak: 'break-all',
+                    whiteSpace: 'nowrap',
+                    overflowX: 'auto',
                   }}
                 >
                   {domainHash}
@@ -269,7 +270,8 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                     padding: '4px 8px',
                     borderRadius: '4px',
                     marginTop: '4px',
-                    wordBreak: 'break-all',
+                    whiteSpace: 'nowrap',
+                    overflowX: 'auto',
                   }}
                 >
                   {messageHash}
