@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 
 interface LedgerSigningProps {
@@ -21,6 +21,9 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   const [currentStep, setCurrentStep] = useState<LedgerSigningStep>('connect');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+
+  const displayDomainHash = useMemo(() => domainHash.toUpperCase(), [domainHash]);
+  const displayMessageHash = useMemo(() => messageHash.toUpperCase(), [messageHash]);
 
   // Validate required fields
   useEffect(() => {
@@ -258,7 +261,7 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                     boxSizing: 'border-box',
                   }}
                 >
-                  {domainHash}
+                  {displayDomainHash}
                 </div>
               </div>
               <div style={{ marginBottom: '12px' }}>
@@ -278,7 +281,7 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                     boxSizing: 'border-box',
                   }}
                 >
-                  {messageHash}
+                  {displayMessageHash}
                 </div>
               </div>
             </div>
