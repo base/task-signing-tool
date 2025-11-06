@@ -18,7 +18,7 @@ export const NetworkSelection: React.FC<NetworkSelectionProps> = ({ onSelect }) 
           margin: '0 0 32px 0',
         }}
       >
-        Which network?
+        Select Network
       </h2>
       <div
         style={{
