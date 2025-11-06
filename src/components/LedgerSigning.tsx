@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
-import { toChecksumHex } from '@/lib/format';
 
 interface LedgerSigningProps {
   domainHash: string;
@@ -23,8 +22,8 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
-  const displayDomainHash = useMemo(() => toChecksumHex(domainHash), [domainHash]);
-  const displayMessageHash = useMemo(() => toChecksumHex(messageHash), [messageHash]);
+  const displayDomainHash = useMemo(() => domainHash.toUpperCase(), [domainHash]);
+  const displayMessageHash = useMemo(() => messageHash.toUpperCase(), [messageHash]);
 
   // Validate required fields
   useEffect(() => {
