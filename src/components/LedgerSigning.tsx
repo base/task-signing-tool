@@ -246,16 +246,17 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                 <div
                   style={{
                     fontFamily: 'monospace',
-                    fontSize: 'clamp(7px, 2vw, 12px)',
+                    fontSize: 'clamp(4px, 1.35vw, 10px)',
                     color: '#92400E',
                     background: '#FEF3C7',
                     padding: '4px 8px',
                     borderRadius: '4px',
                     marginTop: '4px',
                     whiteSpace: 'nowrap',
+                    width: '100%',
+                    display: 'block',
                     boxSizing: 'border-box',
-                    display: 'inline-block',
-                    maxWidth: '100%',
+                    letterSpacing: '-0.2px',
                   }}
                 >
                   {domainHash}
@@ -266,16 +267,17 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
                 <div
                   style={{
                     fontFamily: 'monospace',
-                    fontSize: 'clamp(7px, 2vw, 12px)',
+                    fontSize: 'clamp(4px, 1.35vw, 10px)',
                     color: '#92400E',
                     background: '#FEF3C7',
                     padding: '4px 8px',
                     borderRadius: '4px',
                     marginTop: '4px',
                     whiteSpace: 'nowrap',
+                    width: '100%',
+                    display: 'block',
                     boxSizing: 'border-box',
-                    display: 'inline-block',
-                    maxWidth: '100%',
+                    letterSpacing: '-0.2px',
                   }}
                 >
                   {messageHash}
