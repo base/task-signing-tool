@@ -1,15 +1,8 @@
 import { StateDiffClient } from '@/lib/state-diff';
 import { writeFileSync } from 'fs';
 import path from 'path';
+import { parseArgs } from 'node:util';
 import { parse as shellParse } from 'shell-quote';
-
-type CliOptions = {
-  rpcUrl: string;
-  workdir: string;
-  forgeCmd: string;
-  out?: string;
-  help?: boolean;
-};
 
 function printUsage(): void {
   const msg = `
@@ -37,76 +30,42 @@ Examples:
   console.log(msg);
 }
 
-function parseArgs(argv: string[]): CliOptions {
-  const opts: CliOptions = {
-    rpcUrl: '',
-    workdir: '',
-    forgeCmd: '',
-  };
+async function main() {
+  const { values, positionals } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      'rpc-url': { type: 'string', short: 'r' },
+      workdir: { type: 'string', short: 'w' },
+      'forge-cmd': { type: 'string', short: 'f' },
+      out: { type: 'string', short: 'o' },
+      help: { type: 'boolean', short: 'h' },
+    },
+  });
 
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    const next = () => argv[++i];
-    switch (a) {
-      case '--rpc-url':
-      case '-r':
-        opts.rpcUrl = next() || '';
-        break;
-      case '--workdir':
-      case '-w':
-        opts.workdir = next() || '';
-        break;
-      case '--forge-cmd':
-      case '-f':
-        opts.forgeCmd = next() || '';
-        break;
-      case '--out':
-      case '-o':
-        opts.out = next() || '';
-        break;
-      case '--help':
-      case '-h':
-        opts.help = true;
-        break;
-      default: {
-        // Support --key=value form
-        if (a.startsWith('--')) {
-          const [k, v] = a.split('=');
-          if (k === '--rpc-url') opts.rpcUrl = v || '';
-          else if (k === '--workdir') opts.workdir = v || '';
-          else if (k === '--forge-cmd') opts.forgeCmd = v || '';
-          else if (k === '--out') opts.out = v || '';
-          else if (k === '--help') opts.help = true;
-          else {
-            console.warn(`Unknown option: ${k}`);
-          }
-        } else {
-          console.warn(`Ignoring positional arg: ${a}`);
-        }
-      }
-    }
+  if (positionals.length > 0) {
+    console.warn(`Ignoring positional args: ${positionals.join(', ')}`);
   }
 
-  return opts;
-}
-
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
-  if (opts.help) {
+  if (values.help) {
     printUsage();
     return;
   }
 
-  if (!opts.rpcUrl || !opts.workdir || !opts.forgeCmd) {
+  const rpcUrl = values['rpc-url'] ?? '';
+  const workdirFlag = values.workdir ?? '';
+  const forgeCmdFlag = values['forge-cmd'] ?? '';
+  const outFlag = values.out;
+
+  if (!rpcUrl || !workdirFlag || !forgeCmdFlag) {
     console.error('Missing required flags.');
     printUsage();
     process.exitCode = 1;
     return;
   }
 
-  const workdir = path.resolve(process.cwd(), opts.workdir);
+  const workdir = path.resolve(process.cwd(), workdirFlag);
 
-  const tokens = shellParse(opts.forgeCmd);
+  const tokens = shellParse(forgeCmdFlag);
   const forgeCmdParts: string[] = tokens.map(t => {
     if (typeof t !== 'string') {
       throw new Error(
@@ -117,14 +76,16 @@ async function main() {
   });
 
   const sdc = new StateDiffClient();
-  const { result } = await sdc.simulate(opts.rpcUrl, forgeCmdParts, workdir);
+  const { result } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
-  if (opts.out) {
-    const outPath = path.resolve(process.cwd(), opts.out);
-    writeFileSync(outPath, JSON.stringify(result, null, 2) + '\n');
+  const output = JSON.stringify(result, null, 2);
+
+  if (outFlag) {
+    const outPath = path.resolve(process.cwd(), outFlag);
+    writeFileSync(outPath, output + '\n');
     console.log(`Wrote validation JSON to: ${outPath}`);
   } else {
-    console.log(JSON.stringify(result, null, 2));
+    console.log(output);
   }
 }
 
