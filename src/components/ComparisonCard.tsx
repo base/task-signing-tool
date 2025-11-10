@@ -17,19 +17,8 @@ interface ComparisonCardProps {
 
 const HEX_SEGMENT_WRAP_THRESHOLD = 66;
 
-const baseValueStyle: React.CSSProperties = {
-  borderRadius: '8px',
-  padding: '12px',
-  marginTop: '4px',
-  fontFamily: 'monospace',
-  fontSize: '11px',
-  display: 'block',
-  maxWidth: '100%',
-  overflowX: 'auto',
-  whiteSpace: 'pre-wrap',
-  wordBreak: 'normal',
-  overflowWrap: 'normal',
-};
+const baseValueClasses =
+  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-pre-wrap';
 
 const combineContent = (value?: string, diffs?: StringDiff[]): string => {
   if (diffs && diffs.length > 0) {
@@ -54,20 +43,20 @@ const shouldEnableHexWrapping = (value?: string, diffs?: StringDiff[]): boolean 
   return longestHexSegment > HEX_SEGMENT_WRAP_THRESHOLD;
 };
 
-const buildValueStyle = (
+const buildValueClasses = (
   value: string | undefined,
   diffs: StringDiff[] | undefined,
-  overrides: React.CSSProperties
-): React.CSSProperties => {
+  additionalClasses: string
+): string => {
   const allowHexWrapping = shouldEnableHexWrapping(value, diffs);
 
-  return {
-    ...baseValueStyle,
-    overflowWrap: allowHexWrapping ? 'anywhere' : 'normal',
-    wordBreak: allowHexWrapping ? 'break-word' : 'normal',
-    overflowX: allowHexWrapping ? 'hidden' : 'auto',
-    ...overrides,
-  };
+  return [
+    baseValueClasses,
+    allowHexWrapping ? 'break-words overflow-hidden' : 'break-normal overflow-x-auto',
+    additionalClasses,
+  ]
+    .filter(Boolean)
+    .join(' ');
 };
 
 export const ComparisonCard: React.FC<ComparisonCardProps> = ({
@@ -82,93 +71,33 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
   afterValueDiffs,
 }) => {
   const isExpected = type === 'expected';
-  const bgColor = isExpected ? '#EFF6FF' : '#F0F9FF';
-  const borderColor = isExpected ? '#93C5FD' : '#7DD3FC';
-  const headerColor = isExpected ? '#1D4ED8' : '#0369A1';
+  const containerClasses = isExpected ? 'bg-blue-50 border-blue-300' : 'bg-sky-50 border-sky-300';
+  const headerClasses = isExpected ? 'text-blue-700' : 'text-sky-700';
   const headerIcon = isExpected ? '✅' : '🔍';
   const headerText = isExpected ? 'Expected' : 'Actual';
-  const contractBgColor = isExpected ? '#DBEAFE' : '#E0F2FE';
+  const contractClasses = isExpected ? 'bg-blue-100' : 'bg-sky-100';
+  const borderClasses = isExpected ? 'border-blue-300' : 'border-sky-300';
 
   return (
-    <div
-      style={{
-        background: bgColor,
-        border: `2px solid ${borderColor}`,
-        borderRadius: '20px',
-        padding: '24px',
-      }}
-    >
-      <h3
-        style={{
-          color: headerColor,
-          fontWeight: '700',
-          fontSize: '18px',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          margin: '0 0 16px 0',
-        }}
-      >
+    <div className={`rounded-2xl border-2 p-6 ${containerClasses}`}>
+      <h3 className={`mb-4 flex items-center gap-2 text-lg font-bold ${headerClasses}`}>
         <span>{headerIcon}</span> {headerText}
       </h3>
 
-      <div
-        style={{
-          background: contractBgColor,
-          borderRadius: '12px',
-          padding: '16px',
-          marginBottom: '16px',
-        }}
-      >
-        <h4
-          style={{
-            fontWeight: '600',
-            color: '#1F2937',
-            marginBottom: '8px',
-            margin: '0 0 8px 0',
-          }}
-        >
-          {contractName}
-        </h4>
-        <p
-          style={{
-            fontSize: '12px',
-            color: '#6B7280',
-            fontFamily: 'monospace',
-            wordBreak: 'break-all',
-            margin: 0,
-          }}
-        >
+      <div className={`mb-4 rounded-xl p-4 ${contractClasses}`}>
+        <h4 className="mb-2 font-semibold text-gray-800">{contractName}</h4>
+        <p className="m-0 break-all font-mono text-xs text-gray-500">
           {toChecksumAddressSafe(contractAddress)}
         </p>
       </div>
 
-      <div
-        style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '16px',
-          border: `1px solid ${borderColor}`,
-        }}
-      >
-        <div style={{ marginBottom: '16px' }}>
-          <label
-            style={{
-              fontSize: '10px',
-              fontWeight: '600',
-              color: '#6B7280',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
+      <div className={`rounded-xl border bg-white p-4 ${borderClasses}`}>
+        <div className="mb-4">
+          <label className="text-[10px] font-semibold uppercase text-gray-500 tracking-[0.05em]">
             Storage Key
           </label>
           <div
-            style={buildValueStyle(storageKey, storageKeyDiffs, {
-              background: '#F9FAFB',
-              color: '#1F2937',
-            })}
+            className={buildValueClasses(storageKey, storageKeyDiffs, 'bg-gray-50 text-gray-800')}
           >
             {storageKeyDiffs ? (
               <HighlightedText diffs={storageKeyDiffs} />
@@ -179,23 +108,16 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
         </div>
 
         {beforeValue && (
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              style={{
-                fontSize: '10px',
-                fontWeight: '600',
-                color: '#6B7280',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
+          <div className="mb-4">
+            <label className="text-[10px] font-semibold uppercase text-gray-500 tracking-[0.05em]">
               Before
             </label>
             <div
-              style={buildValueStyle(beforeValue, beforeValueDiffs, {
-                background: '#FEF3C7',
-                color: '#D97706',
-              })}
+              className={buildValueClasses(
+                beforeValue,
+                beforeValueDiffs,
+                'bg-amber-100 text-amber-600'
+              )}
             >
               {beforeValueDiffs ? (
                 <HighlightedText diffs={beforeValueDiffs} />
@@ -207,22 +129,11 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
         )}
 
         <div>
-          <label
-            style={{
-              fontSize: '10px',
-              fontWeight: '600',
-              color: '#6B7280',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
+          <label className="text-[10px] font-semibold uppercase text-gray-500 tracking-[0.05em]">
             {beforeValue ? 'After' : 'Value'}
           </label>
           <div
-            style={buildValueStyle(afterValue, afterValueDiffs, {
-              background: '#EFF6FF',
-              color: '#1D4ED8',
-            })}
+            className={buildValueClasses(afterValue, afterValueDiffs, 'bg-blue-50 text-blue-700')}
           >
             {afterValueDiffs ? (
               <HighlightedText diffs={afterValueDiffs} />
