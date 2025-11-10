@@ -9,33 +9,17 @@ interface HighlightedTextProps {
 }
 
 export const HighlightedText: React.FC<HighlightedTextProps> = ({ diffs, className, style }) => {
-  const getStyleForDiffType = (diffType: StringDiff['type']): React.CSSProperties => {
+  const getClassNameForDiffType = (diffType: StringDiff['type']): string => {
     switch (diffType) {
       case 'added':
-        return {
-          backgroundColor: '#DCFCE7', // green-100
-          color: '#166534', // green-800
-          padding: '1px 2px',
-          borderRadius: '2px',
-        };
+        return 'rounded-sm bg-green-100 px-0.5 py-0.5 text-green-800';
       case 'removed':
-        return {
-          backgroundColor: '#FEE2E2', // red-100
-          color: '#DC2626', // red-600
-          textDecoration: 'line-through',
-          padding: '1px 2px',
-          borderRadius: '2px',
-        };
+        return 'rounded-sm bg-red-100 px-0.5 py-0.5 text-red-600 line-through';
       case 'modified':
-        return {
-          backgroundColor: '#FEF3C7', // yellow-100
-          color: '#D97706', // yellow-600
-          padding: '1px 2px',
-          borderRadius: '2px',
-        };
+        return 'rounded-sm bg-yellow-100 px-0.5 py-0.5 text-yellow-600';
       case 'unchanged':
       default:
-        return {};
+        return '';
     }
   };
 
@@ -44,7 +28,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ diffs, classNa
       {diffs.map((diff, index) => (
         <span
           key={index}
-          style={getStyleForDiffType(diff.type)}
+          className={getClassNameForDiffType(diff.type)}
           title={diff.type !== 'unchanged' ? `${diff.type}: "${diff.value}"` : undefined}
         >
           {checksummizeAddressesInText(diff.value)}
