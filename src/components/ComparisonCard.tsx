@@ -52,7 +52,9 @@ const buildValueClasses = (
 
   return [
     baseValueClasses,
-    allowHexWrapping ? 'break-words overflow-hidden' : 'break-normal overflow-x-auto',
+    allowHexWrapping
+      ? 'break-words overflow-hidden'
+      : 'break-normal overflow-x-auto scrollbar-hide',
     additionalClasses,
   ]
     .filter(Boolean)
