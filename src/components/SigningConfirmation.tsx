@@ -35,82 +35,40 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
     }
   };
 
+  const copyButtonClasses = copied
+    ? 'bg-emerald-500 hover:bg-emerald-600'
+    : 'bg-indigo-500 hover:bg-indigo-600';
+
   return (
-    <div
-      style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        padding: '32px 0',
-      }}
-    >
+    <div className="mx-auto max-w-3xl px-4 py-8">
       {/* Header */}
-      <div
-        style={{
-          textAlign: 'center',
-          marginBottom: '48px',
-        }}
-      >
-        <h2
-          style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            marginBottom: '16px',
-            margin: '0 0 16px 0',
-          }}
-        >
+      <div className="mb-12 text-center">
+        <h2 className="mb-4 bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-3xl font-bold text-transparent">
           Signing Complete!
         </h2>
       </div>
 
       {/* Summary Card */}
-      <div
-        style={{
-          background: '#F9FAFB',
-          border: '1px solid #E5E7EB',
-          borderRadius: '16px',
-          padding: '24px',
-          marginBottom: '32px',
-        }}
-      >
-        <h3
-          style={{
-            margin: '0 0 16px 0',
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#1F2937',
-          }}
-        >
-          Transaction Summary
-        </h3>
+      <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-800">Transaction Summary</h3>
 
-        <div style={{ display: 'grid', gap: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#6B7280' }}>User Type:</span>
-            <span style={{ fontWeight: '500', color: '#1F2937' }}>{user?.displayName ?? ''}</span>
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-500">User Type:</span>
+            <span className="font-medium text-gray-900">{user?.displayName ?? ''}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#6B7280' }}>Network:</span>
-            <span style={{ fontWeight: '500', color: '#1F2937' }}>{network}</span>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-500">Network:</span>
+            <span className="font-medium text-gray-900">{network}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#6B7280' }}>Upgrade:</span>
-            <span style={{ fontWeight: '500', color: '#1F2937' }}>{selectedUpgrade.name}</span>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-500">Upgrade:</span>
+            <span className="font-medium text-gray-900">{selectedUpgrade.name}</span>
           </div>
           {signingData && (
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#6B7280' }}>Signer Address:</span>
-              <span
-                style={{
-                  fontWeight: '500',
-                  color: '#1F2937',
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                }}
-              >
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Signer Address:</span>
+              <span className="font-mono text-sm font-medium text-gray-900">
                 {toChecksumAddressSafe(signingData.signer)}
               </span>
             </div>
@@ -120,107 +78,33 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
 
       {/* Signature Display */}
       {signingData && (
-        <div style={{ marginBottom: '48px' }}>
-          <div
-            style={{
-              background: '#D1FAE5',
-              border: '1px solid #6EE7B7',
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '24px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '16px',
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#065F46',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
-                <span style={{ fontSize: '24px' }}>✅</span>
+        <div className="mb-12 space-y-6">
+          <div className="rounded-xl border border-emerald-300 bg-emerald-100 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-emerald-900">
+                <span className="text-2xl leading-none">✅</span>
                 Ledger Signature Generated
               </h3>
             </div>
 
-            <div
-              style={{
-                background: '#F0FDF4',
-                border: '1px solid #BBF7D0',
-                borderRadius: '8px',
-                padding: '16px',
-                fontFamily: 'monospace',
-                fontSize: '14px',
-                wordBreak: 'break-all',
-                color: '#14532D',
-                position: 'relative',
-              }}
-            >
-              Data: {signingData.data} <br></br>
-              Signer: {signingData.signer} <br></br>
+            <div className="relative break-all rounded-lg border border-emerald-200 bg-emerald-50 p-4 font-mono text-sm text-emerald-900">
+              Data: {signingData.data} <br />
+              Signer: {signingData.signer} <br />
               Signature: {signingData.signature}
               <button
                 onClick={handleCopySignature}
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  right: '8px',
-                  background: copied ? '#10B981' : '#6366F1',
-                  color: 'white',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  fontWeight: '500',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  fontFamily: 'sans-serif',
-                  transition: 'all 0.2s ease',
-                }}
+                type="button"
+                className={`absolute right-2 top-2 rounded-md px-3 py-1 text-xs font-medium text-white transition-colors ${copyButtonClasses}`}
               >
                 {copied ? '✓ Copied!' : 'Copy'}
               </button>
             </div>
           </div>
 
-          <div
-            style={{
-              background: '#E0E7FF',
-              border: '1px solid #A5B4FC',
-              borderRadius: '12px',
-              padding: '20px',
-            }}
-          >
-            <h4
-              style={{
-                margin: '0 0 12px 0',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#312E81',
-              }}
-            >
-              Next Steps:
-            </h4>
-            <ol
-              style={{
-                margin: 0,
-                paddingLeft: '20px',
-                color: '#4C1D95',
-              }}
-            >
-              <li style={{ marginBottom: '8px' }}>
-                Copy the signature above using the copy button and send to your facilitator
-              </li>
+          <div className="rounded-xl border border-indigo-200 bg-indigo-100 p-5">
+            <h4 className="mb-3 text-base font-semibold text-indigo-900">Next Steps:</h4>
+            <ol className="list-decimal space-y-2 pl-5 text-indigo-900">
+              <li>Copy the signature above using the copy button and send to your facilitator</li>
             </ol>
           </div>
         </div>
@@ -228,67 +112,21 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
 
       {/* No Signature Available */}
       {!signingData && (
-        <div
-          style={{
-            background: '#FEF3C7',
-            border: '1px solid #FCD34D',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '32px',
-            textAlign: 'center',
-          }}
-        >
-          <h3
-            style={{
-              margin: '0 0 12px 0',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#92400E',
-            }}
-          >
-            No Signature Data
-          </h3>
-          <p
-            style={{
-              margin: 0,
-              color: '#92400E',
-            }}
-          >
+        <div className="mb-8 rounded-xl border border-amber-300 bg-amber-100 p-6 text-center">
+          <h3 className="mb-3 text-lg font-semibold text-amber-900">No Signature Data</h3>
+          <p className="text-amber-900">
             No signature was provided. Please go back and complete the Ledger signing process.
           </p>
         </div>
       )}
 
       {/* Action Buttons */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '16px',
-          flexWrap: 'wrap',
-        }}
-      >
+      <div className="flex flex-wrap justify-center gap-4">
         {onBackToLedger && (
           <button
             onClick={onBackToLedger}
-            style={{
-              background: '#6366F1',
-              color: 'white',
-              padding: '12px 24px',
-              borderRadius: '12px',
-              fontWeight: '500',
-              fontSize: '16px',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#4F46E5';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = '#6366F1';
-            }}
+            type="button"
+            className="rounded-xl bg-indigo-500 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-indigo-600"
           >
             ← Back to Ledger
           </button>
@@ -296,48 +134,16 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
 
         <button
           onClick={onBackToValidation}
-          style={{
-            background: '#F3F4F6',
-            color: '#6B7280',
-            padding: '12px 24px',
-            borderRadius: '12px',
-            fontWeight: '500',
-            fontSize: '16px',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = '#E5E7EB';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = '#F3F4F6';
-          }}
+          type="button"
+          className="rounded-xl bg-gray-100 px-6 py-3 text-base font-medium text-gray-500 transition-colors hover:bg-gray-200"
         >
           ← Back to Validation
         </button>
 
         <button
           onClick={onBackToSetup}
-          style={{
-            background: '#6B7280',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '12px',
-            fontWeight: '500',
-            fontSize: '16px',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = '#4B5563';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = '#6B7280';
-          }}
+          type="button"
+          className="rounded-xl bg-gray-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-gray-700"
         >
           Start New Validation
         </button>

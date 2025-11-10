@@ -8,59 +8,14 @@ interface NetworkSelectionProps {
 
 export const NetworkSelection: React.FC<NetworkSelectionProps> = ({ onSelect }) => {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <h2
-        style={{
-          fontSize: '24px',
-          fontWeight: '600',
-          color: '#374151',
-          marginBottom: '32px',
-          margin: '0 0 32px 0',
-        }}
-      >
-        Select Network
-      </h2>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}
-      >
+    <div className="text-center">
+      <h2 className="mb-8 text-2xl font-semibold text-gray-700">Select Network</h2>
+      <div className="flex flex-col gap-3">
         {availableNetworks.map(option => (
           <button
             key={option}
             onClick={() => onSelect(option)}
-            style={{
-              width: '100%',
-              background: 'white',
-              border: '1px solid #E5E7EB',
-              borderRadius: '12px',
-              padding: '20px',
-              color: '#374151',
-              fontWeight: '500',
-              fontSize: '16px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              fontFamily: 'inherit',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#F9FAFB';
-              e.currentTarget.style.borderColor = '#D1D5DB';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#E5E7EB';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-            }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white p-5 text-base font-medium text-gray-700 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
           >
             <span>🌐</span> {option.charAt(0).toUpperCase() + option.slice(1)}
           </button>

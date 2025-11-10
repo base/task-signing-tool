@@ -24,3 +24,92 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer utilities {
+  .line-clamp-5 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .upgrade-card .markdown-content a {
+    @apply font-semibold text-indigo-600 underline decoration-2 underline-offset-2 transition-colors;
+  }
+
+  .upgrade-card .markdown-content a:hover {
+    @apply text-indigo-700;
+  }
+
+  .upgrade-card[data-selected='true'] .markdown-content a {
+    @apply text-indigo-100;
+  }
+
+  .upgrade-card[data-selected='true'] .markdown-content a:hover {
+    @apply text-white;
+  }
+
+  .upgrade-card .markdown-content code {
+    @apply rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-mono text-[0.9em] text-gray-900 shadow-sm;
+  }
+
+  .upgrade-card[data-selected='true'] .markdown-content code {
+    @apply border-white/50 bg-white/30 text-white;
+  }
+
+  .upgrade-card .markdown-content pre {
+    @apply mb-3 overflow-auto rounded-lg border border-gray-800 border-l-4 border-l-indigo-500 bg-gray-900 p-3 text-gray-200 shadow-md;
+  }
+
+  .upgrade-card .markdown-content pre code {
+    @apply bg-transparent p-0 text-[0.9em];
+  }
+
+  .upgrade-card[data-selected='true'] .markdown-content pre {
+    @apply border border-white/40 border-l-4 border-l-white bg-white/20 text-white shadow-lg backdrop-blur-sm;
+  }
+
+  .upgrade-card .markdown-content p {
+    @apply mb-3;
+  }
+
+  .upgrade-card .markdown-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  .upgrade-card .markdown-content strong,
+  .upgrade-card .markdown-content b {
+    @apply font-bold;
+  }
+
+  .upgrade-card .markdown-content ul,
+  .upgrade-card .markdown-content ol {
+    @apply mb-3 list-outside pl-5;
+  }
+
+  .upgrade-card .markdown-content li {
+    @apply my-1.5;
+  }
+
+  .upgrade-card .markdown-content ul {
+    @apply list-disc;
+  }
+
+  .upgrade-card .markdown-content ol {
+    @apply list-decimal;
+  }
+
+  .upgrade-card .markdown-content blockquote {
+    @apply mb-3 rounded-md border-l-4 border-gray-300 bg-gray-50 px-3 py-2 text-gray-700;
+  }
+
+  .upgrade-card[data-selected='true'] .markdown-content blockquote {
+    @apply border-l-4 border-white/60 bg-white/20 text-slate-50;
+  }
+
+  .upgrade-card .markdown-content.collapsed a {
+    @apply cursor-default pointer-events-none;
+  }
+}
