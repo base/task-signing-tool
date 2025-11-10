@@ -40,7 +40,7 @@ const shouldEnableHexWrapping = (value?: string, diffs?: StringDiff[]): boolean 
     return max;
   }, 0);
 
-  return longestHexSegment >= HEX_SEGMENT_WRAP_THRESHOLD;
+  return longestHexSegment > HEX_SEGMENT_WRAP_THRESHOLD;
 };
 
 const buildValueClasses = (
@@ -52,7 +52,9 @@ const buildValueClasses = (
 
   return [
     baseValueClasses,
-    allowHexWrapping ? 'break-words overflow-hidden' : 'break-normal overflow-x-auto',
+    allowHexWrapping
+      ? 'break-words overflow-hidden'
+      : 'break-normal overflow-x-auto scrollbar-hide',
     additionalClasses,
   ]
     .filter(Boolean)
