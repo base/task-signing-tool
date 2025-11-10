@@ -1,74 +1,64 @@
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { ConfigParser } from '@/lib/parser';
 import { NextRequest, NextResponse } from 'next/server';
 
-interface ConfigOption {
-  fileName: string;
-  displayName: string;
-  configFile: string;
-  ledgerId: number;
-}
+const toDisplayName = (name: string) =>
+  name
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
 export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const network = url.searchParams.get('network');
+  const upgradeId = url.searchParams.get('upgradeId');
+
+  if (!network || !upgradeId) {
+    return NextResponse.json(
+      { error: 'Missing required parameters: network and upgradeId are required' },
+      { status: 400 }
+    );
+  }
+
+  const validationsPath = path.resolve(process.cwd(), '..', network, upgradeId, 'validations');
+
   try {
-    const url = new URL(req.url);
-    const network = url.searchParams.get('network');
-    const upgradeId = url.searchParams.get('upgradeId');
+    const entries = await fs.readdir(validationsPath);
+    const jsonFiles = entries.filter(file => file.endsWith('.json'));
 
-    if (!network || !upgradeId) {
-      return NextResponse.json(
-        { error: 'Missing required parameters: network and upgradeId are required' },
-        { status: 400 }
-      );
-    }
+    const configOptions = await Promise.all(
+      jsonFiles.map(async configFile => {
+        const baseName = configFile.replace(/\.json$/, '');
+        const displayName = toDisplayName(baseName);
+        const filePath = path.join(validationsPath, configFile);
 
-    const contractDeploymentsPath = path.join(process.cwd(), '..');
+        try {
+          const configContent = await fs.readFile(filePath, 'utf-8');
+          const parsedConfig = ConfigParser.parseFromString(configContent);
 
-    // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
-    const upgradePath = path.join(contractDeploymentsPath, network as string, upgradeId as string);
+          if (parsedConfig.result.success) {
+            return {
+              fileName: baseName,
+              displayName,
+              configFile,
+              ledgerId: parsedConfig.config.ledgerId,
+            };
+          }
 
-    const validationsPath = path.join(upgradePath, 'validations');
-
-    if (!fs.existsSync(validationsPath)) {
-      console.warn(`Validations path does not exist: ${validationsPath}`);
-      return NextResponse.json({ configOptions: [] }, { status: 200 });
-    }
-
-    const configOptions: ConfigOption[] = [];
-    const files = fs.readdirSync(validationsPath).filter(file => file.endsWith('.json'));
-
-    for (const fileName of files) {
-      // Parse filename to display name: "base-sc.json" → "Base Sc"
-      const baseName = fileName.replace('.json', '');
-      const displayName = baseName
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-      // Parse JSON file to extract ledgerId
-      let ledgerId = 0; // Default fallback
-      try {
-        const filePath = path.join(validationsPath, fileName);
-        const configContent = fs.readFileSync(filePath, 'utf-8');
-        const parsedConfig = ConfigParser.parseFromString(configContent);
-
-        if (parsedConfig.result.success) {
-          ledgerId = parsedConfig.config.ledgerId;
-        } else {
-          console.warn(`Failed to parse ${fileName}, using default ledgerId: 0`);
+          console.warn(`Failed to parse ${configFile}, using default ledgerId: 0`);
+        } catch (error) {
+          console.warn(`Error reading ${configFile}, using default ledgerId: 0`, error);
         }
-      } catch (error) {
-        console.warn(`Error reading ${fileName}, using default ledgerId: 0`, error);
-      }
 
-      configOptions.push({
-        fileName: baseName, // "base-sc"
-        displayName: displayName, // "Base Sc"
-        configFile: fileName, // "base-sc.json"
-        ledgerId: ledgerId, // Extracted from validation file
-      });
-    }
+        return {
+          fileName: baseName,
+          displayName,
+          configFile,
+          ledgerId: 0,
+        };
+      })
+    );
 
     console.log(
       `Found ${configOptions.length} config options for ${network}/${upgradeId}:`,
@@ -77,6 +67,13 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ configOptions }, { status: 200 });
   } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+
+    if (err?.code === 'ENOENT') {
+      console.warn(`Validations path does not exist: ${validationsPath}`);
+      return NextResponse.json({ configOptions: [] }, { status: 200 });
+    }
+
     console.error('Error fetching upgrade config:', error);
     return NextResponse.json({ error: 'Failed to fetch upgrade configuration' }, { status: 500 });
   }
