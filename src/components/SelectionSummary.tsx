@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC } from 'react';
 import { ConfigOption } from './UserSelection';
 
 interface SelectionSummaryProps {
@@ -10,7 +10,7 @@ interface SelectionSummaryProps {
   onWalletClick?: () => void;
 }
 
-export const SelectionSummary: React.FC<SelectionSummaryProps> = ({
+export const SelectionSummary: FC<SelectionSummaryProps> = ({
   selectedUser,
   selectedNetwork,
   selectedWallet,
@@ -20,145 +20,63 @@ export const SelectionSummary: React.FC<SelectionSummaryProps> = ({
 }) => {
   if (!selectedUser && !selectedNetwork && !selectedWallet) return null;
 
-  const badgeBaseStyle = {
-    color: 'white',
-    padding: '6px 14px',
-    borderRadius: '16px',
-    fontSize: '13px',
-    fontWeight: '500',
-    boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)',
-    transition: 'all 0.2s ease',
-    border: 'none',
-    fontFamily: 'inherit',
-  };
-
-  const clickableBadgeStyle = {
-    ...badgeBaseStyle,
-    background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
-    cursor: 'pointer',
-  };
-
-  const nonClickableBadgeStyle = {
-    ...badgeBaseStyle,
-    background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
-  };
+  const badgeBaseClasses =
+    'inline-flex items-center gap-1 text-white px-3.5 py-1.5 rounded-full text-sm font-medium shadow-[0_2px_4px_rgba(99,102,241,0.3)] transition-all duration-200';
+  const clickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-100`;
+  const nonClickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-indigo-500 to-violet-500`;
 
   return (
-    <div
-      style={{
-        background: 'rgba(238, 242, 255, 0.5)',
-        borderRadius: '16px',
-        padding: '20px',
-        marginBottom: '32px',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-      }}
-    >
-      <h3
-        style={{
-          textAlign: 'center',
-          color: '#4B5563',
-          fontWeight: '600',
-          marginBottom: '12px',
-          fontSize: '14px',
-          margin: '0 0 12px 0',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-        }}
-      >
+    <div className="mb-8 rounded-2xl border border-white/20 bg-indigo-50/50 p-5 backdrop-blur-lg">
+      <h3 className="mb-3 text-center text-sm font-semibold uppercase tracking-wide text-gray-600">
         Your Selections
       </h3>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          gap: '8px',
-        }}
-      >
+      <div className="flex flex-wrap justify-center gap-2">
         {/* NEW ORDER: Network, Upgrade, User */}
 
         {selectedNetwork &&
           (onNetworkClick ? (
             <button
+              type="button"
               onClick={onNetworkClick}
-              style={{
-                ...clickableBadgeStyle,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              className={clickableBadgeClasses}
               title="Click to change network selection"
             >
-              <span>🌐</span> {selectedNetwork}
+              <span>🌐</span>
+              {selectedNetwork}
             </button>
           ) : (
-            <span
-              style={{
-                ...nonClickableBadgeStyle,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <span>🌐</span> {selectedNetwork}
+            <span className={nonClickableBadgeClasses}>
+              <span>🌐</span>
+              {selectedNetwork}
             </span>
           ))}
 
         {selectedWallet &&
           (onWalletClick ? (
             <button
+              type="button"
               onClick={onWalletClick}
-              style={clickableBadgeStyle}
-              onMouseEnter={e => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              className={clickableBadgeClasses}
               title="Click to change upgrade selection"
             >
               {selectedWallet}
             </button>
           ) : (
-            <span style={nonClickableBadgeStyle}>{selectedWallet}</span>
+            <span className={nonClickableBadgeClasses}>{selectedWallet}</span>
           ))}
 
         {selectedUser &&
           (onUserClick ? (
             <button
+              type="button"
               onClick={onUserClick}
-              style={clickableBadgeStyle}
-              onMouseEnter={e => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background =
-                  'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              className={clickableBadgeClasses}
               title="Click to change user selection"
             >
               {selectedUser.displayName}
             </button>
           ) : (
-            <span style={nonClickableBadgeStyle}>{selectedUser.displayName}</span>
+            <span className={nonClickableBadgeClasses}>{selectedUser.displayName}</span>
           ))}
       </div>
     </div>
