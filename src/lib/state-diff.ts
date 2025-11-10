@@ -70,12 +70,10 @@ export class StateDiffClient {
     const cmd = forgeCmdParts.join(' ');
     console.log(`🔧 Running forge in ${workdir}: ${cmd}`);
 
-    const { stdout, stderr, code } = await this.runCommand(
-      forgeCmdParts[0],
-      forgeCmdParts.slice(1),
-      workdir,
-      120000
-    );
+    const { command, args, env: envAssignments } = this.extractCommandDetails(forgeCmdParts);
+    const spawnEnv = { ...process.env, ...envAssignments };
+
+    const { stdout, stderr, code } = await this.runCommand(command, args, workdir, 120000, spawnEnv);
     if (code !== 0) {
       throw new Error(
         `StateDiffClient::simulate: forge command failed with exit code ${code}.\nStdout: ${stdout}\nStderr: ${stderr}`
@@ -136,10 +134,11 @@ export class StateDiffClient {
     command: string,
     args: string[],
     cwd: string,
-    timeoutMs: number
+    timeoutMs: number,
+    env: NodeJS.ProcessEnv
   ): Promise<{ stdout: string; stderr: string; code: number | null }> {
     return new Promise(resolve => {
-      const child = spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+      const child = spawn(command, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
       let stdout = '';
       let stderr = '';
       const timeout = setTimeout(() => child.kill(), timeoutMs);
@@ -150,6 +149,41 @@ export class StateDiffClient {
         resolve({ stdout, stderr, code });
       });
     });
+  }
+
+  private extractCommandDetails(commandParts: string[]): {
+    command: string;
+    args: string[];
+    env: Record<string, string>;
+  } {
+    if (commandParts.length === 0) {
+      throw new Error('StateDiffClient::extractCommandDetails: No command provided to execute.');
+    }
+
+    const envAssignments: Record<string, string> = {};
+    let index = 0;
+
+    const assignmentRegex = /^[A-Za-z_][A-Za-z0-9_]*=/;
+
+    while (index < commandParts.length && assignmentRegex.test(commandParts[index])) {
+      const token = commandParts[index];
+      const eqIdx = token.indexOf('=');
+      const key = token.slice(0, eqIdx);
+      const value = token.slice(eqIdx + 1);
+      envAssignments[key] = value;
+      index += 1;
+    }
+
+    if (index >= commandParts.length) {
+      throw new Error(
+        'StateDiffClient::extractCommandDetails: Command missing after environment assignments.'
+      );
+    }
+
+    const command = commandParts[index];
+    const args = commandParts.slice(index + 1);
+
+    return { command, args, env: envAssignments };
   }
 
   private async readEncodedStateDiff(workdir: string): Promise<ParsedInput> {
