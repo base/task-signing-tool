@@ -40,7 +40,7 @@ const shouldEnableHexWrapping = (value?: string, diffs?: StringDiff[]): boolean 
     return max;
   }, 0);
 
-  return longestHexSegment > HEX_SEGMENT_WRAP_THRESHOLD;
+  return longestHexSegment >= HEX_SEGMENT_WRAP_THRESHOLD;
 };
 
 const buildValueClasses = (
