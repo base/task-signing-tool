@@ -121,7 +121,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
           margin: '0 0 32px 0',
         }}
       >
-        Which upgrade do you want to validate?
+        Select Upgrade
       </h2>
 
       <div
