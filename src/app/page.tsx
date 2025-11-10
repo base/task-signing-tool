@@ -18,7 +18,16 @@ import { ConfigOption } from '@/components/UserSelection';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 
 type UpgradeType = string | null;
-type Step = 'network' | 'upgrade' | 'user' | 'simulation' | 'validation' | 'ledger' | 'signing';
+type Step = 'network' | 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
+
+const STEP_LAYOUT_WIDTH: Record<Step, string> = {
+  network: '600px',
+  upgrade: '900px',
+  user: '600px',
+  validation: '1200px',
+  ledger: '800px',
+  signing: '800px',
+};
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('network');
@@ -28,6 +37,23 @@ export default function Home() {
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<LedgerSigningResult | null>(null);
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
+
+  const resetSelectionsFrom = (step: 'network' | 'upgrade' | 'user') => {
+    if (step === 'network') {
+      setSelectedNetwork(null);
+    }
+
+    if (step === 'network' || step === 'upgrade') {
+      setSelectedUpgrade(null);
+    }
+
+    if (step === 'network' || step === 'upgrade' || step === 'user') {
+      setSelectedUser(undefined);
+      setValidationData(null);
+      setSigningData(null);
+      setUserLedgerAccount(0);
+    }
+  };
 
   const handleNetworkSelection = (network: NetworkType) => {
     setSelectedNetwork(network);
@@ -64,49 +90,31 @@ export default function Home() {
   };
 
   const handleGoToNetworkSelection = () => {
+    resetSelectionsFrom('network');
     setCurrentStep('network');
-    setSelectedUser(undefined);
-    setSelectedNetwork(null);
-    setSelectedUpgrade(null);
-    setValidationData(null);
-    setSigningData(null);
-    setUserLedgerAccount(0);
   };
 
   const handleGoToUpgradeSelection = () => {
+    resetSelectionsFrom('upgrade');
     setCurrentStep('upgrade');
-    setSelectedUpgrade(null);
-    setSelectedUser(undefined);
-    setValidationData(null);
-    setSigningData(null);
-    setUserLedgerAccount(0);
   };
 
   const handleGoToUserSelection = () => {
+    resetSelectionsFrom('user');
     setCurrentStep('user');
-    setSelectedUser(undefined);
-    setValidationData(null);
-    setSigningData(null);
-    setUserLedgerAccount(0);
   };
+
+  const canEditUpgrade =
+    currentStep === 'user' ||
+    currentStep === 'validation' ||
+    currentStep === 'ledger' ||
+    currentStep === 'signing';
+  const canEditUser =
+    currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing';
 
   return (
     <>
-      <Layout
-        maxWidth={
-          currentStep === 'validation'
-            ? '1200px'
-            : currentStep === 'ledger'
-            ? '800px'
-            : currentStep === 'signing'
-            ? '800px'
-            : currentStep === 'upgrade'
-            ? '900px'
-            : currentStep === 'simulation'
-            ? '900px'
-            : '600px'
-        }
-      >
+      <Layout maxWidth={STEP_LAYOUT_WIDTH[currentStep]}>
         <Header />
 
         <StepIndicator
@@ -121,23 +129,8 @@ export default function Home() {
           selectedNetwork={selectedNetwork}
           selectedWallet={selectedUpgrade}
           onNetworkClick={currentStep !== 'network' ? handleGoToNetworkSelection : undefined}
-          onWalletClick={
-            currentStep === 'user' ||
-            currentStep === 'simulation' ||
-            currentStep === 'validation' ||
-            currentStep === 'ledger' ||
-            currentStep === 'signing'
-              ? handleGoToUpgradeSelection
-              : undefined
-          }
-          onUserClick={
-            currentStep === 'simulation' ||
-            currentStep === 'validation' ||
-            currentStep === 'ledger' ||
-            currentStep === 'signing'
-              ? handleGoToUserSelection
-              : undefined
-          }
+          onWalletClick={canEditUpgrade ? handleGoToUpgradeSelection : undefined}
+          onUserClick={canEditUser ? handleGoToUserSelection : undefined}
         />
 
         {currentStep === 'network' && <NetworkSelection onSelect={handleNetworkSelection} />}
