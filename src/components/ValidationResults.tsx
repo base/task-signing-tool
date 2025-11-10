@@ -430,7 +430,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     if (!currentEntry) {
       return {
         status: 'missing',
-        color: '#3B82F6',
+        bgClass: 'bg-blue-500',
         icon: '❌',
         text: 'Missing - Not found in actual results',
       };
@@ -441,7 +441,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (!item || !item.actual) {
         return {
           status: 'missing',
-          color: '#3B82F6',
+          bgClass: 'bg-blue-500',
           icon: '❌',
           text: 'Missing - Not found in actual results',
         };
@@ -450,13 +450,13 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       return match
         ? {
             status: 'match',
-            color: '#1D4ED8',
+            bgClass: 'bg-blue-700',
             icon: '✅',
             text: 'Match - EIP-712 data matches expected',
           }
         : {
             status: 'mismatch',
-            color: '#DC2626',
+            bgClass: 'bg-red-600',
             icon: '❌',
             text: 'Mismatch - EIP-712 data does not match expected',
           };
@@ -467,7 +467,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (!item || !item.actual) {
         return {
           status: 'missing',
-          color: '#3B82F6',
+          bgClass: 'bg-blue-500',
           icon: '❌',
           text: 'Missing - Not found in actual results',
         };
@@ -480,7 +480,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (match) {
         return {
           status: 'match',
-          color: '#1D4ED8',
+          bgClass: 'bg-blue-700',
           icon: '✅',
           text: 'Match - This override is correct',
         };
@@ -488,14 +488,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (isExpectedDifference) {
         return {
           status: 'expected-difference',
-          color: '#059669',
+          bgClass: 'bg-emerald-600',
           icon: '✅',
           text: 'Expected Difference - This mismatch is acceptable and expected',
         };
       }
       return {
         status: 'mismatch',
-        color: '#DC2626',
+        bgClass: 'bg-red-600',
         icon: '❌',
         text: 'Mismatch - Override values do not match expected',
       };
@@ -506,7 +506,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (!item || !item.actual) {
         return {
           status: 'missing',
-          color: '#3B82F6',
+          bgClass: 'bg-blue-500',
           icon: '❌',
           text: 'Missing - Not found in actual results',
         };
@@ -521,7 +521,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (match) {
         return {
           status: 'match',
-          color: '#1D4ED8',
+          bgClass: 'bg-blue-700',
           icon: '✅',
           text: 'Match - This change is correct',
         };
@@ -529,14 +529,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       if (isExpectedDifference) {
         return {
           status: 'expected-difference',
-          color: '#059669',
+          bgClass: 'bg-emerald-600',
           icon: '✅',
           text: 'Expected Difference - This mismatch is acceptable and expected',
         };
       }
       return {
         status: 'mismatch',
-        color: '#DC2626',
+        bgClass: 'bg-red-600',
         icon: '❌',
         text: 'Mismatch - Change values do not match expected',
       };
@@ -546,7 +546,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     if (!item || !item.actual) {
       return {
         status: 'missing',
-        color: '#3B82F6',
+        bgClass: 'bg-blue-500',
         icon: '❌',
         text: 'Missing - Not found in actual results',
       };
@@ -564,7 +564,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     if (match) {
       return {
         status: 'match',
-        color: '#1D4ED8',
+        bgClass: 'bg-blue-700',
         icon: '✅',
         text: 'Match - Balance change matches expected',
       };
@@ -573,7 +573,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     if (isExpectedDifference) {
       return {
         status: 'expected-difference',
-        color: '#059669',
+        bgClass: 'bg-emerald-600',
         icon: '✅',
         text: 'Expected Difference - This mismatch is acceptable and expected',
       };
@@ -581,7 +581,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
     return {
       status: 'mismatch',
-      color: '#DC2626',
+      bgClass: 'bg-red-600',
       icon: '❌',
       text: 'Mismatch - Balance change does not match expected',
     };
@@ -597,115 +597,52 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     };
 
     return (
-      <div style={{ textAlign: 'center', padding: '64px 0' }}>
-        <div
-          style={{
-            display: 'inline-block',
-            width: '48px',
-            height: '48px',
-            border: '4px solid #E5E7EB',
-            borderTop: '4px solid #6366F1',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            marginBottom: '24px',
-          }}
-        />
-        <h3 style={{ color: '#374151', marginBottom: '8px' }}>{getLoadingTitle()}</h3>
-        <style jsx>{`
-          @keyframes spin {
-            0% {
-              transform: rotate(0deg);
-            }
-            100% {
-              transform: rotate(360deg);
-            }
-          }
-        `}</style>
+      <div className="py-16 text-center">
+        <div className="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-indigo-500" />
+        <h3 className="text-lg font-semibold text-slate-700">{getLoadingTitle()}</h3>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '64px 0' }}>
-        <div
-          style={{
-            background: '#FEE2E2',
-            color: '#DC2626',
-            padding: '24px',
-            borderRadius: '12px',
-            marginBottom: '24px',
-            maxWidth: '600px',
-            margin: '0 auto 24px',
-          }}
-        >
-          <h3 style={{ margin: '0 0 8px 0' }}>❌ Validation Failed</h3>
-          <p style={{ margin: 0 }}>{error}</p>
+      <div className="py-16 text-center">
+        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-rose-100 p-6 text-rose-600">
+          <h3 className="mb-2 text-xl font-semibold">❌ Validation Failed</h3>
+          <p className="text-base">{error}</p>
         </div>
 
-        <button
-          onClick={() => handleRunValidation()}
-          style={{
-            background: '#F3F4F6',
-            color: '#374151',
-            padding: '12px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            fontWeight: '600',
-            cursor: 'pointer',
-            marginRight: '12px',
-          }}
-        >
-          Retry Validation
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <button
+            onClick={() => handleRunValidation()}
+            className="rounded-xl bg-slate-100 px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-200"
+          >
+            Retry Validation
+          </button>
 
-        <button
-          onClick={onBackToSetup}
-          style={{
-            background: '#6B7280',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            fontWeight: '600',
-            cursor: 'pointer',
-          }}
-        >
-          Back to Setup
-        </button>
+          <button
+            onClick={onBackToSetup}
+            className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
+          >
+            Back to Setup
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!validationResult || totalValidationItems === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '64px 0' }}>
-        <div
-          style={{
-            background: '#FEF3C7',
-            color: '#D97706',
-            padding: '24px',
-            borderRadius: '12px',
-            maxWidth: '600px',
-            margin: '0 auto 24px',
-          }}
-        >
-          <h3 style={{ margin: '0 0 8px 0' }}>⚠️ No Changes Found</h3>
-          <p style={{ margin: 0 }}>
+      <div className="py-16 text-center">
+        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-amber-100 p-6 text-amber-700">
+          <h3 className="mb-2 text-xl font-semibold">⚠️ No Changes Found</h3>
+          <p className="text-base">
             No state changes or overrides were found in the validation data.
           </p>
         </div>
         <button
           onClick={onBackToSetup}
-          style={{
-            background: '#6B7280',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            fontWeight: '600',
-            cursor: 'pointer',
-          }}
+          className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
         >
           Back to Setup
         </button>
@@ -719,8 +656,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     variant: 'info' | 'expected-difference';
     icon: string;
     title: string;
-    headingColor: string;
-    textColor: string;
     text: string;
   } | null = (() => {
     if (!currentEntry) return null;
@@ -732,8 +667,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         variant: 'info',
         icon: '💡',
         title: 'What this does',
-        headingColor: '#0369A1',
-        textColor: '#0C4A6E',
         text: item.expected.description,
       };
     }
@@ -745,8 +678,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         variant: 'info',
         icon: '💡',
         title: 'What this does',
-        headingColor: '#0369A1',
-        textColor: '#0C4A6E',
         text: item.expected.description,
       };
     }
@@ -759,8 +690,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         variant: allowDifference ? 'expected-difference' : 'info',
         icon: allowDifference ? '✅' : '💡',
         title: allowDifference ? 'Expected Difference - This is Fine' : 'What this does',
-        headingColor: allowDifference ? '#059669' : '#0369A1',
-        textColor: allowDifference ? '#064E3B' : '#0C4A6E',
         text: item.expected.description,
       };
     }
@@ -783,43 +712,19 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       variant: allowDifference ? 'expected-difference' : 'info',
       icon: allowDifference ? '✅' : '💰',
       title: allowDifference ? 'Expected Difference - Balance Change OK' : 'Balance Change Details',
-      headingColor: allowDifference ? '#059669' : '#0369A1',
-      textColor: allowDifference ? '#064E3B' : '#0C4A6E',
       text: details.join('\n\n'),
     };
   })();
 
   return (
-    <div>
-      <div
-        style={{
-          textAlign: 'center',
-          marginBottom: '32px',
-        }}
-      >
-        <h2
-          style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            marginBottom: '8px',
-            margin: '0 0 8px 0',
-          }}
-        >
+    <div className="space-y-8">
+      <div className="text-center">
+        <h2 className="mb-2 text-4xl font-bold text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text">
           Validation Results
         </h2>
-        <div
-          style={{
-            color: '#6B7280',
-            margin: 0,
-            fontSize: '16px',
-          }}
-        >
-          <div style={{ marginBottom: '4px' }}>
-            <strong>
+        <div className="text-base text-slate-500">
+          <div className="mb-1">
+            <span className="font-semibold text-slate-600">
               Step {stepInfo.currentStep}:{' '}
               {(() => {
                 if (!currentEntry) return '';
@@ -828,10 +733,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 if (currentEntry.kind === 'change') return 'State Changes';
                 return 'Balance Changes';
               })()}
-            </strong>{' '}
+            </span>{' '}
             • Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
           </div>
-          <div style={{ fontSize: '14px', opacity: 0.8 }}>
+          <div className="text-sm opacity-80">
             Step 1: {stepInfo.step1Count} items • Step 2: {stepInfo.step2Count} items • Step 3:{' '}
             {stepInfo.step3Count} items • Step 4: {stepInfo.step4Count} items
           </div>
@@ -839,41 +744,20 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       </div>
 
       {/* Navigation */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '32px',
-        }}
-      >
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <button
           onClick={() => setCurrentChangeIndex(Math.max(0, currentChangeIndex - 1))}
           disabled={currentChangeIndex === 0}
-          style={{
-            padding: '12px 24px',
-            borderRadius: '12px',
-            fontWeight: '600',
-            border: 'none',
-            cursor: currentChangeIndex === 0 ? 'not-allowed' : 'pointer',
-            background: currentChangeIndex === 0 ? '#E5E7EB' : '#F3F4F6',
-            color: currentChangeIndex === 0 ? '#9CA3AF' : '#374151',
-            fontFamily: 'inherit',
-          }}
+          className={`rounded-xl px-6 py-3 font-semibold transition ${
+            currentChangeIndex === 0
+              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
         >
           ← Previous
         </button>
 
-        <div
-          style={{
-            background: '#DBEAFE',
-            color: '#1D4ED8',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '600',
-          }}
-        >
+        <div className="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
           {(() => {
             if (!currentEntry) return 'Unknown Contract';
             if (currentEntry.kind === 'signing') {
@@ -894,16 +778,11 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             setCurrentChangeIndex(Math.min(totalValidationItems - 1, currentChangeIndex + 1))
           }
           disabled={currentChangeIndex === totalValidationItems - 1}
-          style={{
-            padding: '12px 24px',
-            borderRadius: '12px',
-            fontWeight: '600',
-            border: 'none',
-            cursor: currentChangeIndex === totalValidationItems - 1 ? 'not-allowed' : 'pointer',
-            background: currentChangeIndex === totalValidationItems - 1 ? '#E5E7EB' : '#6366F1',
-            color: currentChangeIndex === totalValidationItems - 1 ? '#9CA3AF' : 'white',
-            fontFamily: 'inherit',
-          }}
+          className={`rounded-xl px-6 py-3 font-semibold transition ${
+            currentChangeIndex === totalValidationItems - 1
+              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+              : 'bg-indigo-500 text-white hover:bg-indigo-600'
+          }`}
         >
           Next →
         </button>
@@ -911,14 +790,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
       {/* Comparison Cards */}
       {currentEntry && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '24px',
-            marginBottom: '24px',
-          }}
-        >
+        <div className="grid gap-6 md:grid-cols-2">
           {(() => {
             if (currentEntry.kind === 'signing') {
               const item = itemsByStep.signing[currentEntry.index]!;
@@ -1064,58 +936,30 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       {/* Description Box - show when available */}
       {descriptionContent && (
         <div
-          style={{
-            background:
-              descriptionContent.variant === 'expected-difference'
-                ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'
-                : 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
-            border:
-              descriptionContent.variant === 'expected-difference'
-                ? '2px solid #10B981'
-                : '2px solid #7DD3FC',
-            borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '32px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          }}
+          className={`rounded-2xl border-2 p-6 shadow-md ${
+            descriptionContent.variant === 'expected-difference'
+              ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100'
+              : 'border-sky-200 bg-gradient-to-r from-sky-50 to-sky-100'
+          }`}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '24px',
-                marginTop: '2px',
-              }}
-            >
-              {descriptionContent.icon}
-            </span>
-            <div style={{ flex: 1 }}>
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 text-2xl">{descriptionContent.icon}</span>
+            <div className="flex-1">
               <h4
-                style={{
-                  fontSize: '16px',
-                  fontWeight: '700',
-                  color: descriptionContent.headingColor,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  margin: '0 0 8px 0',
-                }}
+                className={`mb-2 text-sm font-bold uppercase tracking-wider ${
+                  descriptionContent.variant === 'expected-difference'
+                    ? 'text-emerald-700'
+                    : 'text-sky-700'
+                }`}
               >
                 {descriptionContent.title}
               </h4>
               <p
-                style={{
-                  fontSize: '16px',
-                  color: descriptionContent.textColor,
-                  margin: 0,
-                  lineHeight: '1.6',
-                  fontWeight: '500',
-                  whiteSpace: 'pre-wrap',
-                }}
+                className={`text-base font-medium leading-relaxed whitespace-pre-wrap ${
+                  descriptionContent.variant === 'expected-difference'
+                    ? 'text-emerald-900'
+                    : 'text-sky-900'
+                }`}
               >
                 {descriptionContent.text}
               </p>
@@ -1125,24 +969,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       {/* Match Status */}
-      <div
-        style={{
-          textAlign: 'center',
-          marginBottom: '32px',
-        }}
-      >
+      <div className="text-center">
         <div
-          style={{
-            background: matchStatus.color,
-            color: 'white',
-            padding: '16px 32px',
-            borderRadius: '20px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            fontWeight: '700',
-            fontSize: '18px',
-            gap: '8px',
-          }}
+          className={`inline-flex items-center gap-2 rounded-full px-8 py-4 text-lg font-bold text-white ${matchStatus.bgClass}`}
         >
           <span>{matchStatus.icon}</span> {matchStatus.text}
         </div>
@@ -1150,57 +979,27 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
       {/* Proceed to Signing Button */}
       {currentChangeIndex === totalValidationItems - 1 && (
-        <div
-          style={{
-            textAlign: 'center',
-            marginTop: '48px',
-          }}
-        >
+        <div className="mt-12 text-center">
           {/* Status Summary */}
           <div
-            style={{
-              background: blockingErrorsExist
-                ? 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)'
-                : 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)',
-              border: `2px solid ${blockingErrorsExist ? '#FECACA' : '#86EFAC'}`,
-              borderRadius: '16px',
-              padding: '24px',
-              marginBottom: '24px',
-              maxWidth: '500px',
-              margin: '0 auto 24px',
-            }}
+            className={`mx-auto mb-6 max-w-md rounded-2xl border-2 p-6 ${
+              blockingErrorsExist
+                ? 'border-rose-200 bg-gradient-to-r from-rose-100 to-rose-200'
+                : 'border-emerald-200 bg-gradient-to-r from-emerald-100 to-emerald-200'
+            }`}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                marginBottom: blockingErrorsExist ? '12px' : '8px',
-              }}
-            >
-              <span style={{ fontSize: '28px' }}>{blockingErrorsExist ? '🚫' : '✅'}</span>
+            <div className="mb-3 flex items-center justify-center gap-3">
+              <span className="text-3xl">{blockingErrorsExist ? '🚫' : '✅'}</span>
               <h3
-                style={{
-                  margin: 0,
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  color: blockingErrorsExist ? '#DC2626' : '#047857',
-                }}
+                className={`text-xl font-bold ${
+                  blockingErrorsExist ? 'text-rose-600' : 'text-emerald-700'
+                }`}
               >
                 {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
               </h3>
             </div>
             {blockingErrorsExist && (
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: '14px',
-                  color: '#DC2626',
-                  textAlign: 'center',
-                  lineHeight: '1.4',
-                }}
-              >
+              <p className="text-sm text-rose-600">
                 Found <strong>Missing</strong> or <strong>Different</strong> instances. Contact
                 developers before continuing.
               </p>
@@ -1214,35 +1013,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             validationResult?.expected?.domainAndMessageHashes?.messageHash && (
               <button
                 onClick={() => onProceedToLedgerSigning(validationResult)}
-                style={{
-                  background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-                  color: 'white',
-                  padding: '16px 48px',
-                  borderRadius: '12px',
-                  fontWeight: '600',
-                  fontSize: '18px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.2s ease',
-                  boxShadow:
-                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow =
-                    '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow =
-                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-                }}
+                className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-12 py-4 text-lg font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:from-indigo-500 hover:to-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
-                <span style={{ fontSize: '20px' }}>🔐</span>
+                <span className="text-xl">🔐</span>
                 Sign with Ledger →
               </button>
             )}
@@ -1251,32 +1024,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           {(!validationResult?.expected?.domainAndMessageHashes ||
             !validationResult?.expected?.domainAndMessageHashes?.domainHash ||
             !validationResult?.expected?.domainAndMessageHashes?.messageHash) && (
-            <div
-              style={{
-                background: '#FEF3C7',
-                border: '1px solid #FCD34D',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '20px',
-              }}
-            >
-              <p
-                style={{
-                  margin: '0 0 8px 0',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#92400E',
-                }}
-              >
-                ⚠️ Signing Not Available
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: '14px',
-                  color: '#92400E',
-                }}
-              >
+            <div className="mt-6 rounded-lg border border-amber-300 bg-amber-100 p-4 text-left">
+              <p className="mb-2 text-sm font-semibold text-amber-800">⚠️ Signing Not Available</p>
+              <p className="text-sm text-amber-800">
                 Domain and message hashes are required for signing but were not generated during
                 validation. This may indicate an issue with the script execution or validation
                 process.
@@ -1287,38 +1037,11 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       {/* Bottom Navigation Buttons */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '48px',
-        }}
-      >
+      <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Back to Setup - Left */}
         <button
           onClick={onBackToSetup}
-          style={{
-            background: '#F3F4F6',
-            color: '#6B7280',
-            padding: '12px 24px',
-            borderRadius: '12px',
-            fontWeight: '500',
-            fontSize: '16px',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = '#E5E7EB';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = '#F3F4F6';
-          }}
+          className="flex items-center gap-2 rounded-xl bg-slate-100 px-6 py-3 text-base font-medium text-slate-600 transition hover:bg-slate-200"
         >
           ← Back to Setup
         </button>
@@ -1327,49 +1050,20 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         <button
           onClick={handleRunValidation}
           disabled={loading}
-          style={{
-            background: loading ? '#E5E7EB' : '#6366F1',
-            color: loading ? '#9CA3AF' : 'white',
-            padding: '16px 32px',
-            borderRadius: '12px',
-            border: 'none',
-            fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontFamily: 'inherit',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={e => {
-            if (!loading) {
-              e.currentTarget.style.background = '#4F46E5';
-            }
-          }}
-          onMouseLeave={e => {
-            if (!loading) {
-              e.currentTarget.style.background = '#6366F1';
-            }
-          }}
+          className={`flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition ${
+            loading
+              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+              : 'bg-indigo-500 text-white hover:bg-indigo-600'
+          }`}
         >
           {loading ? (
             <>
-              <div
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  border: '2px solid #9CA3AF',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                }}
-              />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
               Running Validation...
             </>
           ) : (
             <>
-              <span style={{ fontSize: '16px' }}>🔄</span>
+              <span className="text-base">🔄</span>
               Rerun Validation
             </>
           )}
