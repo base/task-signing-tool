@@ -6,68 +6,40 @@ interface LayoutProps {
   maxWidth?: string;
 }
 
+const maxWidthClassMap = {
+  '600px': 'max-w-[600px]',
+  '800px': 'max-w-[800px]',
+  '900px': 'max-w-[900px]',
+  '1200px': 'max-w-[1200px]',
+} as const;
+
 export const Layout: React.FC<LayoutProps> = ({ children, maxWidth = '600px' }) => {
+  const resolvedMaxWidthClass =
+    maxWidth in maxWidthClassMap
+      ? maxWidthClassMap[maxWidth as keyof typeof maxWidthClassMap]
+      : maxWidthClassMap['600px'];
+
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        padding: '32px 16px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#667eea] to-[#764ba2] px-4 py-8 font-sans">
       <div
-        style={{
-          width: '100%',
-          maxWidth: maxWidth,
-          margin: '0 auto',
-          transition: 'max-width 0.3s ease',
-        }}
+        className={`mx-auto w-full transition-[max-width] duration-300 ease-in-out ${resolvedMaxWidthClass}`}
+        style={maxWidth in maxWidthClassMap ? undefined : { maxWidth }}
       >
         {/* Logo */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '32px',
-          }}
-        >
-          <div
-            style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              background: 'white',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}
-          >
+        <div className="mb-8 flex justify-center">
+          <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
             <Image
               src="/base.jpg"
               alt="Base Logo"
               width={120}
               height={120}
-              style={{ borderRadius: '50%' }}
+              className="rounded-full"
             />
           </div>
         </div>
 
         {/* Main Card */}
-        <div
-          style={{
-            background: 'white',
-            borderRadius: '32px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            padding: '48px',
-            marginBottom: '32px',
-          }}
-        >
+        <div className="mb-8 rounded-[32px] bg-white p-12 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
           {children}
         </div>
       </div>
