@@ -23,42 +23,21 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   ];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: '48px',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-        }}
-      >
-        {steps.map((step, index) => (
-          <React.Fragment key={step.key}>
-            <div
-              style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                background: currentStep === step.key || step.completed ? '#6366F1' : '#D1D5DB',
-              }}
-            ></div>
-            {index < steps.length - 1 && (
+    <div className="flex items-center justify-center mb-12">
+      <div className="flex items-center gap-4">
+        {steps.map((step, index) => {
+          const isActive = currentStep === step.key || step.completed;
+          return (
+            <React.Fragment key={step.key}>
               <div
-                style={{
-                  width: '48px',
-                  height: '2px',
-                  background: step.completed ? '#6366F1' : '#D1D5DB',
-                }}
-              ></div>
-            )}
-          </React.Fragment>
-        ))}
+                className={`h-3 w-3 rounded-full ${isActive ? 'bg-indigo-500' : 'bg-gray-300'}`}
+              />
+              {index < steps.length - 1 && (
+                <div className={`h-0.5 w-12 ${step.completed ? 'bg-indigo-500' : 'bg-gray-300'}`} />
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );
