@@ -72,22 +72,11 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
           margin: '0 0 32px 0',
         }}
       >
-        Setup Your Validation
+        Select Profile
       </h2>
 
       {/* Step 1: User Type Selection */}
       <div style={{ marginBottom: '32px' }}>
-        <h3
-          style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#374151',
-            marginBottom: '16px',
-            margin: '0 0 16px 0',
-          }}
-        >
-          Step 1: Who are you?
-        </h3>
         <div
           style={{
             display: 'flex',
