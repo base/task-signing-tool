@@ -1,30 +1,47 @@
 import { ValidationService } from '@/lib/validation-service';
 import { NextRequest, NextResponse } from 'next/server';
+import { NetworkType } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
     const { upgradeId, network, userType } = json;
 
-    if (!upgradeId || !network || !userType) {
+    if (
+      typeof upgradeId !== 'string' ||
+      typeof network !== 'string' ||
+      typeof userType !== 'string' ||
+      !upgradeId.trim() ||
+      !network.trim() ||
+      !userType.trim()
+    ) {
       return NextResponse.json(
         { message: 'Missing required parameters: upgradeId, network, and userType are required' },
         { status: 400 }
       );
     }
 
-    const actualNetwork = network.toLowerCase();
+    const trimmedUpgradeId = upgradeId.trim();
+    const trimmedUserType = userType.trim();
+    const normalizedNetwork = network.trim().toLowerCase();
 
-    console.log(`🔍 Starting validation for ${upgradeId} on ${actualNetwork} for ${userType}`);
+    if (!Object.values(NetworkType).includes(normalizedNetwork as NetworkType)) {
+      return NextResponse.json(
+        {
+          message: `Unsupported network: ${network}. Supported networks are ${Object.values(
+            NetworkType
+          ).join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
 
-    // Initialize ValidationService
     const validationService = new ValidationService();
 
-    // Run validation with the RPC URL
     const validationResult = await validationService.validateUpgrade({
-      upgradeId,
-      network: actualNetwork,
-      taskConfigFileName: userType,
+      upgradeId: trimmedUpgradeId,
+      network: normalizedNetwork as NetworkType,
+      taskConfigFileName: trimmedUserType,
     });
 
     return NextResponse.json({ success: true, data: validationResult }, { status: 200 });
@@ -36,11 +53,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-// Increase timeout for script execution
-export const config = {
-  api: {
-    externalResolver: true,
-    responseLimit: false,
-  },
-};
