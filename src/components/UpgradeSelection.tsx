@@ -1,5 +1,5 @@
 import { TaskStatus } from '@/lib/types';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -11,6 +11,7 @@ const STATUS_CLASS_MAP: Record<TaskStatus, string> = {
 
 const BADGE_BASE_CLASSES =
   'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors';
+const DESCRIPTION_CHAR_LIMIT = 200;
 
 interface ExecutionLink {
   url: string;
@@ -42,34 +43,59 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (!selectedNetwork) return;
-
-    const fetchUpgrades = async () => {
-      setLoading(true);
+  const fetchUpgrades = useCallback(async () => {
+    if (!selectedNetwork) {
+      setUpgradeOptions([]);
+      setLoading(false);
       setError(null);
+      return;
+    }
 
-      try {
-        const network = selectedNetwork.toLowerCase();
-        const response = await fetch(`/api/upgrades?network=${network}`);
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-        if (!response.ok) {
-          throw new Error(`UpgradeSelection::fetchUpgrades: API response not ok: ${response}`);
-        }
+    setLoading(true);
+    setError(null);
 
-        const upgrades = await response.json();
-        setUpgradeOptions(upgrades);
-      } catch (err) {
-        setError(`UpgradeSelection::fetchUpgrades: Failed to load upgrades: ${err}`);
-        console.error('Error fetching upgrades:', err);
-      } finally {
+    try {
+      const network = selectedNetwork.toLowerCase();
+      const response = await fetch(`/api/upgrades?network=${network}`, {
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `UpgradeSelection::fetchUpgrades: API response not ok: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const upgrades: Upgrade[] = await response.json();
+      setUpgradeOptions(upgrades);
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError') {
+        return;
+      }
+
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`UpgradeSelection::fetchUpgrades: Failed to load upgrades: ${message}`);
+      console.error('Error fetching upgrades:', err);
+    } finally {
+      if (!controller.signal.aborted) {
         setLoading(false);
       }
-    };
-
-    fetchUpgrades();
+    }
   }, [selectedNetwork]);
+
+  useEffect(() => {
+    fetchUpgrades();
+
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [fetchUpgrades]);
 
   if (loading) {
     return (
@@ -86,8 +112,9 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
         <p className="mb-4 text-sm text-red-600">{error}</p>
         <button
           type="button"
-          onClick={() => window.location.reload()}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+          onClick={fetchUpgrades}
+          disabled={loading}
+          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-70"
         >
           Retry
         </button>
@@ -111,7 +138,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
         {upgradeOptions.map(option => {
           const isSelected = selectedWallet === option.id;
           const isExpanded = !!expandedCards[option.id];
-          const isTruncated = (option.description || '').length > 200;
+          const isTruncated = option.description.length > DESCRIPTION_CHAR_LIMIT;
           const collapsed = isTruncated && !isExpanded;
 
           return (
@@ -222,6 +249,31 @@ const StatusBadge: React.FC<{
   executionLinks?: ExecutionLink[];
 }> = ({ status, executionLinks }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!showDropdown) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showDropdown]);
 
   if (!status) return null;
 
@@ -245,25 +297,27 @@ const StatusBadge: React.FC<{
           className={`${badgeClasses} cursor-pointer hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
           onClick={e => handleLinkClick(executionLinks[0].url, e)}
           title={`View transaction: ${executionLinks[0].label}`}
+          aria-haspopup="menu"
+          aria-expanded="false"
         >
           {status}
         </button>
       );
     }
 
-    // Multiple links - show dropdown on hover
+    // Multiple links - toggle dropdown on click
     return (
-      <div
-        className="relative inline-block"
-        onMouseEnter={() => setShowDropdown(true)}
-        onMouseLeave={() => setShowDropdown(false)}
-      >
+      <div ref={dropdownRef} className="relative inline-block">
         <button
           type="button"
           className={`${badgeClasses} cursor-pointer hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
-          title="Multiple transactions available - hover to see options"
+          title="Multiple transactions available - click to see options"
           aria-haspopup="menu"
           aria-expanded={showDropdown}
+          onClick={e => {
+            e.stopPropagation();
+            setShowDropdown(prev => !prev);
+          }}
         >
           {status} ({executionLinks.length})
         </button>
@@ -280,6 +334,7 @@ const StatusBadge: React.FC<{
                   key={`${link.url}-${index}`}
                   onClick={e => handleLinkClick(link.url, e)}
                   className="flex w-full flex-col items-start px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  role="menuitem"
                 >
                   <div className="font-medium">{link.label}</div>
                   <div className="w-full truncate text-xs text-gray-500">
