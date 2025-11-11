@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { toChecksumAddressSafe, toDisplaySignature } from '@/lib/format';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 import { ConfigOption } from './UserSelection';
@@ -16,7 +16,13 @@ interface SigningConfirmationProps {
   onBackToSetup: () => void;
 }
 
-export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
+type DetailItem = {
+  label: string;
+  value: ReactNode;
+  monospace?: boolean;
+};
+
+export function SigningConfirmation({
   user,
   network,
   selectedUpgrade,
@@ -24,14 +30,40 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
   onBackToValidation,
   onBackToLedger,
   onBackToSetup,
-}) => {
+}: SigningConfirmationProps) {
   const [copied, setCopied] = useState(false);
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleCopySignature = () => {
-    if (signingData) {
-      navigator.clipboard.writeText(toDisplaySignature(signingData));
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current !== null) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setCopied(false);
+    if (resetTimeoutRef.current !== null) {
+      clearTimeout(resetTimeoutRef.current);
+      resetTimeoutRef.current = null;
+    }
+  }, [signingData]);
+
+  const handleCopySignature = async () => {
+    if (!signingData) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(toDisplaySignature(signingData));
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (resetTimeoutRef.current !== null) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+      resetTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy signature to clipboard', error);
     }
   };
 
@@ -39,44 +71,72 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
     ? 'bg-emerald-500 hover:bg-emerald-600'
     : 'bg-indigo-500 hover:bg-indigo-600';
 
+  const summaryItems: DetailItem[] = [
+    {
+      label: 'User Type',
+      value: user?.displayName ?? '—',
+    },
+    {
+      label: 'Network',
+      value: network,
+    },
+    {
+      label: 'Upgrade',
+      value: selectedUpgrade.name,
+    },
+  ];
+
+  if (signingData) {
+    summaryItems.push({
+      label: 'Signer Address',
+      value: toChecksumAddressSafe(signingData.signer),
+      monospace: true,
+    });
+  }
+
+  const signatureItems: DetailItem[] = signingData
+    ? [
+        {
+          label: 'Data',
+          value: signingData.data,
+          monospace: true,
+        },
+        {
+          label: 'Signer',
+          value: toChecksumAddressSafe(signingData.signer),
+          monospace: true,
+        },
+        {
+          label: 'Signature',
+          value: toDisplaySignature(signingData),
+          monospace: true,
+        },
+      ]
+    : [];
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      {/* Header */}
       <div className="mb-12 text-center">
         <h2 className="mb-4 bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-3xl font-bold text-transparent">
           Signing Complete!
         </h2>
       </div>
 
-      {/* Summary Card */}
       <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-6">
         <h3 className="mb-4 text-lg font-semibold text-gray-800">Transaction Summary</h3>
 
         <div className="space-y-3">
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-500">User Type:</span>
-            <span className="font-medium text-gray-900">{user?.displayName ?? ''}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Network:</span>
-            <span className="font-medium text-gray-900">{network}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Upgrade:</span>
-            <span className="font-medium text-gray-900">{selectedUpgrade.name}</span>
-          </div>
-          {signingData && (
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-500">Signer Address:</span>
-              <span className="font-mono text-sm font-medium text-gray-900">
-                {toChecksumAddressSafe(signingData.signer)}
+          {summaryItems.map(({ label, value, monospace }) => (
+            <div key={label} className="flex justify-between">
+              <span className="text-sm text-gray-500">{label}:</span>
+              <span className={`text-sm font-medium text-gray-900 ${monospace ? 'font-mono' : ''}`}>
+                {value}
               </span>
             </div>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* Signature Display */}
       {signingData && (
         <div className="mb-12 space-y-6">
           <div className="rounded-xl border border-emerald-300 bg-emerald-100 p-6">
@@ -88,9 +148,13 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
             </div>
 
             <div className="relative break-all rounded-lg border border-emerald-200 bg-emerald-50 p-4 font-mono text-sm text-emerald-900">
-              Data: {signingData.data} <br />
-              Signer: {signingData.signer} <br />
-              Signature: {signingData.signature}
+              <div className="space-y-2">
+                {signatureItems.map(({ label, value }) => (
+                  <div key={label}>
+                    <span className="font-semibold">{label}:</span> {value}
+                  </div>
+                ))}
+              </div>
               <button
                 onClick={handleCopySignature}
                 type="button"
@@ -110,7 +174,6 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
         </div>
       )}
 
-      {/* No Signature Available */}
       {!signingData && (
         <div className="mb-8 rounded-xl border border-amber-300 bg-amber-100 p-6 text-center">
           <h3 className="mb-3 text-lg font-semibold text-amber-900">No Signature Data</h3>
@@ -120,7 +183,6 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
         </div>
       )}
 
-      {/* Action Buttons */}
       <div className="flex flex-wrap justify-center gap-4">
         {onBackToLedger && (
           <button
@@ -150,4 +212,4 @@ export const SigningConfirmation: React.FC<SigningConfirmationProps> = ({
       </div>
     </div>
   );
-};
+}
