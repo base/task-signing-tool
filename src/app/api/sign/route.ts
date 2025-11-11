@@ -1,4 +1,8 @@
-import { LedgerSigner, LedgerSigningOptions } from '@/lib/ledger-signing';
+import {
+  checkLedgerAvailability,
+  LedgerSigningOptions,
+  signDomainAndMessageHash,
+} from '@/lib/ledger-signing';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -16,9 +20,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ledgerSigner = new LedgerSigner();
-
-    if (!(await ledgerSigner.checkAvailability())) {
+    if (!(await checkLedgerAvailability())) {
       return NextResponse.json(
         {
           error: 'eip712sign binary not found. Install it and ensure it is on PATH or GOPATH/bin.',
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await ledgerSigner.signDomainAndMessageHash({
+    const result = await signDomainAndMessageHash({
       domainHash,
       messageHash,
       ledgerAccount,
