@@ -22,6 +22,36 @@ const INITIAL_STATE: ValidationRunnerState = {
   result: null,
 };
 
+const toErrorState = (message: string): ValidationRunnerState => ({
+  status: 'error',
+  error: message,
+  result: null,
+});
+
+type InstallDepsResponse = {
+  success: boolean;
+  error?: string;
+  depsInstalled?: boolean;
+};
+
+type ValidateResponse = {
+  success: boolean;
+  error?: string;
+  data?: ValidationData;
+};
+
+const postJson = async <T>(url: string, payload: unknown): Promise<T> => {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response.json() as Promise<T>;
+};
+
 interface UseValidationRunnerReturn extends ValidationRunnerState {
   runValidation: () => Promise<ValidationData | null>;
   reset: () => void;
@@ -37,20 +67,14 @@ export const useValidationRunner = ({
   const [state, setState] = useState<ValidationRunnerState>(INITIAL_STATE);
   const isRunningRef = useRef(false);
 
-  const setErrorState = useCallback((message: string) => {
-    setState({
-      status: 'error',
-      error: message,
-      result: null,
-    });
-  }, []);
-
   const runValidation = useCallback(async (): Promise<ValidationData | null> => {
     if (isRunningRef.current) {
       return null;
     }
 
     isRunningRef.current = true;
+    const networkSlug = network.toLowerCase();
+
     setState({
       status: 'installing-deps',
       error: null,
@@ -58,30 +82,21 @@ export const useValidationRunner = ({
     });
 
     try {
-      console.log(`🔍 Checking dependencies for ${network.toLowerCase()}/${upgradeId}`);
-      const depsResponse = await fetch('/api/install-deps', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          network: network.toLowerCase(),
-          upgradeId,
-        }),
+      console.log(`🔍 Checking dependencies for ${networkSlug}/${upgradeId}`);
+      const depsResult = await postJson<InstallDepsResponse>('/api/install-deps', {
+        network: networkSlug,
+        upgradeId,
       });
 
-      const depsResult = await depsResponse.json();
-
       if (!depsResult.success) {
-        const message = `ValidationResults::handleRunValidation: install-deps api returned an error: ${depsResult.error}`;
-        setErrorState(message);
+        setState(
+          toErrorState(`install-deps failed: ${depsResult.error ?? 'Unknown error occurred'}`)
+        );
         return null;
       }
 
       if (depsResult.depsInstalled) {
-        console.log(
-          `✅ Dependencies installed successfully for ${network.toLowerCase()}/${upgradeId}`
-        );
+        console.log(`✅ Dependencies installed successfully for ${networkSlug}/${upgradeId}`);
       }
 
       console.log('Running validation with options:', {
@@ -90,31 +105,27 @@ export const useValidationRunner = ({
         userType,
       });
 
-      setState(prev => ({
-        ...prev,
+      setState({
         status: 'running',
-      }));
-
-      const response = await fetch('/api/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          upgradeId,
-          network: network.toLowerCase(),
-          userType,
-        }),
+        error: null,
+        result: null,
       });
 
-      const result = await response.json();
+      const validationResult = await postJson<ValidateResponse>('/api/validate', {
+        upgradeId,
+        network: networkSlug,
+        userType,
+      });
 
-      if (!result.success) {
-        const message = `ValidationResults::handleRunValidation: validate api returned an error: ${
-          result.error || 'Validation failed'
-        }`;
-        setErrorState(message);
-        console.error('Validation failed:', result.error);
+      if (!validationResult.success) {
+        setState(toErrorState(`validate failed: ${validationResult.error ?? 'Validation failed'}`));
+        console.error('Validation failed:', validationResult.error);
+        return null;
+      }
+
+      if (!validationResult.data) {
+        setState(toErrorState('validate failed: missing data in response'));
+        console.error('Validation failed: missing data in response');
         return null;
       }
 
@@ -123,21 +134,22 @@ export const useValidationRunner = ({
       setState({
         status: 'success',
         error: null,
-        result: result.data as ValidationData,
+        result: validationResult.data as ValidationData,
       });
 
-      return result.data as ValidationData;
+      return validationResult.data as ValidationData;
     } catch (err) {
-      const message = `ValidationResults::handleRunValidation: error running validation: ${
-        err instanceof Error ? err.message : 'Network error occurred'
-      }`;
-      setErrorState(message);
       console.error('Validation error:', err);
+      setState(
+        toErrorState(
+          `validation error: ${err instanceof Error ? err.message : 'Network error occurred'}`
+        )
+      );
       return null;
     } finally {
       isRunningRef.current = false;
     }
-  }, [network, setErrorState, upgradeId, userType]);
+  }, [network, upgradeId, userType]);
 
   const reset = useCallback(() => {
     setState(INITIAL_STATE);
