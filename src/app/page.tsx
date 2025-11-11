@@ -120,7 +120,7 @@ export default function Home() {
         <StepIndicator
           currentStep={currentStep}
           hasNetwork={!!selectedNetwork}
-          hasWallet={!!selectedUpgrade}
+          hasUpgrade={!!selectedUpgrade}
           hasUser={!!selectedUser}
         />
 
