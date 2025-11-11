@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { ConfigParser } from '@/lib/parser';
+import { parseFromString } from '@/lib/parser';
 import { NextRequest, NextResponse } from 'next/server';
 
 const toDisplayName = (name: string) =>
@@ -35,9 +35,9 @@ export async function GET(req: NextRequest) {
 
         try {
           const configContent = await fs.readFile(filePath, 'utf-8');
-          const parsedConfig = ConfigParser.parseFromString(configContent);
+          const parsedConfig = parseFromString(configContent);
 
-          if (parsedConfig.result.success) {
+          if (parsedConfig.result.success && 'config' in parsedConfig) {
             return {
               fileName: baseName,
               displayName,
