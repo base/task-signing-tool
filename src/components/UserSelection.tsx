@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface ConfigOption {
   fileName: string;
@@ -13,7 +13,7 @@ interface UserSelectionProps {
   onSelect: (cfg: ConfigOption) => void;
 }
 
-export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId, onSelect }) => {
+export function UserSelection({ network, upgradeId, onSelect }: UserSelectionProps) {
   const [availableUsers, setAvailableUsers] = useState<ConfigOption[]>([]);
   const [selectedUser, setSelectedUser] = useState<ConfigOption | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -21,15 +21,36 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
 
   // Fetch available users when network and upgradeId change
   useEffect(() => {
-    const fetchAvailableUsers = async () => {
-      if (!network || !upgradeId) return;
+    const resetState = () => {
+      setAvailableUsers([]);
+      setSelectedUser(null);
+      setError('');
+      setLoadingUsers(false);
+    };
 
-      setLoadingUsers(true);
+    if (!network || !upgradeId) {
+      resetState();
+      return;
+    }
+
+    let isActive = true;
+    setAvailableUsers([]);
+    setSelectedUser(null);
+    setError('');
+    setLoadingUsers(true);
+
+    const fetchAvailableUsers = async () => {
       try {
         const response = await fetch(
           `/api/upgrade-config?network=${network.toLowerCase()}&upgradeId=${upgradeId}`
         );
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || response.statusText);
+        }
         const { configOptions, error: apiError } = await response.json();
+
+        if (!isActive) return;
 
         if (apiError) {
           setError(`UserSelection::fetchAvailableUsers: API returned an error: ${apiError}`);
@@ -39,26 +60,28 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
           setError('');
         }
       } catch (err) {
+        if (!isActive) return;
+        const message = err instanceof Error ? err.message : String(err);
         console.error('Failed to fetch upgrade config:', err);
-        setError(`UserSelection::fetchAvailableUsers: Failed to fetch upgrade config: ${err}`);
+        setError(`UserSelection::fetchAvailableUsers: Failed to fetch upgrade config: ${message}`);
         setAvailableUsers([]);
       } finally {
-        setLoadingUsers(false);
+        if (isActive) {
+          setLoadingUsers(false);
+        }
       }
     };
 
     fetchAvailableUsers();
+
+    return () => {
+      isActive = false;
+    };
   }, [network, upgradeId]);
 
   const handleUserSelect = (userOption: ConfigOption) => {
     setSelectedUser(userOption);
     setError('');
-  };
-
-  const handleProceed = () => {
-    if (selectedUser) {
-      onSelect(selectedUser);
-    }
   };
 
   return (
@@ -122,7 +145,11 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
             Next, simulate the transaction to confirm it behaves as expected.
           </p>
           <button
-            onClick={handleProceed}
+            onClick={() => {
+              if (selectedUser) {
+                onSelect(selectedUser);
+              }
+            }}
             type="button"
             className="inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
           >
@@ -132,4 +159,4 @@ export const UserSelection: React.FC<UserSelectionProps> = ({ network, upgradeId
       )}
     </div>
   );
-};
+}
