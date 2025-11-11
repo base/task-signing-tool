@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { createPublicClient, http, decodeAbiParameters, Hex, Address } from 'viem';
 import { BalanceChange, StateChange, StateOverride, TaskConfig } from './types/index';
@@ -73,7 +73,13 @@ export class StateDiffClient {
     const { command, args, env: envAssignments } = this.extractCommandDetails(forgeCmdParts);
     const spawnEnv = { ...process.env, ...envAssignments };
 
-    const { stdout, stderr, code } = await this.runCommand(command, args, workdir, 120000, spawnEnv);
+    const { stdout, stderr, code } = await this.runCommand(
+      command,
+      args,
+      workdir,
+      120000,
+      spawnEnv
+    );
     if (code !== 0) {
       throw new Error(
         `StateDiffClient::simulate: forge command failed with exit code ${code}.\nStdout: ${stdout}\nStderr: ${stderr}`
@@ -88,46 +94,39 @@ export class StateDiffClient {
     const chainIdHex = (await client.request({ method: 'eth_chainId' })) as string;
     const chainIdStr = BigInt(chainIdHex).toString();
 
-    const parsed = await this.readEncodedStateDiff(workdir);
-    this.deleteStateDiffFile(workdir);
-    const { domainHash, messageHash } = this.getDomainAndMessageHashes(parsed.dataToSign);
-    const payload = this.decodeOverrides(parsed.overrides);
-    const decodedDiff = this.decodeStateDiff(parsed.stateDiff);
-    const decodedPreimages = this.decodePreimages(parsed.preimages);
+    const stateDiffPath = this.stateDiffFilePath(workdir);
+    const parsed = await this.readEncodedStateDiff(stateDiffPath);
 
-    const parentMap = new Map<Hex, Hex>();
-    for (const p of decodedPreimages)
-      parentMap.set(this.n(slotHex(p.slot)), this.n(slotHex(p.parent)));
+    try {
+      const { domainHash, messageHash } = this.getDomainAndMessageHashes(parsed.dataToSign);
+      const payload = this.decodeOverrides(parsed.overrides);
+      const decodedDiff = this.decodeStateDiff(parsed.stateDiff);
+      const decodedPreimages = this.decodePreimages(parsed.preimages);
+      const parentMap = this.buildParentMap(decodedPreimages);
+      const config = this.loadAndResolveConfig();
+      const diffsMap = this.buildDiffsMap(decodedDiff);
+      const balanceChanges = this.extractBalanceChanges(config, chainIdStr, decodedDiff);
 
-    const config = this.loadAndResolveConfig();
-
-    const diffsMap = this.buildDiffsMap(decodedDiff);
-    const diffsList = Array.from(diffsMap.values());
-
-    const balanceChanges = this.extractBalanceChanges(config, chainIdStr, decodedDiff);
-
-    const result: TaskConfig = {
-      cmd,
-      ledgerId: 0,
-      rpcUrl: rpcUrl,
-      expectedDomainAndMessageHashes: {
-        address: parsed.targetSafe,
-        domainHash: domainHash,
-        messageHash: messageHash,
-      },
-      stateOverrides: this.convertOverridesToJSON(
+      const result = this.buildTaskConfig({
+        cmd,
+        rpcUrl,
+        parsed,
+        domainHash,
+        messageHash,
         config,
         chainIdStr,
-        payload.stateOverrides,
-        parentMap
-      ),
-      stateChanges: this.convertDiffsToJSON(config, chainIdStr, diffsList, parentMap),
-      balanceChanges,
-    };
+        payload,
+        diffs: Array.from(diffsMap.values()),
+        balanceChanges,
+        parentMap,
+      });
 
-    const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;
-    console.log('✅ State-diff transformation completed');
-    return { result, output };
+      const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;
+      console.log('✅ State-diff transformation completed');
+      return { result, output };
+    } finally {
+      await this.deleteFile(stateDiffPath);
+    }
   }
 
   private runCommand(
@@ -186,26 +185,30 @@ export class StateDiffClient {
     return { command, args, env: envAssignments };
   }
 
-  private async readEncodedStateDiff(workdir: string): Promise<ParsedInput> {
-    const p = path.join(workdir, 'stateDiff.json');
-    if (!fs.existsSync(p)) {
-      throw new Error(`stateDiff.json not found at ${p}`);
-    }
-    const raw = fs.readFileSync(p, 'utf-8');
-    const parsed = JSON.parse(raw);
-    return parsed as ParsedInput;
+  private stateDiffFilePath(workdir: string): string {
+    return path.join(workdir, 'stateDiff.json');
   }
 
-  private deleteStateDiffFile(workdir: string) {
-    const p = path.join(workdir, 'stateDiff.json');
-    if (!fs.existsSync(p)) {
-      throw new Error(`stateDiff.json not found at ${p}`);
-    }
+  private async readEncodedStateDiff(filePath: string): Promise<ParsedInput> {
     try {
-      fs.unlinkSync(p);
-    } catch (err) {
-      const message = String(err);
-      throw new Error(`Failed to delete stateDiff.json at ${p}: ${message}`);
+      const raw = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(raw) as ParsedInput;
+    } catch (err: any) {
+      if (err?.code === 'ENOENT') {
+        throw new Error(`stateDiff.json not found at ${filePath}`);
+      }
+      throw err;
+    }
+  }
+
+  private async deleteFile(filePath: string): Promise<void> {
+    try {
+      await fs.unlink(filePath);
+    } catch (err: any) {
+      if (err?.code === 'ENOENT') {
+        return;
+      }
+      throw new Error(`Failed to delete stateDiff.json at ${filePath}: ${String(err)}`);
     }
   }
 
@@ -318,7 +321,12 @@ export class StateDiffClient {
     return arr;
   }
 
+  private static configCache: { contracts: Record<string, Record<string, ContractCfg>> } | null =
+    null;
+
   private loadAndResolveConfig(): { contracts: Record<string, Record<string, ContractCfg>> } {
+    if (StateDiffClient.configCache) return StateDiffClient.configCache;
+
     const parsed = contractsCfg as unknown as {
       contracts: Record<string, Record<string, RawContractCfg>>;
       storageLayouts: Record<string, Record<string, SlotCfg>>;
@@ -372,6 +380,7 @@ export class StateDiffClient {
       }
     }
 
+    StateDiffClient.configCache = out;
     return out;
   }
 
@@ -461,18 +470,16 @@ export class StateDiffClient {
       const name = contract?.name ?? '<<ContractName>>';
       const storageArray = Array.from(d.storageDiffs.values());
       storageArray.sort((a, b) => a.key.localeCompare(b.key));
-      const changes = storageArray
-        .filter(s => !equalHex(s.before, s.after))
-        .map(s => {
-          const slotCfg = this.getSlot(contract, s.key, parentMap);
-          return {
-            key: s.key,
-            before: this.n(s.before),
-            after: this.n(s.after),
-            description: slotCfg.summary,
-            allowDifference: slotCfg.allowDifference,
-          };
-        });
+      const changes = storageArray.map(s => {
+        const slotCfg = this.getSlot(contract, s.key, parentMap);
+        return {
+          key: s.key,
+          before: this.n(s.before),
+          after: this.n(s.after),
+          description: slotCfg.summary,
+          allowDifference: slotCfg.allowDifference,
+        };
+      });
       if (changes.length > 0) result.push({ name, address: d.address, changes });
     }
     return result;
@@ -554,15 +561,64 @@ export class StateDiffClient {
     if (!h.startsWith('0x')) return ('0x' + h) as Hex;
     return ('0x' + h.slice(2)) as Hex;
   }
-}
 
-function slotHex(h: string): Hex {
-  // Normalize to 0x + 64 hex chars
-  const v = (h || '').toLowerCase();
-  if (!v.startsWith('0x')) return ('0x' + v.padStart(64, '0')) as Hex;
-  const body = v.slice(2);
-  if (body.length === 64) return ('0x' + body) as Hex;
-  return ('0x' + body.padStart(64, '0')) as Hex;
+  private buildParentMap(decodedPreimages: readonly ParentPreimage[]): Map<Hex, Hex> {
+    const parentMap = new Map<Hex, Hex>();
+    for (const p of decodedPreimages) {
+      parentMap.set(normalize32(p.slot), normalize32(p.parent));
+    }
+    return parentMap;
+  }
+
+  private buildTaskConfig(params: {
+    cmd: string;
+    rpcUrl: string;
+    parsed: ParsedInput;
+    domainHash: Hex;
+    messageHash: Hex;
+    config: { contracts: Record<string, Record<string, ContractCfg>> };
+    chainIdStr: string;
+    payload: PayloadDecoded;
+    diffs: Array<{
+      address: string;
+      storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }>;
+    }>;
+    balanceChanges: BalanceChange[];
+    parentMap: Map<Hex, Hex>;
+  }): TaskConfig {
+    const {
+      cmd,
+      rpcUrl,
+      parsed,
+      domainHash,
+      messageHash,
+      config,
+      chainIdStr,
+      payload,
+      diffs,
+      balanceChanges,
+      parentMap,
+    } = params;
+
+    return {
+      cmd,
+      ledgerId: 0,
+      rpcUrl,
+      expectedDomainAndMessageHashes: {
+        address: parsed.targetSafe,
+        domainHash,
+        messageHash,
+      },
+      stateOverrides: this.convertOverridesToJSON(
+        config,
+        chainIdStr,
+        payload.stateOverrides,
+        parentMap
+      ),
+      stateChanges: this.convertDiffsToJSON(config, chainIdStr, diffs, parentMap),
+      balanceChanges,
+    };
+  }
 }
 
 function equalHex(a: string, b: string): boolean {
