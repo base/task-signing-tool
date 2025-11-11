@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { LedgerSigningResult } from '@/lib/ledger-signing';
 
 const CARD_CLASSES = 'bg-gray-50 border border-gray-200 rounded-xl p-6';
@@ -37,13 +37,13 @@ async function submitLedgerSignatureRequest(payload: {
   return response.json();
 }
 
-export const LedgerSigning: React.FC<LedgerSigningProps> = ({
+export function LedgerSigning({
   domainHash,
   messageHash,
   ledgerAccount,
   onSigningComplete,
   onCancel,
-}) => {
+}: LedgerSigningProps) {
   const [currentStep, setCurrentStep] = useState<LedgerSigningStep>('connect');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -261,4 +261,4 @@ export const LedgerSigning: React.FC<LedgerSigningProps> = ({
       </div>
     </div>
   );
-};
+}
