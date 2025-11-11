@@ -1,27 +1,23 @@
-import { getAddress, isAddress } from 'viem';
+import { getAddress } from 'viem';
 import { LedgerSigningResult } from './ledger-signing';
 
-export function toChecksumAddressSafe(address: string | null | undefined): string {
-  if (!address) return '';
+function toChecksum(address: string): string {
   try {
-    return isAddress(address) ? getAddress(address) : address;
+    return getAddress(address);
   } catch {
     return address;
   }
 }
 
-// Replace all 0x...40-hex address substrings with checksummed versions
-export function checksummizeAddressesInText(text: string | null | undefined): string {
-  if (!text) return '';
-  return text.replace(/0x[a-fA-F0-9]{40}\b/g, (m: string) => {
-    try {
-      return isAddress(m) ? getAddress(m) : m;
-    } catch {
-      return m;
-    }
-  });
+export function toChecksumAddressSafe(address: string | null | undefined): string {
+  return address ? toChecksum(address) : '';
 }
 
-export function toDisplaySignature(res: LedgerSigningResult): string {
-  return `Data: ${res.data}\nSigner: ${res.signer}\nSignature: ${res.signature}`;
+// Replace all 0x...40-hex address substrings with checksummed versions
+export function checksummizeAddressesInText(text: string | null | undefined): string {
+  return text ? text.replace(/0x[a-fA-F0-9]{40}\b/g, toChecksum) : '';
+}
+
+export function toDisplaySignature({ data, signer, signature }: LedgerSigningResult): string {
+  return `Data: ${data}\nSigner: ${signer}\nSignature: ${signature}`;
 }
