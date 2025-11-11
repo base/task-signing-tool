@@ -15,62 +15,60 @@ export interface DeploymentInfo {
   }>;
 }
 
-function formatUpgradeName(folderName: string): string {
-  // Convert folder name like "2025-06-04-upgrade-system-config" to "Upgrade System Config"
-  const parts = folderName.split('-');
-  const nameParts = parts.slice(3); // Skip date parts (2025-06-04)
+const DEFAULT_DESCRIPTION = 'Smart contract upgrade deployment';
+const MAX_STATUS_SEARCH_LINES = 20;
+const MAX_STATUS_FOLLOW_UP_LINES = 5;
 
-  return nameParts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+function formatUpgradeName(folderName: string): string {
+  const slug = folderName.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function cleanMarkdownBlock(block: string): string {
+  return block.replace(/[ \t]+$/gm, '').replace(/^\n+|\n+$/g, '');
 }
 
 function extractDescription(content: string): string {
   try {
-    // Normalize line endings to avoid CRLF-related mismatches
     const normalized = content.replace(/\r\n/g, '\n');
-
-    // Look for description after a "## Description" header (case-insensitive)
-    // Capture everything after the header until the next line that starts with "##" or EOF
     const descriptionMatch = normalized.match(/##\s*Description[^\n]*\n([\s\S]*?)(?=\n##\s+|$)/i);
     if (descriptionMatch) {
-      const block = descriptionMatch[1];
-      // Preserve paragraphs and blank lines; trim trailing spaces per line and strip leading/trailing blank lines
-      const cleaned = block.replace(/[ \t]+$/gm, '').replace(/^\n+|\n+$/g, '');
-      return cleaned;
+      return cleanMarkdownBlock(descriptionMatch[1]);
     }
 
-    // Fallback: capture from the first meaningful line until the next "##" header or EOF
     const lines = normalized.split('\n');
-    let startIndex = -1;
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue; // skip empty
-      if (line.startsWith('#')) continue; // skip headings
-      if (/^status\s*:/i.test(line)) continue; // skip status lines
-      startIndex = i;
-      break;
-    }
+    const paragraph: string[] = [];
 
-    if (startIndex !== -1) {
-      let endIndex = lines.length;
-      for (let j = startIndex + 1; j < lines.length; j++) {
-        if (/^[\t ]*##\s+/.test(lines[j])) {
-          endIndex = j;
-          break;
-        }
+    for (const rawLine of lines) {
+      const trimmed = rawLine.trim();
+      if (!trimmed) {
+        if (paragraph.length > 0) break;
+        continue;
       }
 
-      const descriptionBlock = lines.slice(startIndex, endIndex).join('\n');
-      const cleaned = descriptionBlock.replace(/[ \t]+$/gm, '').replace(/^\n+|\n+$/g, '');
-      if (cleaned) {
-        return cleaned;
-      }
+      if (trimmed.startsWith('#')) continue;
+      if (/^status\s*:/i.test(trimmed)) continue;
+
+      paragraph.push(rawLine.replace(/[ \t]+$/g, ''));
     }
 
-    return 'Smart contract upgrade deployment';
+    const fallback = cleanMarkdownBlock(paragraph.join('\n'));
+    return fallback || DEFAULT_DESCRIPTION;
   } catch (error) {
-    console.warn(error);
-    return 'Smart contract upgrade deployment';
+    console.warn('extractDescription fallback:', error);
+    return DEFAULT_DESCRIPTION;
   }
+}
+
+function normalizeUrl(rawUrl: string): string | undefined {
+  if (!rawUrl) return undefined;
+  const trimmed = rawUrl.trim();
+  if (!trimmed.startsWith('http')) return undefined;
+  return trimmed.replace(/[)\].,]+$/, '');
 }
 
 function parseExecutionStatus(content: string): {
@@ -78,173 +76,122 @@ function parseExecutionStatus(content: string): {
   executionLinks?: Array<{ url: string; label: string }>;
 } {
   try {
-    const lines = content.split('\n');
-
-    // Find the status line - limit search to first 20 lines
+    const lines = content.replace(/\r\n/g, '\n').split('\n');
     const statusLineIndex = lines
-      .slice(0, 20)
-      .findIndex(line => line.toLowerCase().includes('status:'));
-    if (statusLineIndex === -1) return {};
+      .slice(0, MAX_STATUS_SEARCH_LINES)
+      .findIndex(line => /status:/i.test(line));
+    if (statusLineIndex === -1) {
+      return {};
+    }
 
     const statusLine = lines[statusLineIndex];
-    const statusLower = statusLine.toLowerCase();
+    const normalizedStatus = statusLine.toUpperCase();
+    const isExecuted = normalizedStatus.includes(TaskStatus.Executed);
+    const isReady = normalizedStatus.includes(TaskStatus.ReadyToSign);
 
-    // Check if it's executed
-    if (!statusLower.includes(TaskStatus.Executed.toLowerCase())) {
-      if (statusLower.includes(TaskStatus.ReadyToSign.toLowerCase())) {
+    if (!isExecuted) {
+      if (isReady) {
         return { status: TaskStatus.ReadyToSign };
       }
       return { status: TaskStatus.Pending };
     }
 
     const executionLinks: Array<{ url: string; label: string }> = [];
+    const seenUrls = new Set<string>();
 
-    // Simple pattern matching - avoid complex regex
-    if (statusLine.includes('(http')) {
-      // Pattern 1: Status: EXECUTED (https://...)
-      const urlStart = statusLine.indexOf('(http');
-      const urlEnd = statusLine.indexOf(')', urlStart);
-      if (urlEnd > urlStart) {
-        const url = statusLine.substring(urlStart + 1, urlEnd);
-        executionLinks.push({ url, label: 'Transaction' });
-        return { status: TaskStatus.Executed, executionLinks };
+    const addLink = (label: string, maybeUrl: string | undefined) => {
+      const url = maybeUrl ? normalizeUrl(maybeUrl) : undefined;
+      if (!url || seenUrls.has(url)) return;
+      seenUrls.add(url);
+      executionLinks.push({ label: label || 'Transaction', url });
+    };
+
+    for (const match of statusLine.matchAll(/https?:\/\/[^\s)\]]+/g)) {
+      addLink('Transaction', match[0]);
+    }
+
+    for (
+      let i = statusLineIndex + 1;
+      i < lines.length && i <= statusLineIndex + MAX_STATUS_FOLLOW_UP_LINES;
+      i++
+    ) {
+      const rawLine = lines[i].trim();
+      if (!rawLine) break;
+      if (rawLine.startsWith('#')) break;
+
+      const labelledMatch = rawLine.match(/^([^:]+):\s*(https?:\/\/\S+)/i);
+      if (labelledMatch) {
+        addLink(labelledMatch[1].trim(), labelledMatch[2]);
+        continue;
+      }
+
+      const urlMatch = rawLine.match(/https?:\/\/\S+/);
+      if (urlMatch) {
+        addLink('Transaction', urlMatch[0]);
       }
     }
 
-    if (statusLine.includes(`[${TaskStatus.Executed}](http`)) {
-      // Pattern 2: Status: [EXECUTED](https://...)
-      const urlStart = statusLine.indexOf('](http') + 2;
-      const urlEnd = statusLine.indexOf(')', urlStart);
-      if (urlEnd > urlStart) {
-        const url = statusLine.substring(urlStart, urlEnd);
-        executionLinks.push({ url, label: 'Transaction' });
-        return { status: TaskStatus.Executed, executionLinks };
-      }
-    }
-
-    if (statusLine.includes(`${TaskStatus.Executed} http`)) {
-      // Pattern 3: Status: EXECUTED https://...
-      const urlStart = statusLine.indexOf('http');
-      const url = statusLine.substring(urlStart).split(' ')[0];
-      if (url.startsWith('http')) {
-        executionLinks.push({ url, label: 'Transaction' });
-        return { status: TaskStatus.Executed, executionLinks };
-      }
-    }
-
-    // Pattern 4: Multi-line format - only check next 5 lines
-    if (statusLower.includes(TaskStatus.Executed.toLowerCase()) && !statusLine.includes('http')) {
-      for (let i = statusLineIndex + 1; i < Math.min(statusLineIndex + 6, lines.length); i++) {
-        const line = lines[i].trim();
-        if (!line || line.startsWith('#')) break;
-
-        if (line.includes('http') && line.includes(':')) {
-          const colonIndex = line.indexOf(':');
-          const label = line.substring(0, colonIndex).trim();
-          const urlPart = line.substring(colonIndex + 1).trim();
-          const url = urlPart.split(' ')[0];
-          if (url.startsWith('http')) {
-            executionLinks.push({ url, label });
-          }
-        }
-      }
-
-      if (executionLinks.length > 0) {
-        return { status: TaskStatus.Executed, executionLinks };
-      }
-    }
-
-    // If we detected EXECUTED but couldn't parse links, still mark as executed
-    return { status: TaskStatus.Executed };
+    return executionLinks.length > 0
+      ? { status: TaskStatus.Executed, executionLinks }
+      : { status: TaskStatus.Executed };
   } catch (error) {
-    console.error('Error in parseExecutionStatus:', error);
+    console.error('parseExecutionStatus error:', error);
     return {};
   }
 }
 
+function deriveDateFromFolder(folderName: string): string {
+  const match = folderName.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : folderName.substring(0, 10);
+}
+
 export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
   const contractDeploymentsPath = path.join(process.cwd(), '..');
-
-  // Handle test network specially - load from validation-tool-interface/test-upgrade instead of root/test
   const networkPath = path.join(contractDeploymentsPath, network);
 
-  try {
-    // Check if the path exists
-    if (!fs.existsSync(networkPath)) {
-      console.error(`Network path does not exist: ${networkPath}`);
-      return [];
-    }
+  if (!fs.existsSync(networkPath)) {
+    console.error(`Network path does not exist: ${networkPath}`);
+    return [];
+  }
 
+  try {
     const folders = fs
       .readdirSync(networkPath, { withFileTypes: true })
       .filter(dirent => dirent.isDirectory())
       .map(dirent => dirent.name)
-      .filter(name => name.match(/^\d{4}-\d{2}-\d{2}-/)); // Only date-prefixed folders
+      .filter(name => /^\d{4}-\d{2}-\d{2}-/.test(name));
 
-    return folders
-      .map(folderName => {
-        try {
-          const readmePath = path.join(networkPath, folderName, 'README.md');
-          const name = formatUpgradeName(folderName);
+    const upgrades = folders.map(folderName => {
+      const date = deriveDateFromFolder(folderName);
+      const baseInfo: DeploymentInfo = {
+        id: folderName,
+        name: formatUpgradeName(folderName),
+        description: '',
+        date,
+        network,
+      };
 
-          // Extract date from folder name (e.g., "2025-06-04-upgrade-system-config" -> "2025-06-04")
-          const dateMatch = folderName.match(/^(\d{4}-\d{2}-\d{2})/);
-          const date = dateMatch ? dateMatch[1] : folderName.substring(0, 10);
-          let description = '';
+      const readmePath = path.join(networkPath, folderName, 'README.md');
+      if (!fs.existsSync(readmePath)) {
+        return baseInfo;
+      }
 
-          if (!fs.existsSync(readmePath)) {
-            return {
-              id: folderName,
-              name,
-              description,
-              date,
-              network,
-              status: undefined,
-              executionLinks: undefined,
-            };
-          }
+      try {
+        const content = fs.readFileSync(readmePath, 'utf-8');
+        const { status, executionLinks } = parseExecutionStatus(content);
+        return {
+          ...baseInfo,
+          description: extractDescription(content),
+          status,
+          executionLinks,
+        };
+      } catch (parseError) {
+        console.error(`Error parsing ${folderName}:`, parseError);
+        return { ...baseInfo, description: DEFAULT_DESCRIPTION };
+      }
+    });
 
-          // Add error handling and timeout for parsing
-          let status, executionLinks;
-          try {
-            const content = fs.readFileSync(readmePath, 'utf-8');
-            const parseResult = parseExecutionStatus(content);
-            description = extractDescription(content);
-            status = parseResult.status;
-            executionLinks = parseResult.executionLinks;
-          } catch (parseError) {
-            console.error(`Error parsing ${folderName}:`, parseError);
-            status = undefined;
-            executionLinks = undefined;
-          }
-
-          return {
-            id: folderName,
-            name,
-            description,
-            date,
-            network,
-            status,
-            executionLinks,
-          };
-        } catch (itemError) {
-          console.error(`Error processing folder ${folderName}:`, itemError);
-          // Return a basic item if there's an error
-          const dateMatch = folderName.match(/^(\d{4}-\d{2}-\d{2})/);
-          const date = dateMatch ? dateMatch[1] : folderName.substring(0, 10);
-
-          return {
-            id: folderName,
-            name: formatUpgradeName(folderName),
-            description: 'Smart contract upgrade deployment',
-            date,
-            network,
-            status: undefined,
-            executionLinks: undefined,
-          };
-        }
-      })
-      .sort((a, b) => b.id.localeCompare(a.id)); // Sort by date (newest first)
+    return upgrades.sort((a, b) => b.id.localeCompare(a.id));
   } catch (error) {
     console.error(`Error reading deployment folders for ${network}:`, error);
     return [];
