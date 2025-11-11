@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { ConfigParser } from './parser';
+import { getValidationSummary, parseFromString } from './parser';
 import { StateDiffClient } from './state-diff';
 import {
   BalanceChange,
@@ -41,14 +41,15 @@ export class ValidationService {
 
     try {
       const configContent = fs.readFileSync(configPath, 'utf-8');
-      const parsedConfig = ConfigParser.parseFromString(configContent);
+      const parsedConfig = parseFromString(configContent);
 
       if (!parsedConfig.result.success) {
-        console.error(
-          '❌ Failed to parse config:',
-          ConfigParser.getValidationSummary(parsedConfig.result)
-        );
+        console.error('❌ Failed to parse config:', getValidationSummary(parsedConfig.result));
         throw new Error('ValidationService::getConfigData: Failed to parse config file');
+      }
+
+      if (!('config' in parsedConfig)) {
+        throw new Error('ValidationService::getConfigData: Parsed config missing config data');
       }
 
       console.log(`✅ Loaded config data from ${configFileName}`);
@@ -123,7 +124,11 @@ export class ValidationService {
       const stateDiffResult = await this.stateDiffClient.simulate(cfg.rpcUrl, forgeCmd, scriptPath);
 
       console.log(
-        `✅ State-diff simulation completed: ${stateDiffResult.result.stateOverrides.length} state overrides, ${stateDiffResult.result.stateChanges.length} state changes, ${stateDiffResult.result.balanceChanges?.length ?? 0} balance changes found`
+        `✅ State-diff simulation completed: ${
+          stateDiffResult.result.stateOverrides.length
+        } state overrides, ${stateDiffResult.result.stateChanges.length} state changes, ${
+          stateDiffResult.result.balanceChanges?.length ?? 0
+        } balance changes found`
       );
 
       return {
