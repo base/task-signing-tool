@@ -1,4 +1,4 @@
-import { ValidationService } from '@/lib/validation-service';
+import { validateUpgrade } from '@/lib/validation-service';
 import { NextRequest, NextResponse } from 'next/server';
 import { NetworkType } from '@/lib/types';
 
@@ -36,9 +36,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const validationService = new ValidationService();
-
-    const validationResult = await validationService.validateUpgrade({
+    const validationResult = await validateUpgrade({
       upgradeId: trimmedUpgradeId,
       network: normalizedNetwork as NetworkType,
       taskConfigFileName: trimmedUserType,
