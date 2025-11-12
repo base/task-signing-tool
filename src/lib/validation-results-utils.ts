@@ -68,17 +68,36 @@ export interface StepCounts {
   balance: number;
 }
 
-const SIGNING_LABEL = 'Domain/Message Hash';
-const OVERRIDE_LABEL = 'State Overrides';
-const CHANGE_LABEL = 'State Changes';
-const BALANCE_LABEL = 'Balance Changes';
+const STEP_DEFINITIONS = [
+  { kind: 'signing', label: 'Domain/Message Hash', itemsKey: 'signing', order: 1 },
+  { kind: 'override', label: 'State Overrides', itemsKey: 'overrides', order: 2 },
+  { kind: 'change', label: 'State Changes', itemsKey: 'changes', order: 3 },
+  { kind: 'balance', label: 'Balance Changes', itemsKey: 'balance', order: 4 },
+] as const satisfies ReadonlyArray<{
+  kind: ValidationNavEntry['kind'];
+  label: string;
+  itemsKey: keyof ValidationItemsByStep;
+  order: number;
+}>;
 
-export const STEP_LABELS: Record<ValidationNavEntry['kind'], string> = {
-  signing: SIGNING_LABEL,
-  override: OVERRIDE_LABEL,
-  change: CHANGE_LABEL,
-  balance: BALANCE_LABEL,
-};
+type StepDefinition = (typeof STEP_DEFINITIONS)[number];
+type StepKind = StepDefinition['kind'];
+
+const STEP_DEFINITION_MAP: Record<StepKind, StepDefinition> = STEP_DEFINITIONS.reduce(
+  (acc, definition) => {
+    acc[definition.kind] = definition;
+    return acc;
+  },
+  {} as Record<StepKind, StepDefinition>
+);
+
+export const STEP_LABELS: Record<ValidationNavEntry['kind'], string> = STEP_DEFINITIONS.reduce(
+  (acc, definition) => {
+    acc[definition.kind] = definition.label;
+    return acc;
+  },
+  {} as Record<ValidationNavEntry['kind'], string>
+);
 
 export const formatBalanceValue = (hex: string): string => {
   try {
@@ -137,8 +156,6 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
     diffs.push({
       type: 'unchanged',
       value: expected.substring(0, prefixLength),
-      startIndex: 0,
-      endIndex: prefixLength,
     });
   }
 
@@ -147,8 +164,6 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
     diffs.push({
       type: 'removed',
       value: removedPart,
-      startIndex: prefixLength,
-      endIndex: expected.length - suffixLength,
     });
   }
 
@@ -157,8 +172,6 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
     diffs.push({
       type: 'added',
       value: addedPart,
-      startIndex: prefixLength,
-      endIndex: actual.length - suffixLength,
     });
   }
 
@@ -166,8 +179,6 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
     diffs.push({
       type: 'unchanged',
       value: expected.substring(expected.length - suffixLength),
-      startIndex: expected.length - suffixLength,
-      endIndex: expected.length,
     });
   }
 
@@ -218,22 +229,17 @@ const buildOverrideComparisons = (
 ): OverrideComparison[] => {
   if (!validationResult) return [];
 
-  const overrides: OverrideComparison[] = [];
   const expectedOverrides = validationResult.expected.stateOverrides ?? [];
   const actualOverrides = validationResult.actual.stateOverrides ?? [];
 
-  expectedOverrides.forEach((stateOverride, soIndex) => {
-    stateOverride.overrides.forEach((override, oIndex) => {
-      overrides.push({
-        contractName: stateOverride.name,
-        contractAddress: stateOverride.address,
-        expected: override,
-        actual: actualOverrides[soIndex]?.overrides?.[oIndex],
-      });
-    });
-  });
-
-  return overrides;
+  return expectedOverrides.flatMap((stateOverride, soIndex) =>
+    stateOverride.overrides.map((override, oIndex) => ({
+      contractName: stateOverride.name,
+      contractAddress: stateOverride.address,
+      expected: override,
+      actual: actualOverrides[soIndex]?.overrides?.[oIndex],
+    }))
+  );
 };
 
 const buildChangeComparisons = (
@@ -241,22 +247,17 @@ const buildChangeComparisons = (
 ): StateChangeComparison[] => {
   if (!validationResult) return [];
 
-  const changes: StateChangeComparison[] = [];
   const expectedChanges = validationResult.expected.stateChanges ?? [];
   const actualChanges = validationResult.actual.stateChanges ?? [];
 
-  expectedChanges.forEach((stateChange, scIndex) => {
-    stateChange.changes.forEach((change, cIndex) => {
-      changes.push({
-        contractName: stateChange.name,
-        contractAddress: stateChange.address,
-        expected: change,
-        actual: actualChanges[scIndex]?.changes?.[cIndex],
-      });
-    });
-  });
-
-  return changes;
+  return expectedChanges.flatMap((stateChange, scIndex) =>
+    stateChange.changes.map((change, cIndex) => ({
+      contractName: stateChange.name,
+      contractAddress: stateChange.address,
+      expected: change,
+      actual: actualChanges[scIndex]?.changes?.[cIndex],
+    }))
+  );
 };
 
 const buildBalanceComparisons = (
@@ -264,20 +265,15 @@ const buildBalanceComparisons = (
 ): BalanceChangeComparison[] => {
   if (!validationResult) return [];
 
-  const balances: BalanceChangeComparison[] = [];
   const expectedBalances = validationResult.expected.balanceChanges ?? [];
   const actualBalances = validationResult.actual.balanceChanges ?? [];
 
-  expectedBalances.forEach((balanceChange, bcIndex) => {
-    balances.push({
-      contractName: balanceChange.name,
-      contractAddress: balanceChange.address,
-      expected: balanceChange,
-      actual: actualBalances[bcIndex],
-    });
-  });
-
-  return balances;
+  return expectedBalances.map((balanceChange, bcIndex) => ({
+    contractName: balanceChange.name,
+    contractAddress: balanceChange.address,
+    expected: balanceChange,
+    actual: actualBalances[bcIndex],
+  }));
 };
 
 export const buildValidationItems = (
@@ -290,20 +286,20 @@ export const buildValidationItems = (
 });
 
 export const buildNavList = (items: ValidationItemsByStep): ValidationNavEntry[] => {
-  const nav: ValidationNavEntry[] = [];
-  items.signing.forEach((_, index) => nav.push({ kind: 'signing', index }));
-  items.overrides.forEach((_, index) => nav.push({ kind: 'override', index }));
-  items.changes.forEach((_, index) => nav.push({ kind: 'change', index }));
-  items.balance.forEach((_, index) => nav.push({ kind: 'balance', index }));
-  return nav;
+  return STEP_DEFINITIONS.flatMap(definition => {
+    const stepItems = items[definition.itemsKey];
+    return stepItems.map((_, index) => ({ kind: definition.kind, index }));
+  });
 };
 
-export const getStepCounts = (items: ValidationItemsByStep): StepCounts => ({
-  signing: items.signing.length,
-  overrides: items.overrides.length,
-  changes: items.changes.length,
-  balance: items.balance.length,
-});
+export const getStepCounts = (items: ValidationItemsByStep): StepCounts =>
+  STEP_DEFINITIONS.reduce(
+    (acc, definition) => {
+      acc[definition.itemsKey] = items[definition.itemsKey].length;
+      return acc;
+    },
+    { signing: 0, overrides: 0, changes: 0, balance: 0 } satisfies StepCounts
+  );
 
 const matchesOverride = (comparison: OverrideComparison) =>
   comparison.actual &&
@@ -322,49 +318,46 @@ const matchesBalance = (comparison: BalanceChangeComparison) =>
   comparison.expected.before === comparison.actual.before &&
   comparison.expected.after === comparison.actual.after;
 
-const isExpectedDifference = (description?: string | null) =>
-  !!description && description.toLowerCase().includes('difference is expected');
-
 export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
-  for (const signing of items.signing) {
-    if (!signing.actual) return true;
-    if (signing.expected.dataToSign !== signing.actual.dataToSign) return true;
-  }
+  const signingMismatch = items.signing.some(
+    signing => !signing.actual || signing.expected.dataToSign !== signing.actual.dataToSign
+  );
+  if (signingMismatch) return true;
 
-  for (const override of items.overrides) {
-    if (!override.actual) return true;
-    if (!matchesOverride(override) && !isExpectedDifference(override.expected.description)) {
-      return true;
-    }
-  }
+  const overrideMismatch = items.overrides.some(
+    override => !override.actual || !matchesOverride(override)
+  );
+  if (overrideMismatch) return true;
 
-  for (const change of items.changes) {
-    if (!change.actual) return true;
-    if (
-      !matchesChange(change) &&
-      !change.expected.allowDifference &&
-      !isExpectedDifference(change.expected.description)
-    ) {
-      return true;
-    }
-  }
+  const changeMismatch = items.changes.some(
+    change => !change.actual || (!matchesChange(change) && !change.expected.allowDifference)
+  );
+  if (changeMismatch) return true;
 
-  for (const balance of items.balance) {
-    if (!balance.actual) return true;
-    if (
-      !matchesBalance(balance) &&
-      !balance.expected.allowDifference &&
-      !isExpectedDifference(balance.expected.description)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+  const balanceMismatch = items.balance.some(
+    balance => !balance.actual || (!matchesBalance(balance) && !balance.expected.allowDifference)
+  );
+  return balanceMismatch;
 };
 
 const defaultContractAddress = (address?: string) =>
   address && address.trim().length > 0 ? address : 'Unknown Address';
+
+const STATUS_STYLES: Record<ValidationMatchStatus['status'], { bgClass: string; icon: string }> = {
+  match: { bgClass: 'bg-blue-700', icon: '✅' },
+  mismatch: { bgClass: 'bg-red-600', icon: '❌' },
+  missing: { bgClass: 'bg-blue-500', icon: '❌' },
+  'expected-difference': { bgClass: 'bg-emerald-600', icon: '✅' },
+};
+
+const createMatchStatus = (
+  status: ValidationMatchStatus['status'],
+  text: string
+): ValidationMatchStatus => ({
+  status,
+  text,
+  ...STATUS_STYLES[status],
+});
 
 const assertNever = (value: never): never => {
   throw new Error(`Unhandled entry kind: ${(value as ValidationNavEntry).kind}`);
@@ -380,26 +373,11 @@ export const evaluateValidationEntry = (
       const expectedData = item.expected.dataToSign;
       const actualData = item.actual?.dataToSign ?? NOT_FOUND_TEXT;
       const match = item.actual ? expectedData === item.actual.dataToSign : false;
-      const matchStatus: ValidationMatchStatus = match
-        ? {
-            status: 'match',
-            bgClass: 'bg-blue-700',
-            icon: '✅',
-            text: 'Match - EIP-712 data matches expected',
-          }
-        : item.actual
-        ? {
-            status: 'mismatch',
-            bgClass: 'bg-red-600',
-            icon: '❌',
-            text: 'Mismatch - EIP-712 data does not match expected',
-          }
-        : {
-            status: 'missing',
-            bgClass: 'bg-blue-500',
-            icon: '❌',
-            text: 'Missing - Not found in actual results',
-          };
+      const matchStatus: ValidationMatchStatus = item.actual
+        ? match
+          ? createMatchStatus('match', 'Match - EIP-712 data matches expected')
+          : createMatchStatus('mismatch', 'Mismatch - EIP-712 data does not match expected')
+        : createMatchStatus('missing', 'Missing - Not found in actual results');
 
       const description =
         item.expected.description && item.expected.description.trim().length > 0
@@ -414,7 +392,7 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: SIGNING_LABEL,
+        stepLabel: STEP_DEFINITION_MAP.signing.label,
         contractName: item.contractName,
         cards: {
           expected: {
@@ -438,38 +416,11 @@ export const evaluateValidationEntry = (
       const actualKey = item.actual?.key ?? NOT_FOUND_TEXT;
       const actualValue = item.actual?.value ?? NOT_FOUND_TEXT;
       const match = matchesOverride(item);
-      const expectedDifference = isExpectedDifference(item.expected.description);
-
-      let matchStatus: ValidationMatchStatus;
-      if (match) {
-        matchStatus = {
-          status: 'match',
-          bgClass: 'bg-blue-700',
-          icon: '✅',
-          text: 'Match - This override is correct',
-        };
-      } else if (expectedDifference) {
-        matchStatus = {
-          status: 'expected-difference',
-          bgClass: 'bg-emerald-600',
-          icon: '✅',
-          text: 'Expected Difference - This mismatch is acceptable and expected',
-        };
-      } else if (item.actual) {
-        matchStatus = {
-          status: 'mismatch',
-          bgClass: 'bg-red-600',
-          icon: '❌',
-          text: 'Mismatch - Override values do not match expected',
-        };
-      } else {
-        matchStatus = {
-          status: 'missing',
-          bgClass: 'bg-blue-500',
-          icon: '❌',
-          text: 'Missing - Not found in actual results',
-        };
-      }
+      const matchStatus: ValidationMatchStatus = item.actual
+        ? match
+          ? createMatchStatus('match', 'Match - This override is correct')
+          : createMatchStatus('mismatch', 'Mismatch - Override values do not match expected')
+        : createMatchStatus('missing', 'Missing - Not found in actual results');
 
       const description =
         item.expected.description && item.expected.description.trim().length > 0
@@ -484,7 +435,7 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: OVERRIDE_LABEL,
+        stepLabel: STEP_DEFINITION_MAP.override.label,
         contractName: item.contractName,
         cards: {
           expected: {
@@ -510,38 +461,23 @@ export const evaluateValidationEntry = (
       const actualBefore = item.actual?.before ?? NOT_FOUND_TEXT;
       const actualAfter = item.actual?.after ?? NOT_FOUND_TEXT;
       const match = matchesChange(item);
-      const expectedDifference =
-        item.expected.allowDifference || isExpectedDifference(item.expected.description);
+      const expectedDifference = item.expected.allowDifference;
 
       let matchStatus: ValidationMatchStatus;
       if (match) {
-        matchStatus = {
-          status: 'match',
-          bgClass: 'bg-blue-700',
-          icon: '✅',
-          text: 'Match - This change is correct',
-        };
+        matchStatus = createMatchStatus('match', 'Match - This change is correct');
       } else if (expectedDifference) {
-        matchStatus = {
-          status: 'expected-difference',
-          bgClass: 'bg-emerald-600',
-          icon: '✅',
-          text: 'Expected Difference - This mismatch is acceptable and expected',
-        };
+        matchStatus = createMatchStatus(
+          'expected-difference',
+          'Expected Difference - This mismatch is acceptable and expected'
+        );
       } else if (item.actual) {
-        matchStatus = {
-          status: 'mismatch',
-          bgClass: 'bg-red-600',
-          icon: '❌',
-          text: 'Mismatch - Change values do not match expected',
-        };
+        matchStatus = createMatchStatus(
+          'mismatch',
+          'Mismatch - Change values do not match expected'
+        );
       } else {
-        matchStatus = {
-          status: 'missing',
-          bgClass: 'bg-blue-500',
-          icon: '❌',
-          text: 'Missing - Not found in actual results',
-        };
+        matchStatus = createMatchStatus('missing', 'Missing - Not found in actual results');
       }
 
       const description =
@@ -557,7 +493,7 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: CHANGE_LABEL,
+        stepLabel: STEP_DEFINITION_MAP.change.label,
         contractName: item.contractName,
         cards: {
           expected: {
@@ -584,41 +520,26 @@ export const evaluateValidationEntry = (
       const item = items.balance[entry.index]!;
       const actualField = item.actual?.field ?? NOT_FOUND_TEXT;
       const match = matchesBalance(item);
-      const expectedDifference =
-        item.expected.allowDifference || isExpectedDifference(item.expected.description);
+      const expectedDifference = item.expected.allowDifference;
 
       const actualBefore = item.actual ? formatBalanceValue(item.actual.before) : NOT_FOUND_TEXT;
       const actualAfter = item.actual ? formatBalanceValue(item.actual.after) : NOT_FOUND_TEXT;
 
       let matchStatus: ValidationMatchStatus;
       if (match) {
-        matchStatus = {
-          status: 'match',
-          bgClass: 'bg-blue-700',
-          icon: '✅',
-          text: 'Match - Balance change matches expected',
-        };
+        matchStatus = createMatchStatus('match', 'Match - Balance change matches expected');
       } else if (expectedDifference) {
-        matchStatus = {
-          status: 'expected-difference',
-          bgClass: 'bg-emerald-600',
-          icon: '✅',
-          text: 'Expected Difference - This mismatch is acceptable and expected',
-        };
+        matchStatus = createMatchStatus(
+          'expected-difference',
+          'Expected Difference - This mismatch is acceptable and expected'
+        );
       } else if (item.actual) {
-        matchStatus = {
-          status: 'mismatch',
-          bgClass: 'bg-red-600',
-          icon: '❌',
-          text: 'Mismatch - Balance change does not match expected',
-        };
+        matchStatus = createMatchStatus(
+          'mismatch',
+          'Mismatch - Balance change does not match expected'
+        );
       } else {
-        matchStatus = {
-          status: 'missing',
-          bgClass: 'bg-blue-500',
-          icon: '❌',
-          text: 'Missing - Not found in actual results',
-        };
+        matchStatus = createMatchStatus('missing', 'Missing - Not found in actual results');
       }
 
       const expectedBefore = formatBalanceValue(item.expected.before);
@@ -651,7 +572,7 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: BALANCE_LABEL,
+        stepLabel: STEP_DEFINITION_MAP.balance.label,
         contractName: item.contractName,
         cards: {
           expected: {
@@ -687,16 +608,6 @@ export interface StepInfo {
   currentStepIndex: number;
 }
 
-const STEP_LOOKUP: Record<
-  ValidationNavEntry['kind'],
-  { order: number; countKey: keyof StepCounts }
-> = {
-  signing: { order: 1, countKey: 'signing' },
-  override: { order: 2, countKey: 'overrides' },
-  change: { order: 3, countKey: 'changes' },
-  balance: { order: 4, countKey: 'balance' },
-};
-
 export const getStepInfo = (
   entry: ValidationNavEntry | undefined,
   counts: StepCounts
@@ -709,10 +620,10 @@ export const getStepInfo = (
     };
   }
 
-  const { order, countKey } = STEP_LOOKUP[entry.kind];
+  const definition = STEP_DEFINITION_MAP[entry.kind];
   return {
-    currentStep: order,
-    currentStepItems: counts[countKey],
+    currentStep: definition.order,
+    currentStepItems: counts[definition.itemsKey],
     currentStepIndex: entry.index + 1,
   };
 };
@@ -723,16 +634,8 @@ export const getContractNameForEntry = (
 ): string => {
   if (!entry) return 'Unknown Contract';
 
-  switch (entry.kind) {
-    case 'signing':
-      return items.signing[entry.index]?.contractName ?? 'Unknown Contract';
-    case 'override':
-      return items.overrides[entry.index]?.contractName ?? 'Unknown Contract';
-    case 'change':
-      return items.changes[entry.index]?.contractName ?? 'Unknown Contract';
-    case 'balance':
-      return items.balance[entry.index]?.contractName ?? 'Unknown Contract';
-    default:
-      return 'Unknown Contract';
-  }
+  const definition = STEP_DEFINITION_MAP[entry.kind];
+  const stepItems = items[definition.itemsKey];
+  const item = stepItems[entry.index];
+  return item?.contractName ?? 'Unknown Contract';
 };
