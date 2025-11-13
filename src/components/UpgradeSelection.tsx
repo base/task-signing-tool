@@ -93,8 +93,8 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-10 text-center">
-        <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 shadow-lg" />
-        <p className="mt-4 text-base font-medium text-gray-600">Loading upgrades...</p>
+        <div className="inline-block h-10 w-10 animate-spin rounded-full border-3 border-gray-300 border-t-blue-600" />
+        <p className="mt-4 text-sm font-medium text-gray-600">Loading tasks...</p>
       </div>
     );
   }
@@ -102,14 +102,14 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-10 text-center">
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 p-4">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="text-sm font-medium text-red-700">{error}</p>
         </div>
         <button
           type="button"
           onClick={fetchUpgrades}
           disabled={loading}
-          className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-70"
+          className="btn-primary"
         >
           Retry
         </button>
@@ -126,12 +126,12 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   }
 
   return (
-    <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
+    <div>
+      <h2 className="mb-6 text-center text-2xl font-semibold text-gray-900">
         Select Task
       </h2>
 
-      <div className="mb-8 flex max-h-[400px] flex-col gap-5 overflow-y-auto pr-2 scrollbar-hide">
+      <div className="flex max-h-[500px] flex-col gap-3 overflow-y-auto scrollbar-thin">
         {upgradeOptions.map(option => {
           const isSelected = selectedWallet === option.id && selectedNetwork === option.network;
           const isExpanded = !!expandedCards[option.id];
@@ -150,29 +150,29 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
               }}
               role="button"
               tabIndex={0}
-              className={`upgrade-card group relative w-full cursor-pointer rounded-3xl p-8 text-left transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
+              className={`upgrade-card relative w-full cursor-pointer rounded-xl p-6 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                 isSelected
-                  ? 'border-2 border-transparent bg-gradient-to-br from-purple-600 via-pink-600 to-amber-500 text-white shadow-[0_20px_50px_rgba(139,92,246,0.4)] scale-[1.02] ring-2 ring-purple-300/50'
-                  : 'border border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
+                  ? 'border-2 border-blue-600 bg-blue-600 text-white shadow-md'
+                  : 'border border-gray-300 bg-white text-gray-900 shadow-sm hover:border-gray-400 hover:shadow-md'
               }`}
               data-selected={isSelected ? 'true' : 'false'}
             >
-              <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="mb-3 flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="mb-2 text-2xl font-bold leading-tight">{option.name}</div>
-                  <div className="mb-1 flex items-center gap-3">
+                  <div className="mb-2 text-lg font-semibold">{option.name}</div>
+                  <div className="flex items-center gap-2">
                     <div
-                      className={`text-sm font-medium ${
-                        isSelected ? 'text-white/90' : 'text-gray-600'
+                      className={`text-xs font-medium ${
+                        isSelected ? 'text-white/90' : 'text-gray-500'
                       }`}
                     >
                       {option.date}
                     </div>
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+                      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
                         isSelected
-                          ? 'bg-white/25 text-white backdrop-blur-sm'
-                          : 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700'
                       }`}
                     >
                       {option.network.charAt(0).toUpperCase() + option.network.slice(1)}
@@ -180,12 +180,31 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                   </div>
                 </div>
 
-                <StatusBadge status={option.status} executionLinks={option.executionLinks} />
+                <div className="flex gap-2">
+                  <StatusBadge status={option.status} executionLinks={option.executionLinks} />
+                  {isSelected && (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-600">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div
-                className={`relative text-base leading-relaxed ${
-                  isSelected ? 'text-white/95' : 'text-gray-600'
+                className={`relative text-sm leading-relaxed ${
+                  isSelected ? 'text-white/95' : 'text-gray-700'
                 }`}
               >
                 <div className={`markdown-content ${collapsed ? 'collapsed line-clamp-5' : ''}`}>
@@ -210,10 +229,10 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
 
                 {collapsed && (
                   <div
-                    className={`pointer-events-none absolute inset-x-0 bottom-0 h-9 ${
+                    className={`pointer-events-none absolute inset-x-0 bottom-0 h-8 ${
                       isSelected
-                        ? 'bg-gradient-to-b from-transparent to-white/20'
-                        : 'bg-gradient-to-b from-transparent to-gray-100'
+                        ? 'bg-gradient-to-b from-transparent to-blue-600'
+                        : 'bg-gradient-to-b from-transparent to-white'
                     }`}
                   />
                 )}
@@ -226,23 +245,29 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                     e.stopPropagation();
                     setExpandedCards(prev => ({ ...prev, [option.id]: !isExpanded }));
                   }}
-                  className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 ${
+                  className={`mt-2 inline-flex items-center gap-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 ${
                     isSelected
-                      ? 'border-white/60 bg-white/20 text-white hover:bg-white/30 focus-visible:ring-white/80'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 focus-visible:ring-indigo-500'
+                      ? 'text-white hover:text-white/80 focus-visible:ring-white'
+                      : 'text-blue-600 hover:text-blue-700 focus-visible:ring-blue-500'
                   }`}
                   aria-expanded={isExpanded}
                   aria-label={isExpanded ? 'Show less description' : 'Show full description'}
                 >
                   {isExpanded ? 'Show less' : 'Show more'}
-                  <span className="text-sm">{isExpanded ? '▲' : '▼'}</span>
+                  <svg
+                    className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </button>
-              )}
-
-              {isSelected && (
-                <div className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-lg font-bold shadow-lg ring-2 ring-white/50">
-                  ✓
-                </div>
               )}
             </div>
           );

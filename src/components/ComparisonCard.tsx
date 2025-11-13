@@ -64,20 +64,20 @@ const ValueSection = ({ label, value, diffs, toneClasses, className }: ValueSect
 
 const variants = {
   expected: {
-    container: 'bg-blue-50 border-blue-300',
-    header: 'text-blue-700',
-    icon: '✅',
+    container: 'bg-green-50 border-green-300',
+    header: 'text-green-900',
+    icon: '✓',
     title: 'Expected',
-    contract: 'bg-blue-100',
-    border: 'border-blue-300',
+    contract: 'bg-white border-green-200',
+    border: 'border-green-200',
   },
   actual: {
-    container: 'bg-sky-50 border-sky-300',
-    header: 'text-sky-700',
-    icon: '🔍',
+    container: 'bg-blue-50 border-blue-300',
+    header: 'text-blue-900',
+    icon: '⟳',
     title: 'Actual',
-    contract: 'bg-sky-100',
-    border: 'border-sky-300',
+    contract: 'bg-white border-blue-200',
+    border: 'border-blue-200',
   },
 } as const;
 
@@ -94,25 +94,25 @@ export function ComparisonCard({
 }: ComparisonCardProps) {
   const variant = variants[type];
   return (
-    <div className={`rounded-2xl border-2 p-6 ${variant.container}`}>
-      <h3 className={`mb-4 flex items-center gap-2 text-lg font-bold ${variant.header}`}>
+    <div className={`rounded-lg border p-5 ${variant.container}`}>
+      <h3 className={`mb-4 flex items-center gap-2 text-base font-semibold ${variant.header}`}>
         <span>{variant.icon}</span> {variant.title}
       </h3>
 
-      <div className={`mb-4 rounded-xl p-4 ${variant.contract}`}>
-        <h4 className="mb-2 font-semibold text-gray-800">{contractName}</h4>
-        <p className="m-0 break-all font-mono text-xs text-gray-500">
+      <div className={`mb-4 rounded-lg border p-3 ${variant.contract}`}>
+        <h4 className="mb-1 text-sm font-medium text-gray-900">{contractName}</h4>
+        <p className="m-0 break-all font-mono text-xs text-gray-600">
           {toChecksumAddressSafe(contractAddress)}
         </p>
       </div>
 
-      <div className={`rounded-xl border bg-white p-4 ${variant.border}`}>
+      <div className={`rounded-lg border bg-white p-3 ${variant.border}`}>
         <ValueSection
           label="Storage Key"
           value={storageKey}
           diffs={storageKeyDiffs}
           toneClasses="bg-gray-50 text-gray-800"
-          className="mb-4"
+          className="mb-3"
         />
 
         {beforeValue && (
@@ -120,8 +120,8 @@ export function ComparisonCard({
             label="Before"
             value={beforeValue}
             diffs={beforeValueDiffs}
-            toneClasses="bg-amber-100 text-amber-600"
-            className="mb-4"
+            toneClasses="bg-orange-50 text-orange-800"
+            className="mb-3"
           />
         )}
 
@@ -129,7 +129,7 @@ export function ComparisonCard({
           label={beforeValue ? 'After' : 'Value'}
           value={afterValue}
           diffs={afterValueDiffs}
-          toneClasses="bg-blue-50 text-blue-700"
+          toneClasses="bg-blue-50 text-blue-800"
         />
       </div>
     </div>
