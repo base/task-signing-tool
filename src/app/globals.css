@@ -24,6 +24,14 @@ body {
     sans-serif;
 }
 
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 @utility line-clamp-5 {
   display: -webkit-box;
   -webkit-box-orient: vertical;
