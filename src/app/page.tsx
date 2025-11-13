@@ -5,7 +5,6 @@ import {
   Header,
   Layout,
   LedgerSigning,
-  NetworkSelection,
   SelectionSummary,
   SigningConfirmation,
   StepIndicator,
@@ -18,10 +17,9 @@ import { ConfigOption } from '@/components/UserSelection';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 
 type UpgradeType = string | null;
-type Step = 'network' | 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
+type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
 
 const STEP_LAYOUT_WIDTH: Record<Step, string> = {
-  network: '600px',
   upgrade: '900px',
   user: '600px',
   validation: '1200px',
@@ -30,7 +28,7 @@ const STEP_LAYOUT_WIDTH: Record<Step, string> = {
 };
 
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState<Step>('network');
+  const [currentStep, setCurrentStep] = useState<Step>('upgrade');
   const [selectedUser, setSelectedUser] = useState<ConfigOption>();
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<UpgradeType>(null);
@@ -38,16 +36,13 @@ export default function Home() {
   const [signingData, setSigningData] = useState<LedgerSigningResult | null>(null);
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
-  const resetSelectionsFrom = (step: 'network' | 'upgrade' | 'user') => {
-    if (step === 'network') {
+  const resetSelectionsFrom = (step: 'upgrade' | 'user') => {
+    if (step === 'upgrade') {
       setSelectedNetwork(null);
-    }
-
-    if (step === 'network' || step === 'upgrade') {
       setSelectedUpgrade(null);
     }
 
-    if (step === 'network' || step === 'upgrade' || step === 'user') {
+    if (step === 'upgrade' || step === 'user') {
       setSelectedUser(undefined);
       setValidationData(null);
       setSigningData(null);
@@ -55,13 +50,9 @@ export default function Home() {
     }
   };
 
-  const handleNetworkSelection = (network: NetworkType) => {
-    setSelectedNetwork(network);
-    setCurrentStep('upgrade');
-  };
-
-  const handleUpgradeSelection = (upgradeId: string) => {
+  const handleUpgradeSelection = (upgradeId: string, network: string) => {
     setSelectedUpgrade(upgradeId);
+    setSelectedNetwork(network as NetworkType);
     setCurrentStep('user');
   };
 
@@ -87,11 +78,6 @@ export default function Home() {
 
   const handleBackToLedger = () => {
     setCurrentStep('ledger');
-  };
-
-  const handleGoToNetworkSelection = () => {
-    resetSelectionsFrom('network');
-    setCurrentStep('network');
   };
 
   const handleGoToUpgradeSelection = () => {
@@ -128,12 +114,10 @@ export default function Home() {
           selectedUser={selectedUser}
           selectedNetwork={selectedNetwork}
           selectedWallet={selectedUpgrade}
-          onNetworkClick={currentStep !== 'network' ? handleGoToNetworkSelection : undefined}
+          onNetworkClick={undefined}
           onWalletClick={canEditUpgrade ? handleGoToUpgradeSelection : undefined}
           onUserClick={canEditUser ? handleGoToUserSelection : undefined}
         />
-
-        {currentStep === 'network' && <NetworkSelection onSelect={handleNetworkSelection} />}
 
         {currentStep === 'upgrade' && (
           <UpgradeSelection
@@ -159,7 +143,7 @@ export default function Home() {
               id: selectedUpgrade || '',
               name: selectedUpgrade || '',
             }}
-            onBackToSetup={handleGoToNetworkSelection}
+            onBackToSetup={handleGoToUpgradeSelection}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
         )}
@@ -185,7 +169,7 @@ export default function Home() {
             signingData={signingData}
             onBackToValidation={handleBackToValidation}
             onBackToLedger={signingData ? handleBackToLedger : undefined}
-            onBackToSetup={handleGoToNetworkSelection}
+            onBackToSetup={handleGoToUpgradeSelection}
           />
         )}
       </Layout>
