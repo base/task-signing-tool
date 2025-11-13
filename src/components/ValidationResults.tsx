@@ -75,8 +75,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-indigo-500" />
-        <h3 className="text-lg font-semibold text-slate-700">{loadingTitle}</h3>
+        <div className="mx-auto mb-6 h-16 w-16 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 shadow-lg" />
+        <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          {loadingTitle}
+        </h3>
       </div>
     );
   }
@@ -133,17 +135,17 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="mb-2 text-4xl font-bold text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text">
+        <h2 className="mb-3 text-5xl font-black text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 bg-clip-text">
           Validation Results
         </h2>
-        <div className="text-base text-slate-500">
-          <div className="mb-1">
-            <span className="font-semibold text-slate-600">
+        <div className="text-base text-gray-600">
+          <div className="mb-2">
+            <span className="font-bold text-gray-700">
               Step {stepInfo.currentStep}: {currentEntry ? STEP_LABELS[currentEntry.kind] : ''}
             </span>{' '}
             • Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
           </div>
-          <div className="text-sm opacity-80">
+          <div className="text-sm font-medium text-gray-500">
             Step 1: {stepCounts.signing} items • Step 2: {stepCounts.overrides} items • Step 3:{' '}
             {stepCounts.changes} items • Step 4: {stepCounts.balance} items
           </div>
@@ -154,26 +156,26 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         <button
           onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
           disabled={currentIndex === 0}
-          className={`rounded-xl px-6 py-3 font-semibold transition ${
+          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
             currentIndex === 0
               ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 hover:-translate-y-0.5 hover:shadow-lg'
           }`}
         >
           ← Previous
         </button>
 
-        <div className="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
+        <div className="rounded-full bg-gradient-to-r from-purple-100 to-pink-100 px-5 py-2.5 text-sm font-bold text-purple-700 shadow-md ring-1 ring-purple-200">
           {getContractNameForEntry(currentEntry, itemsByStep)}
         </div>
 
         <button
           onClick={() => setCurrentIndex(prev => Math.min(totalItems - 1, prev + 1))}
           disabled={currentIndex === totalItems - 1}
-          className={`rounded-xl px-6 py-3 font-semibold transition ${
+          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
             currentIndex === totalItems - 1
               ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-indigo-500 text-white hover:bg-indigo-600'
+              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
           }`}
         >
           Next →
@@ -263,9 +265,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             validationResult.expected?.domainAndMessageHashes?.messageHash && (
               <button
                 onClick={() => onProceedToLedgerSigning(validationResult)}
-                className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-12 py-4 text-lg font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:from-indigo-500 hover:to-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 px-12 py-5 text-lg font-bold text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(139,92,246,0.4)] hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
               >
-                <span className="text-xl">🔐</span>
+                <span className="text-2xl">🔐</span>
                 Sign with Ledger →
               </button>
             )}
@@ -296,10 +298,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         <button
           onClick={runValidation}
           disabled={isLoading}
-          className={`flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition ${
+          className={`flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition-all duration-200 ${
             isLoading
               ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-indigo-500 text-white hover:bg-indigo-600'
+              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
           }`}
         >
           {isLoading ? (

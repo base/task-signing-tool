@@ -20,9 +20,9 @@ export function SelectionSummary({
   if (!selectedUser && !selectedNetwork && !selectedWallet) return null;
 
   const badgeBaseClasses =
-    'inline-flex items-center gap-1 text-white px-3.5 py-1.5 rounded-full text-sm font-medium shadow-[0_2px_4px_rgba(99,102,241,0.3)] transition-all duration-200';
-  const clickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-100`;
-  const nonClickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-indigo-500 to-violet-500`;
+    'inline-flex items-center gap-2 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300 relative overflow-hidden';
+  const clickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-700 hover:via-pink-700 hover:to-amber-600 hover:-translate-y-1 hover:shadow-xl hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2`;
+  const nonClickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500`;
 
   const renderBadge = (
     label: string | null | undefined,
@@ -48,11 +48,11 @@ export function SelectionSummary({
   };
 
   return (
-    <div className="mb-8 rounded-2xl border border-white/20 bg-indigo-50/50 p-5 backdrop-blur-lg">
-      <h3 className="mb-3 text-center text-sm font-semibold uppercase tracking-wide text-gray-600">
+    <div className="mb-8 rounded-2xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-pink-50/60 to-amber-50/80 p-6 backdrop-blur-xl shadow-lg ring-1 ring-white/50">
+      <h3 className="mb-4 text-center text-xs font-bold uppercase tracking-widest text-purple-700">
         Your Selections
       </h3>
-      <div className="flex flex-wrap justify-center gap-2">
+      <div className="flex flex-wrap justify-center gap-3">
         {renderBadge(selectedNetwork, {
           onClick: onNetworkClick,
           icon: '🌐',

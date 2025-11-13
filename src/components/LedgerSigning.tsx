@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { LedgerSigningResult } from '@/lib/ledger-signing';
 
-const CARD_CLASSES = 'bg-gray-50 border border-gray-200 rounded-xl p-6';
-const INFO_BOX_CLASSES = 'bg-blue-50 border border-blue-300 rounded-lg p-4 mb-5';
-const WARNING_BOX_CLASSES = 'bg-amber-50 border border-amber-500 rounded-lg p-4 mb-5';
-const ERROR_BOX_CLASSES = 'bg-red-100 border border-red-200 rounded-lg p-4 mb-5';
-const STEP_TITLE_CLASSES = 'text-lg font-semibold text-gray-700 mb-4';
+const CARD_CLASSES = 'bg-gradient-to-br from-white to-purple-50/30 border border-purple-200/50 rounded-2xl p-8 shadow-lg backdrop-blur-sm';
+const INFO_BOX_CLASSES = 'bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-300 rounded-xl p-5 mb-6 shadow-sm backdrop-blur-sm';
+const WARNING_BOX_CLASSES = 'bg-gradient-to-br from-amber-50 to-amber-100/50 border-2 border-amber-400 rounded-xl p-5 mb-6 shadow-md backdrop-blur-sm';
+const ERROR_BOX_CLASSES = 'bg-gradient-to-br from-red-50 to-red-100/50 border-2 border-red-300 rounded-xl p-5 mb-6 shadow-md backdrop-blur-sm';
+const STEP_TITLE_CLASSES = 'text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-5';
 const TOTAL_STEPS = 2;
 
 interface LedgerSigningProps {
@@ -121,9 +121,9 @@ export function LedgerSigning({
             <button
               onClick={handleConnect}
               disabled={!hasRequiredFields}
-              className="w-full rounded-lg border border-transparent bg-emerald-500 py-3 px-6 text-base font-semibold text-white transition-colors hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-emerald-200"
+              className="w-full rounded-xl border border-transparent bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 px-6 text-base font-bold text-white shadow-lg transition-all duration-200 hover:from-emerald-600 hover:to-emerald-700 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
             >
-              Continue to Signing
+              Continue to Signing →
             </button>
           </div>
         );
@@ -192,26 +192,26 @@ export function LedgerSigning({
                   setCurrentStep('connect');
                   setErrorMessage(null);
                 }}
-                className="flex-1 rounded-lg border border-gray-300 bg-white py-3 px-6 text-base font-medium text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:ring-offset-2"
+                className="flex-1 rounded-xl border border-gray-300 bg-white py-3 px-6 text-base font-semibold text-gray-600 transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:ring-offset-2"
               >
                 ← Go Back
               </button>
               <button
                 onClick={handleSign}
                 disabled={loading || !hasRequiredFields}
-                className={`flex flex-[2] items-center justify-center gap-2 rounded-lg border border-transparent py-3 px-6 text-base font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 ${
+                className={`flex flex-[2] items-center justify-center gap-2 rounded-xl border border-transparent py-4 px-6 text-base font-bold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 ${
                   loading || !hasRequiredFields
                     ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-                    : 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg hover:from-red-700 hover:to-red-800 hover:-translate-y-0.5 hover:shadow-xl'
                 }`}
               >
                 {loading ? (
                   <>
-                    <div className="h-4 w-4 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                    <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
                     Signing...
                   </>
                 ) : (
-                  'Sign on Ledger'
+                  '🔐 Sign on Ledger'
                 )}
               </button>
             </div>
@@ -240,10 +240,10 @@ export function LedgerSigning({
       )}
 
       <div className="mb-8 text-center">
-        <h2 className="mb-4 text-2xl font-semibold text-gray-700">
+        <h2 className="mb-3 text-4xl font-black bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 bg-clip-text text-transparent">
           Ledger Signing - Step {currentStep === 'connect' ? '1' : '2'} of {TOTAL_STEPS}
         </h2>
-        <p className="m-0 text-sm text-gray-500">
+        <p className="m-0 text-base font-medium text-gray-600">
           {currentStep === 'connect' && 'Connect and verify your Ledger device'}
           {currentStep === 'sign' && 'Sign the EIP-712 transaction data'}
         </p>
@@ -254,7 +254,7 @@ export function LedgerSigning({
       <div className="mt-6 flex justify-between">
         <button
           onClick={onCancel}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:ring-offset-2"
+          className="rounded-xl border border-gray-300 bg-white px-6 py-3 text-base font-semibold text-gray-600 transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:ring-offset-2"
         >
           Cancel
         </button>
