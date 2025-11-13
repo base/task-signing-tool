@@ -1,14 +1,15 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
-  --luxury-gold: #d4af37;
-  --luxury-purple: #6b46c1;
-  --luxury-blue: #1e40af;
-  --luxury-gradient-start: #0f172a;
-  --luxury-gradient-mid: #1e1b4b;
-  --luxury-gradient-end: #312e81;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --secondary: #64748b;
+  --accent: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
 }
 
 @theme inline {
@@ -34,70 +35,53 @@ body {
 
 button {
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 button:disabled {
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
-/* Premium animations */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
   }
-  50% {
-    box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-.animate-shimmer {
-  animation: shimmer 3s infinite;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  background-size: 1000px 100%;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
 }
 
-/* Glassmorphism utility */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.glass-dark {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 @utility line-clamp-5 {
@@ -109,15 +93,15 @@ button:disabled {
 
 @layer components {
   .upgrade-card .markdown-content a {
-    @apply font-semibold text-amber-400 underline decoration-2 underline-offset-2 transition-all duration-200;
+    @apply font-medium text-blue-600 underline underline-offset-2 transition-colors duration-200;
   }
 
   .upgrade-card .markdown-content a:hover {
-    @apply text-amber-300 scale-105;
+    @apply text-blue-700;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content a {
-    @apply text-amber-200;
+    @apply text-blue-200;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content a:hover {
@@ -125,23 +109,23 @@ button:disabled {
   }
 
   .upgrade-card .markdown-content code {
-    @apply rounded-md border border-purple-200 bg-purple-50/50 px-2 py-0.5 font-mono text-[0.9em] text-purple-900 shadow-sm;
+    @apply rounded border border-gray-300 bg-gray-100 px-1.5 py-0.5 font-mono text-[0.9em] text-gray-700;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content code {
-    @apply border-white/50 bg-white/20 text-white backdrop-blur-sm;
+    @apply border-white/30 bg-white/20 text-white;
   }
 
   .upgrade-card .markdown-content pre {
-    @apply mb-3 overflow-auto rounded-lg border border-gray-800 border-l-4 border-l-purple-500 bg-gray-900/90 p-3 text-gray-200 shadow-lg backdrop-blur-sm;
+    @apply mb-3 overflow-auto rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-800;
   }
 
   .upgrade-card .markdown-content pre code {
-    @apply bg-transparent p-0 text-[0.9em];
+    @apply border-0 bg-transparent p-0 text-[0.9em];
   }
 
   .upgrade-card[data-selected='true'] .markdown-content pre {
-    @apply border border-white/30 border-l-4 border-l-amber-400 bg-white/10 text-white shadow-xl backdrop-blur-md;
+    @apply border-white/20 bg-white/10 text-white;
   }
 
   .upgrade-card .markdown-content p {
@@ -154,7 +138,7 @@ button:disabled {
 
   .upgrade-card .markdown-content strong,
   .upgrade-card .markdown-content b {
-    @apply font-bold;
+    @apply font-semibold;
   }
 
   .upgrade-card .markdown-content ul,
@@ -175,47 +159,15 @@ button:disabled {
   }
 
   .upgrade-card .markdown-content blockquote {
-    @apply mb-3 rounded-md border-l-4 border-purple-300 bg-purple-50/50 px-3 py-2 text-gray-700 backdrop-blur-sm;
+    @apply mb-3 rounded-lg border-l-4 border-blue-400 bg-blue-50 px-4 py-2 text-gray-700;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content blockquote {
-    @apply border-l-4 border-amber-400 bg-white/15 text-slate-50 backdrop-blur-md;
+    @apply border-l-4 border-blue-300 bg-white/15 text-gray-100;
   }
 
   .upgrade-card .markdown-content.collapsed a {
     @apply cursor-default pointer-events-none;
-  }
-
-  /* Premium button styles */
-  .btn-premium {
-    @apply relative overflow-hidden rounded-xl px-8 py-4 font-semibold text-white shadow-2xl transition-all duration-300;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    background-size: 200% 200%;
-  }
-
-  .btn-premium:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
-    background-position: right center;
-  }
-
-  .btn-premium:active {
-    transform: translateY(0);
-  }
-
-  .btn-premium::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s;
-  }
-
-  .btn-premium:hover::before {
-    left: 100%;
   }
 }
 

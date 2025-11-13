@@ -1,6 +1,10 @@
 import { Fragment } from 'react';
 
 const SETUP_STEPS = ['upgrade', 'user'] as const;
+const STEP_LABELS: Record<typeof SETUP_STEPS[number], string> = {
+  upgrade: 'Select Task',
+  user: 'Select Profile',
+};
 const HIDDEN_STEPS = new Set(['validation', 'ledger', 'signing']);
 
 type SetupStep = (typeof SETUP_STEPS)[number];
@@ -30,26 +34,29 @@ export function StepIndicator({
   };
 
   return (
-    <div className="flex items-center justify-center mb-12">
-      <div className="flex items-center gap-6">
+    <div className="mb-8">
+      <div className="flex items-center justify-between">
         {SETUP_STEPS.map((step, index) => {
           const isComplete = completionMap[step];
-          const isActive = index <= activeIndex || isComplete;
+          const isActive = index === activeIndex;
+          const isPast = index < activeIndex;
 
           return (
             <Fragment key={step}>
-              <div className="relative">
-                <div
-                  className={`relative z-10 h-5 w-5 rounded-full transition-all duration-500 ${
-                    isActive
-                      ? 'bg-gradient-to-br from-purple-500 to-amber-500 shadow-lg shadow-purple-500/50 scale-110'
-                      : 'bg-gray-300'
-                  }`}
-                >
-                  {isComplete && (
-                    <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex flex-col items-center flex-1">
+                <div className="relative mb-2">
+                  <div
+                    className={`relative z-10 h-10 w-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+                      isActive
+                        ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                        : isComplete || isPast
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {isComplete || isPast ? (
                       <svg
-                        className="h-3 w-3 text-white"
+                        className="h-5 w-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -57,25 +64,31 @@ export function StepIndicator({
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth={3}
+                          strokeWidth={2.5}
                           d="M5 13l4 4L19 7"
                         />
                       </svg>
-                    </div>
-                  )}
-                  {isActive && !isComplete && (
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 to-amber-500 animate-pulse opacity-75" />
-                  )}
+                    ) : (
+                      <span className="text-sm font-semibold">{index + 1}</span>
+                    )}
+                  </div>
                 </div>
+                <span
+                  className={`text-xs font-medium ${
+                    isActive || isComplete || isPast ? 'text-gray-900' : 'text-gray-500'
+                  }`}
+                >
+                  {STEP_LABELS[step]}
+                </span>
               </div>
               {index < SETUP_STEPS.length - 1 && (
-                <div
-                  className={`h-1 w-16 rounded-full transition-all duration-500 ${
-                    isComplete
-                      ? 'bg-gradient-to-r from-purple-500 to-amber-500 shadow-md'
-                      : 'bg-gray-300'
-                  }`}
-                />
+                <div className="flex-1 h-0.5 mx-2 mb-6">
+                  <div
+                    className={`h-full transition-all duration-200 ${
+                      isComplete || isPast ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}
+                  />
+                </div>
               )}
             </Fragment>
           );

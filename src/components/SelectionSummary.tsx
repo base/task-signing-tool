@@ -20,9 +20,9 @@ export function SelectionSummary({
   if (!selectedUser && !selectedNetwork && !selectedWallet) return null;
 
   const badgeBaseClasses =
-    'inline-flex items-center gap-2 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300 relative overflow-hidden';
-  const clickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-700 hover:via-pink-700 hover:to-amber-600 hover:-translate-y-1 hover:shadow-xl hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2`;
-  const nonClickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500`;
+    'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200';
+  const clickableBadgeClasses = `${badgeBaseClasses} bg-blue-100 text-blue-700 hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`;
+  const nonClickableBadgeClasses = `${badgeBaseClasses} bg-gray-100 text-gray-700`;
 
   const renderBadge = (
     label: string | null | undefined,
@@ -33,8 +33,13 @@ export function SelectionSummary({
     const { onClick, icon, title } = options;
     const content = (
       <>
-        {icon ? <span>{icon}</span> : null}
-        {label}
+        {icon ? <span className="text-base">{icon}</span> : null}
+        <span>{label}</span>
+        {onClick && (
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        )}
       </>
     );
 
@@ -48,23 +53,23 @@ export function SelectionSummary({
   };
 
   return (
-    <div className="mb-8 rounded-2xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-pink-50/60 to-amber-50/80 p-6 backdrop-blur-xl shadow-lg ring-1 ring-white/50">
-      <h3 className="mb-4 text-center text-xs font-bold uppercase tracking-widest text-purple-700">
-        Your Selections
-      </h3>
-      <div className="flex flex-wrap justify-center gap-3">
+    <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Current:
+        </span>
         {renderBadge(selectedNetwork, {
           onClick: onNetworkClick,
           icon: '🌐',
-          title: 'Click to change network selection',
+          title: 'Click to change network',
         })}
         {renderBadge(selectedWallet, {
           onClick: onWalletClick,
-          title: 'Click to change wallet selection',
+          title: 'Click to change task',
         })}
         {renderBadge(selectedUser?.displayName, {
           onClick: onUserClick,
-          title: 'Click to change user selection',
+          title: 'Click to change profile',
         })}
       </div>
     </div>

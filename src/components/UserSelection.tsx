@@ -86,18 +86,18 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
 
   return (
     <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
+      <h2 className="mb-6 text-xl font-semibold text-gray-900">
         Select Profile
       </h2>
 
-      {/* Step 1: User Type Selection */}
-      <div className="mb-8">
-        <div className="flex flex-col gap-4">
+      {/* User Type Selection */}
+      <div className="mb-6">
+        <div className="flex flex-col gap-3">
           {loadingUsers ? (
-            <p className="text-base font-medium text-gray-600">Loading user options...</p>
+            <p className="text-sm text-gray-600">Loading profiles...</p>
           ) : availableUsers.length === 0 ? (
-            <p className="text-base font-medium text-gray-600">
-              No user options available for this network and upgrade ID.
+            <p className="text-sm text-gray-600">
+              No profiles available for this network and task.
             </p>
           ) : (
             availableUsers.map(option => {
@@ -108,14 +108,18 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
                   key={option.fileName}
                   type="button"
                   onClick={() => handleUserSelect(option)}
-                  className={`inline-flex w-full items-center justify-center gap-3 rounded-2xl border-2 px-8 py-6 text-base font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 px-6 py-4 text-base font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                     isSelected
-                      ? 'border-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white shadow-xl scale-[1.02] ring-2 ring-purple-300/50'
-                      : 'border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
+                      ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:shadow-md'
                   }`}
                   aria-pressed={isSelected}
                 >
-                  {isSelected && <span className="text-xl font-bold">✓</span>}
+                  {isSelected && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-blue-600 text-sm font-bold">
+                      ✓
+                    </span>
+                  )}
                   {option.displayName}
                 </button>
               );
@@ -126,7 +130,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
 
       {error && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left">
-          <p className="mb-2 text-sm font-semibold text-red-700">❌ Error:</p>
+          <p className="mb-2 text-sm font-semibold text-red-700">Error</p>
           <p className="text-sm text-red-600">{error}</p>
           {error.includes('not found') && (
             <p className="mt-2 text-xs text-red-600">
@@ -144,7 +148,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
       {selectedUser && (
         <div className="mt-6">
           <p className="mb-3 text-sm text-gray-600">
-            Next, simulate the transaction to confirm it behaves as expected.
+            Proceed to simulate and validate the transaction
           </p>
           <button
             onClick={() => {
@@ -153,9 +157,9 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
               }
             }}
             type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-10 py-5 text-base font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-2xl hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white transition-all hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
-            Simulate →
+            Continue to Validation →
           </button>
         </div>
       )}
