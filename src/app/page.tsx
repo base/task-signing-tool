@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import {
-  Header,
-  Layout,
+  AppShell,
+  Stepper,
   LedgerSigning,
-  SelectionSummary,
   SigningConfirmation,
-  StepIndicator,
   UpgradeSelection,
   UserSelection,
   ValidationResults,
+  Button,
+  Card,
 } from '@/components';
 import { NetworkType, ValidationData } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
@@ -100,79 +100,138 @@ export default function Home() {
 
   return (
     <>
-      <Layout maxWidth={STEP_LAYOUT_WIDTH[currentStep]}>
-        <Header />
-
-        <StepIndicator
-          currentStep={currentStep}
-          hasNetwork={!!selectedNetwork}
-          hasUpgrade={!!selectedUpgrade}
-          hasUser={!!selectedUser}
-        />
-
-        <SelectionSummary
-          selectedUser={selectedUser}
-          selectedNetwork={selectedNetwork}
-          selectedWallet={selectedUpgrade}
-          onNetworkClick={undefined}
-          onWalletClick={canEditUpgrade ? handleGoToUpgradeSelection : undefined}
-          onUserClick={canEditUser ? handleGoToUserSelection : undefined}
-        />
-
-        {currentStep === 'upgrade' && (
-          <UpgradeSelection
-            selectedWallet={selectedUpgrade}
-            selectedNetwork={selectedNetwork}
-            onSelect={handleUpgradeSelection}
+      <AppShell
+        headerRight={
+          <div className="hidden md:flex items-center gap-2">
+            {selectedNetwork && (
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                🌐 {selectedNetwork}
+              </span>
+            )}
+            {selectedUpgrade && (
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                Task: {selectedUpgrade}
+              </span>
+            )}
+            {selectedUser && (
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                Profile: {selectedUser.displayName}
+              </span>
+            )}
+          </div>
+        }
+        sidebar={
+          <Stepper
+            current={currentStep}
+            steps={[
+              {
+                id: 'upgrade',
+                label: 'Choose Task',
+                allowed: true,
+                onClick: currentStep !== 'upgrade' ? handleGoToUpgradeSelection : undefined,
+              },
+              {
+                id: 'user',
+                label: 'Choose Profile',
+                allowed: canEditUpgrade,
+                onClick: canEditUpgrade ? handleGoToUserSelection : undefined,
+              },
+              {
+                id: 'validation',
+                label: 'Validate',
+                allowed: canEditUser,
+              },
+              {
+                id: 'ledger',
+                label: 'Sign',
+                allowed: currentStep === 'ledger' || currentStep === 'signing',
+              },
+              {
+                id: 'signing',
+                label: 'Confirm',
+                allowed: currentStep === 'signing',
+              },
+            ]}
           />
+        }
+      >
+        {currentStep === 'upgrade' && (
+          <Card title="Select a task to sign">
+            <UpgradeSelection
+              selectedWallet={selectedUpgrade}
+              selectedNetwork={selectedNetwork}
+              onSelect={handleUpgradeSelection}
+            />
+          </Card>
         )}
 
         {currentStep === 'user' && selectedNetwork && selectedUpgrade && (
-          <UserSelection
-            network={selectedNetwork}
-            upgradeId={selectedUpgrade}
-            onSelect={handleUserSelection}
-          />
+          <Card title="Select a signing profile">
+            <UserSelection
+              network={selectedNetwork}
+              upgradeId={selectedUpgrade}
+              onSelect={handleUserSelection}
+            />
+          </Card>
         )}
 
         {currentStep === 'validation' && (
-          <ValidationResults
-            userType={selectedUser?.fileName || ''}
-            network={selectedNetwork || ''}
-            selectedUpgrade={{
-              id: selectedUpgrade || '',
-              name: selectedUpgrade || '',
-            }}
-            onBackToSetup={handleGoToUpgradeSelection}
-            onProceedToLedgerSigning={handleProceedToLedgerSigning}
-          />
+          <div className="space-y-4">
+            <ValidationResults
+              userType={selectedUser?.fileName || ''}
+              network={selectedNetwork || ''}
+              selectedUpgrade={{
+                id: selectedUpgrade || '',
+                name: selectedUpgrade || '',
+              }}
+              onBackToSetup={handleGoToUpgradeSelection}
+              onProceedToLedgerSigning={handleProceedToLedgerSigning}
+            />
+          </div>
         )}
 
         {currentStep === 'ledger' && validationData && (
-          <LedgerSigning
-            domainHash={validationData.expected?.domainAndMessageHashes?.domainHash || ''}
-            messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
-            ledgerAccount={userLedgerAccount}
-            onSigningComplete={handleLedgerSigningComplete}
-            onCancel={handleBackToValidation}
-          />
+          <Card title="Sign with Ledger">
+            <LedgerSigning
+              domainHash={validationData.expected?.domainAndMessageHashes?.domainHash || ''}
+              messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
+              ledgerAccount={userLedgerAccount}
+              onSigningComplete={handleLedgerSigningComplete}
+              onCancel={handleBackToValidation}
+            />
+          </Card>
         )}
 
         {currentStep === 'signing' && (
-          <SigningConfirmation
-            user={selectedUser}
-            network={selectedNetwork || ''}
-            selectedUpgrade={{
-              id: selectedUpgrade || '',
-              name: selectedUpgrade || '',
-            }}
-            signingData={signingData}
-            onBackToValidation={handleBackToValidation}
-            onBackToLedger={signingData ? handleBackToLedger : undefined}
-            onBackToSetup={handleGoToUpgradeSelection}
-          />
+          <Card title="Signing confirmation">
+            <SigningConfirmation
+              user={selectedUser}
+              network={selectedNetwork || ''}
+              selectedUpgrade={{
+                id: selectedUpgrade || '',
+                name: selectedUpgrade || '',
+              }}
+              signingData={signingData}
+              onBackToValidation={handleBackToValidation}
+              onBackToLedger={signingData ? handleBackToLedger : undefined}
+              onBackToSetup={handleGoToUpgradeSelection}
+            />
+          </Card>
         )}
-      </Layout>
+
+        <div className="flex gap-3 pt-2 md:hidden">
+          {canEditUpgrade && (
+            <Button variant="secondary" onClick={handleGoToUpgradeSelection} className="flex-1">
+              Edit Task
+            </Button>
+          )}
+          {canEditUser && (
+            <Button variant="secondary" onClick={handleGoToUserSelection} className="flex-1">
+              Edit Profile
+            </Button>
+          )}
+        </div>
+      </AppShell>
     </>
   );
 }

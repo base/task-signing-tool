@@ -86,17 +86,15 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
 
   return (
     <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
-        Select Profile
-      </h2>
+      <h2 className="mb-6 text-xl font-semibold text-slate-900">Select a profile</h2>
 
       {/* Step 1: User Type Selection */}
       <div className="mb-8">
         <div className="flex flex-col gap-4">
           {loadingUsers ? (
-            <p className="text-base font-medium text-gray-600">Loading user options...</p>
+            <p className="text-sm font-medium text-slate-600">Loading user options…</p>
           ) : availableUsers.length === 0 ? (
-            <p className="text-base font-medium text-gray-600">
+            <p className="text-sm font-medium text-slate-600">
               No user options available for this network and upgrade ID.
             </p>
           ) : (
@@ -108,14 +106,14 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
                   key={option.fileName}
                   type="button"
                   onClick={() => handleUserSelect(option)}
-                  className={`inline-flex w-full items-center justify-center gap-3 rounded-2xl border-2 px-8 py-6 text-base font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
+                  className={`inline-flex w-full items-center justify-center gap-3 rounded-lg border px-5 py-4 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${
                     isSelected
-                      ? 'border-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white shadow-xl scale-[1.02] ring-2 ring-purple-300/50'
-                      : 'border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
+                      ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                      : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
                   }`}
                   aria-pressed={isSelected}
                 >
-                  {isSelected && <span className="text-xl font-bold">✓</span>}
+                  {isSelected && <span className="text-base font-bold">✓</span>}
                   {option.displayName}
                 </button>
               );
@@ -125,13 +123,13 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left">
-          <p className="mb-2 text-sm font-semibold text-red-700">❌ Error:</p>
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-left">
+          <p className="mb-2 text-sm font-semibold text-rose-700">❌ Error:</p>
+          <p className="text-sm text-rose-700">{error}</p>
           {error.includes('not found') && (
-            <p className="mt-2 text-xs text-red-600">
+            <p className="mt-2 text-xs text-rose-700">
               Run:{' '}
-              <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">
+              <code className="rounded bg-rose-100 px-1.5 py-0.5 font-mono text-xs">
                 make install-eip712sign
               </code>{' '}
               in project root
@@ -143,7 +141,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
       {/* Proceed Button */}
       {selectedUser && (
         <div className="mt-6">
-          <p className="mb-3 text-sm text-gray-600">
+          <p className="mb-3 text-xs text-slate-500">
             Next, simulate the transaction to confirm it behaves as expected.
           </p>
           <button
@@ -153,9 +151,9 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
               }
             }}
             type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-10 py-5 text-base font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-2xl hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
           >
-            Simulate →
+            Continue
           </button>
         </div>
       )}

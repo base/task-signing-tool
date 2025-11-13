@@ -10,3 +10,8 @@ export { StepIndicator } from './StepIndicator';
 export { UpgradeSelection } from './UpgradeSelection';
 export { UserSelection } from './UserSelection';
 export { ValidationResults } from './ValidationResults';
+export { AppShell } from './ui/AppShell';
+export { Stepper } from './ui/Stepper';
+export { Button } from './ui/Button';
+export { Card } from './ui/Card';
+export { HeaderBar } from './ui/HeaderBar';
