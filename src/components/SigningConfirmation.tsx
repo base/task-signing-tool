@@ -108,7 +108,7 @@ export function SigningConfirmation({
         },
         {
           label: 'Signature',
-          value: toDisplaySignature(signingData),
+          value: signingData.signature,
           monospace: true,
         },
       ]
