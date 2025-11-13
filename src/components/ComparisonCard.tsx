@@ -17,7 +17,7 @@ interface ComparisonCardProps {
 const HEX_SEGMENT_WRAP_THRESHOLD = 66;
 
 const baseValueClasses =
-  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-pre-wrap';
+  'rounded-md p-3 mt-1 font-mono text-xs block max-w-full whitespace-pre-wrap';
 
 const getValueClasses = (
   value: string | undefined,
@@ -53,7 +53,7 @@ interface ValueSectionProps {
 
 const ValueSection = ({ label, value, diffs, toneClasses, className }: ValueSectionProps) => (
   <div className={className}>
-    <label className="text-[10px] font-semibold uppercase text-gray-500 tracking-[0.05em]">
+    <label className="text-xs font-semibold uppercase text-slate-600 tracking-wider">
       {label}
     </label>
     <div className={getValueClasses(value, diffs, toneClasses)}>
@@ -64,20 +64,16 @@ const ValueSection = ({ label, value, diffs, toneClasses, className }: ValueSect
 
 const variants = {
   expected: {
-    container: 'bg-blue-50 border-blue-300',
-    header: 'text-blue-700',
-    icon: '✅',
-    title: 'Expected',
+    container: 'bg-blue-50 border-blue-200',
+    header: 'text-blue-900',
     contract: 'bg-blue-100',
-    border: 'border-blue-300',
+    border: 'border-blue-200',
   },
   actual: {
-    container: 'bg-sky-50 border-sky-300',
-    header: 'text-sky-700',
-    icon: '🔍',
-    title: 'Actual',
-    contract: 'bg-sky-100',
-    border: 'border-sky-300',
+    container: 'bg-slate-50 border-slate-200',
+    header: 'text-slate-900',
+    contract: 'bg-slate-100',
+    border: 'border-slate-200',
   },
 } as const;
 
@@ -94,24 +90,24 @@ export function ComparisonCard({
 }: ComparisonCardProps) {
   const variant = variants[type];
   return (
-    <div className={`rounded-2xl border-2 p-6 ${variant.container}`}>
-      <h3 className={`mb-4 flex items-center gap-2 text-lg font-bold ${variant.header}`}>
-        <span>{variant.icon}</span> {variant.title}
+    <div className={`rounded-lg border p-5 ${variant.container}`}>
+      <h3 className={`mb-4 text-base font-semibold ${variant.header}`}>
+        {type === 'expected' ? 'Expected' : 'Actual'}
       </h3>
 
-      <div className={`mb-4 rounded-xl p-4 ${variant.contract}`}>
-        <h4 className="mb-2 font-semibold text-gray-800">{contractName}</h4>
-        <p className="m-0 break-all font-mono text-xs text-gray-500">
+      <div className={`mb-4 rounded-md p-3 ${variant.contract}`}>
+        <h4 className="mb-1 text-sm font-semibold text-slate-900">{contractName}</h4>
+        <p className="m-0 break-all font-mono text-xs text-slate-600">
           {toChecksumAddressSafe(contractAddress)}
         </p>
       </div>
 
-      <div className={`rounded-xl border bg-white p-4 ${variant.border}`}>
+      <div className={`rounded-md border bg-white p-4 ${variant.border}`}>
         <ValueSection
           label="Storage Key"
           value={storageKey}
           diffs={storageKeyDiffs}
-          toneClasses="bg-gray-50 text-gray-800"
+          toneClasses="bg-slate-50 text-slate-900"
           className="mb-4"
         />
 
@@ -120,7 +116,7 @@ export function ComparisonCard({
             label="Before"
             value={beforeValue}
             diffs={beforeValueDiffs}
-            toneClasses="bg-amber-100 text-amber-600"
+            toneClasses="bg-amber-50 text-amber-900"
             className="mb-4"
           />
         )}
@@ -129,7 +125,7 @@ export function ComparisonCard({
           label={beforeValue ? 'After' : 'Value'}
           value={afterValue}
           diffs={afterValueDiffs}
-          toneClasses="bg-blue-50 text-blue-700"
+          toneClasses="bg-blue-50 text-blue-900"
         />
       </div>
     </div>

@@ -19,7 +19,6 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Fetch available users when network and upgradeId change
   useEffect(() => {
     const resetState = () => {
       setAvailableUsers([]);
@@ -85,48 +84,51 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   };
 
   return (
-    <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
-        Select Profile
-      </h2>
+    <div>
+      <h2 className="mb-6 text-2xl font-semibold text-slate-900">Select Profile</h2>
 
-      {/* Step 1: User Type Selection */}
-      <div className="mb-8">
-        <div className="flex flex-col gap-4">
-          {loadingUsers ? (
-            <p className="text-base font-medium text-gray-600">Loading user options...</p>
-          ) : availableUsers.length === 0 ? (
-            <p className="text-base font-medium text-gray-600">
-              No user options available for this network and upgrade ID.
-            </p>
-          ) : (
-            availableUsers.map(option => {
-              const isSelected = selectedUser?.fileName === option.fileName;
-
-              return (
-                <button
-                  key={option.fileName}
-                  type="button"
-                  onClick={() => handleUserSelect(option)}
-                  className={`inline-flex w-full items-center justify-center gap-3 rounded-2xl border-2 px-8 py-6 text-base font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
-                    isSelected
-                      ? 'border-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white shadow-xl scale-[1.02] ring-2 ring-purple-300/50'
-                      : 'border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
-                  }`}
-                  aria-pressed={isSelected}
-                >
-                  {isSelected && <span className="text-xl font-bold">✓</span>}
-                  {option.displayName}
-                </button>
-              );
-            })
-          )}
+      {loadingUsers ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+          <p className="mt-4 text-sm text-slate-600">Loading profiles...</p>
         </div>
-      </div>
+      ) : availableUsers.length === 0 ? (
+        <div className="py-16 text-center">
+          <p className="text-sm text-slate-600">No profiles available for this task</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {availableUsers.map(option => {
+            const isSelected = selectedUser?.fileName === option.fileName;
+
+            return (
+              <button
+                key={option.fileName}
+                type="button"
+                onClick={() => handleUserSelect(option)}
+                className={`w-full rounded-lg border-2 p-4 text-left transition-all ${
+                  isSelected
+                    ? 'border-blue-600 bg-blue-50 shadow-sm'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-slate-900">{option.displayName}</span>
+                  {isSelected && (
+                    <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left">
-          <p className="mb-2 text-sm font-semibold text-red-700">❌ Error:</p>
+        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="mb-1 text-sm font-semibold text-red-700">Error</p>
           <p className="text-sm text-red-600">{error}</p>
           {error.includes('not found') && (
             <p className="mt-2 text-xs text-red-600">
@@ -140,22 +142,14 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
         </div>
       )}
 
-      {/* Proceed Button */}
       {selectedUser && (
-        <div className="mt-6">
-          <p className="mb-3 text-sm text-gray-600">
-            Next, simulate the transaction to confirm it behaves as expected.
-          </p>
+        <div className="mt-8 text-center">
           <button
-            onClick={() => {
-              if (selectedUser) {
-                onSelect(selectedUser);
-              }
-            }}
+            onClick={() => onSelect(selectedUser)}
             type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-10 py-5 text-base font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-2xl hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+            className="rounded-lg bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-700"
           >
-            Simulate →
+            Continue to Validation
           </button>
         </div>
       )}

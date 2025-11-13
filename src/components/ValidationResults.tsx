@@ -75,33 +75,32 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 h-16 w-16 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 shadow-lg" />
-        <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          {loadingTitle}
-        </h3>
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+        <h3 className="text-lg font-semibold text-slate-900">{loadingTitle}</h3>
+        <p className="mt-2 text-sm text-slate-600">This may take a moment...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="py-16 text-center">
-        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-rose-100 p-6 text-rose-600">
-          <h3 className="mb-2 text-xl font-semibold">❌ Validation Failed</h3>
-          <p className="text-base">{error}</p>
+      <div className="py-16">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-6">
+          <h3 className="mb-2 text-lg font-semibold text-red-900">Validation Failed</h3>
+          <p className="text-sm text-red-700">{error}</p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => runValidation()}
-            className="rounded-xl bg-slate-100 px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-200"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Retry Validation
           </button>
 
           <button
             onClick={onBackToSetup}
-            className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Back to Setup
           </button>
@@ -112,16 +111,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   if (!validationResult || totalItems === 0) {
     return (
-      <div className="py-16 text-center">
-        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-amber-100 p-6 text-amber-700">
-          <h3 className="mb-2 text-xl font-semibold">⚠️ No Changes Found</h3>
-          <p className="text-base">
+      <div className="py-16">
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-6">
+          <h3 className="mb-2 text-lg font-semibold text-amber-900">No Changes Found</h3>
+          <p className="text-sm text-amber-700">
             No state changes or overrides were found in the validation data.
           </p>
         </div>
         <button
           onClick={onBackToSetup}
-          className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           Back to Setup
         </button>
@@ -133,49 +132,47 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const descriptionContent = evaluation?.description;
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="mb-3 text-5xl font-black text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 bg-clip-text">
-          Validation Results
-        </h2>
-        <div className="text-base text-gray-600">
-          <div className="mb-2">
-            <span className="font-bold text-gray-700">
+    <div className="space-y-6">
+      <div>
+        <h2 className="mb-2 text-2xl font-semibold text-slate-900">Validation Results</h2>
+        <div className="text-sm text-slate-600">
+          <div className="mb-1">
+            <span className="font-medium">
               Step {stepInfo.currentStep}: {currentEntry ? STEP_LABELS[currentEntry.kind] : ''}
             </span>{' '}
             • Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
           </div>
-          <div className="text-sm font-medium text-gray-500">
-            Step 1: {stepCounts.signing} items • Step 2: {stepCounts.overrides} items • Step 3:{' '}
-            {stepCounts.changes} items • Step 4: {stepCounts.balance} items
+          <div className="text-xs text-slate-500">
+            Step 1: {stepCounts.signing} • Step 2: {stepCounts.overrides} • Step 3:{' '}
+            {stepCounts.changes} • Step 4: {stepCounts.balance}
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
         <button
           onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
           disabled={currentIndex === 0}
-          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
+          className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
             currentIndex === 0
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 hover:-translate-y-0.5 hover:shadow-lg'
+              ? 'cursor-not-allowed border-slate-200 bg-white text-slate-400'
+              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
           }`}
         >
           ← Previous
         </button>
 
-        <div className="rounded-full bg-gradient-to-r from-purple-100 to-pink-100 px-5 py-2.5 text-sm font-bold text-purple-700 shadow-md ring-1 ring-purple-200">
+        <div className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700">
           {getContractNameForEntry(currentEntry, itemsByStep)}
         </div>
 
         <button
           onClick={() => setCurrentIndex(prev => Math.min(totalItems - 1, prev + 1))}
           disabled={currentIndex === totalItems - 1}
-          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
+          className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
             currentIndex === totalItems - 1
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
+              ? 'cursor-not-allowed border-slate-200 bg-white text-slate-400'
+              : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
           Next →
@@ -183,7 +180,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       </div>
 
       {evaluation && (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <ComparisonCard type="expected" {...evaluation.cards.expected} />
           <ComparisonCard type="actual" {...evaluation.cards.actual} />
         </div>
@@ -191,29 +188,29 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
       {descriptionContent && (
         <div
-          className={`rounded-2xl border-2 p-6 shadow-md ${
+          className={`rounded-lg border p-4 ${
             descriptionContent.variant === 'expected-difference'
-              ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100'
-              : 'border-sky-200 bg-gradient-to-r from-sky-50 to-sky-100'
+              ? 'border-emerald-200 bg-emerald-50'
+              : 'border-blue-200 bg-blue-50'
           }`}
         >
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 text-2xl">{descriptionContent.icon}</span>
+            <span className="text-xl">{descriptionContent.icon}</span>
             <div className="flex-1">
               <h4
-                className={`mb-2 text-sm font-bold uppercase tracking-wider ${
+                className={`mb-1 text-xs font-semibold uppercase tracking-wider ${
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-emerald-700'
-                    : 'text-sky-700'
+                    : 'text-blue-700'
                 }`}
               >
                 {descriptionContent.title}
               </h4>
               <p
-                className={`text-base font-medium leading-relaxed whitespace-pre-wrap ${
+                className={`text-sm leading-relaxed whitespace-pre-wrap ${
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-emerald-900'
-                    : 'text-sky-900'
+                    : 'text-blue-900'
                 }`}
               >
                 {descriptionContent.text}
@@ -224,9 +221,15 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       {matchStatus && (
-        <div className="text-center">
+        <div className="flex justify-center">
           <div
-            className={`inline-flex items-center gap-2 rounded-full px-8 py-4 text-lg font-bold text-white ${matchStatus.bgClass}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold ${
+              matchStatus.bgClass.includes('emerald')
+                ? 'bg-emerald-100 text-emerald-700'
+                : matchStatus.bgClass.includes('amber')
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-red-100 text-red-700'
+            }`}
           >
             <span>{matchStatus.icon}</span> {matchStatus.text}
           </div>
@@ -234,26 +237,26 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       {currentIndex === totalItems - 1 && (
-        <div className="mt-12 text-center">
+        <div className="mt-8">
           <div
-            className={`mx-auto mb-6 max-w-md rounded-2xl border-2 p-6 ${
+            className={`mb-6 rounded-lg border p-6 ${
               blockingErrorsExist
-                ? 'border-rose-200 bg-gradient-to-r from-rose-100 to-rose-200'
-                : 'border-emerald-200 bg-gradient-to-r from-emerald-100 to-emerald-200'
+                ? 'border-red-200 bg-red-50'
+                : 'border-emerald-200 bg-emerald-50'
             }`}
           >
-            <div className="mb-3 flex items-center justify-center gap-3">
-              <span className="text-3xl">{blockingErrorsExist ? '🚫' : '✅'}</span>
+            <div className="mb-3 flex items-center justify-center gap-2">
+              <span className="text-2xl">{blockingErrorsExist ? '🚫' : '✅'}</span>
               <h3
-                className={`text-xl font-bold ${
-                  blockingErrorsExist ? 'text-rose-600' : 'text-emerald-700'
+                className={`text-lg font-semibold ${
+                  blockingErrorsExist ? 'text-red-900' : 'text-emerald-900'
                 }`}
               >
                 {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
               </h3>
             </div>
             {blockingErrorsExist && (
-              <p className="text-sm text-rose-600">
+              <p className="text-sm text-red-700">
                 Found <strong>Missing</strong> or <strong>Different</strong> instances. Contact
                 developers before continuing.
               </p>
@@ -263,34 +266,34 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           {!blockingErrorsExist &&
             validationResult.expected?.domainAndMessageHashes?.domainHash &&
             validationResult.expected?.domainAndMessageHashes?.messageHash && (
-              <button
-                onClick={() => onProceedToLedgerSigning(validationResult)}
-                className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 px-12 py-5 text-lg font-bold text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(139,92,246,0.4)] hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
-              >
-                <span className="text-2xl">🔐</span>
-                Sign with Ledger →
-              </button>
+              <div className="text-center">
+                <button
+                  onClick={() => onProceedToLedgerSigning(validationResult)}
+                  className="rounded-lg bg-blue-600 px-8 py-3 text-base font-medium text-white hover:bg-blue-700"
+                >
+                  Sign with Ledger
+                </button>
+              </div>
             )}
 
           {(!validationResult.expected?.domainAndMessageHashes ||
             !validationResult.expected?.domainAndMessageHashes?.domainHash ||
             !validationResult.expected?.domainAndMessageHashes?.messageHash) && (
-            <div className="mt-6 rounded-lg border border-amber-300 bg-amber-100 p-4 text-left">
-              <p className="mb-2 text-sm font-semibold text-amber-800">⚠️ Signing Not Available</p>
-              <p className="text-sm text-amber-800">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="mb-1 text-sm font-semibold text-amber-800">Signing Not Available</p>
+              <p className="text-sm text-amber-700">
                 Domain and message hashes are required for signing but were not generated during
-                validation. This may indicate an issue with the script execution or validation
-                process.
+                validation.
               </p>
             </div>
           )}
         </div>
       )}
 
-      <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-6">
         <button
           onClick={onBackToSetup}
-          className="flex items-center gap-2 rounded-xl bg-slate-100 px-6 py-3 text-base font-medium text-slate-600 transition hover:bg-slate-200"
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           ← Back to Setup
         </button>
@@ -298,22 +301,19 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         <button
           onClick={runValidation}
           disabled={isLoading}
-          className={`flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition-all duration-200 ${
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             isLoading
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
+              ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
           {isLoading ? (
             <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
-              Running Validation...
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+              Running...
             </>
           ) : (
-            <>
-              <span className="text-base">🔄</span>
-              Rerun Validation
-            </>
+            'Rerun Validation'
           )}
         </button>
       </div>
