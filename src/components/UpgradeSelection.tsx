@@ -31,7 +31,7 @@ interface Upgrade {
 interface UpgradeSelectionProps {
   selectedWallet: string | null;
   selectedNetwork: string | null;
-  onSelect: (upgradeId: string) => void;
+  onSelect: (upgradeId: string, network: string) => void;
 }
 
 export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
@@ -46,13 +46,6 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchUpgrades = useCallback(async () => {
-    if (!selectedNetwork) {
-      setUpgradeOptions([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -61,8 +54,8 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
     setError(null);
 
     try {
-      const network = selectedNetwork.toLowerCase();
-      const response = await fetch(`/api/upgrades?network=${network}`, {
+      // Fetch all ready-to-sign tasks across all networks
+      const response = await fetch(`/api/upgrades?readyToSign=true`, {
         signal: controller.signal,
       });
 
@@ -87,7 +80,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
         setLoading(false);
       }
     }
-  }, [selectedNetwork]);
+  }, []);
 
   useEffect(() => {
     fetchUpgrades();
@@ -125,30 +118,30 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   if (upgradeOptions.length === 0) {
     return (
       <div className="p-10 text-center">
-        <p className="text-sm text-gray-500">No upgrades available for {selectedNetwork}</p>
+        <p className="text-sm text-gray-500">No tasks ready to sign</p>
       </div>
     );
   }
 
   return (
     <div className="text-center">
-      <h2 className="mb-8 text-2xl font-semibold text-gray-700">Select Upgrade</h2>
+      <h2 className="mb-8 text-2xl font-semibold text-gray-700">Select Task</h2>
 
       <div className="mb-8 flex max-h-[400px] flex-col gap-5 overflow-y-auto pr-2">
         {upgradeOptions.map(option => {
-          const isSelected = selectedWallet === option.id;
+          const isSelected = selectedWallet === option.id && selectedNetwork === option.network;
           const isExpanded = !!expandedCards[option.id];
           const isTruncated = option.description.length > DESCRIPTION_CHAR_LIMIT;
           const collapsed = isTruncated && !isExpanded;
 
           return (
             <div
-              key={option.id}
-              onClick={() => onSelect(option.id)}
+              key={`${option.network}-${option.id}`}
+              onClick={() => onSelect(option.id, option.network)}
               onKeyDown={e => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect(option.id);
+                  onSelect(option.id, option.network);
                 }
               }}
               role="button"
@@ -163,12 +156,23 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
               <div className="mb-3 flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="mb-1 text-xl font-bold leading-tight">{option.name}</div>
-                  <div
-                    className={`text-sm font-medium ${
-                      isSelected ? 'text-white/90' : 'text-gray-500'
-                    }`}
-                  >
-                    {option.date}
+                  <div className="mb-1 flex items-center gap-2">
+                    <div
+                      className={`text-sm font-medium ${
+                        isSelected ? 'text-white/90' : 'text-gray-500'
+                      }`}
+                    >
+                      {option.date}
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        isSelected
+                          ? 'bg-white/20 text-white'
+                          : 'bg-indigo-100 text-indigo-800'
+                      }`}
+                    >
+                      {option.network.charAt(0).toUpperCase() + option.network.slice(1)}
+                    </span>
                   </div>
                 </div>
 

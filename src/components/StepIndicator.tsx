@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 
-const SETUP_STEPS = ['network', 'upgrade', 'user'] as const;
+const SETUP_STEPS = ['upgrade', 'user'] as const;
 const HIDDEN_STEPS = new Set(['validation', 'ledger', 'signing']);
 
 type SetupStep = (typeof SETUP_STEPS)[number];
@@ -25,7 +25,6 @@ export function StepIndicator({
   const activeIndex = SETUP_STEPS.indexOf(activeStep);
 
   const completionMap: Record<SetupStep, boolean> = {
-    network: hasNetwork,
     upgrade: hasUpgrade,
     user: hasUser,
   };
