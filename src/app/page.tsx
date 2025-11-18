@@ -2,16 +2,14 @@
 
 import { useState } from 'react';
 import {
-  Header,
-  Layout,
-  LedgerSigning,
-  SelectionSummary,
-  SigningConfirmation,
-  StepIndicator,
   UpgradeSelection,
   UserSelection,
   ValidationResults,
+  LedgerSigning,
+  SigningConfirmation,
+  SelectionSummary,
 } from '@/components';
+import { PageShell, StepIndicator } from '@/components/ui';
 import { NetworkType, ValidationData } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
@@ -20,11 +18,11 @@ type UpgradeType = string | null;
 type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
 
 const STEP_LAYOUT_WIDTH: Record<Step, string> = {
-  upgrade: '900px',
-  user: '600px',
-  validation: '1200px',
-  ledger: '800px',
-  signing: '800px',
+  upgrade: 'max-w-4xl',
+  user: 'max-w-3xl',
+  validation: 'max-w-6xl',
+  ledger: 'max-w-4xl',
+  signing: 'max-w-4xl',
 };
 
 export default function Home() {
@@ -98,26 +96,51 @@ export default function Home() {
   const canEditUser =
     currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing';
 
+  // Map current step to step indicator format
+  const steps = [
+    { 
+      id: 'upgrade', 
+      label: 'Select Task', 
+      status: currentStep === 'upgrade' ? 'current' : (selectedUpgrade ? 'completed' : 'pending') as 'current' | 'completed' | 'pending'
+    },
+    { 
+      id: 'user', 
+      label: 'Select User', 
+      status: currentStep === 'user' ? 'current' : (selectedUser ? 'completed' : (selectedUpgrade ? 'pending' : 'pending')) as 'current' | 'completed' | 'pending'
+    },
+    { 
+      id: 'validation', 
+      label: 'Review & Validate', 
+      status: currentStep === 'validation' ? 'current' : (validationData ? 'completed' : (selectedUser ? 'pending' : 'pending')) as 'current' | 'completed' | 'pending'
+    },
+    { 
+      id: 'ledger', 
+      label: 'Sign with Ledger', 
+      status: currentStep === 'ledger' ? 'current' : (signingData ? 'completed' : (validationData ? 'pending' : 'pending')) as 'current' | 'completed' | 'pending'
+    },
+    { 
+      id: 'signing', 
+      label: 'Confirmation', 
+      status: currentStep === 'signing' ? 'current' : 'pending' as 'current' | 'completed' | 'pending'
+    },
+  ];
+
   return (
-    <>
-      <Layout maxWidth={STEP_LAYOUT_WIDTH[currentStep]}>
-        <Header />
+    <PageShell maxWidth={STEP_LAYOUT_WIDTH[currentStep]}>
+      <StepIndicator steps={steps} />
 
-        <StepIndicator
-          currentStep={currentStep}
-          hasNetwork={!!selectedNetwork}
-          hasUpgrade={!!selectedUpgrade}
-          hasUser={!!selectedUser}
-        />
-
-        <SelectionSummary
-          selectedUser={selectedUser}
-          selectedNetwork={selectedNetwork}
-          selectedWallet={selectedUpgrade}
-          onNetworkClick={undefined}
-          onWalletClick={canEditUpgrade ? handleGoToUpgradeSelection : undefined}
-          onUserClick={canEditUser ? handleGoToUserSelection : undefined}
-        />
+      {/* Legacy component wrapper - will be replaced */}
+      <div className="mt-8 animate-fade-in">
+        {canEditUpgrade && (
+           <SelectionSummary
+             selectedUser={selectedUser}
+             selectedNetwork={selectedNetwork}
+             selectedWallet={selectedUpgrade}
+             onNetworkClick={undefined}
+             onWalletClick={canEditUpgrade ? handleGoToUpgradeSelection : undefined}
+             onUserClick={canEditUser ? handleGoToUserSelection : undefined}
+           />
+        )}
 
         {currentStep === 'upgrade' && (
           <UpgradeSelection
@@ -172,7 +195,7 @@ export default function Home() {
             onBackToSetup={handleGoToUpgradeSelection}
           />
         )}
-      </Layout>
-    </>
+      </div>
+    </PageShell>
   );
 }

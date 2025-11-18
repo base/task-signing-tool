@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+import { SectionHeader } from './ui/SectionHeader';
 
 export interface ConfigOption {
   fileName: string;
@@ -53,7 +56,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
         if (!isActive) return;
 
         if (apiError) {
-          setError(`UserSelection::fetchAvailableUsers: API returned an error: ${apiError}`);
+          setError(`API returned an error: ${apiError}`);
           setAvailableUsers([]);
         } else {
           setAvailableUsers(configOptions);
@@ -63,7 +66,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
         if (!isActive) return;
         const message = err instanceof Error ? err.message : String(err);
         console.error('Failed to fetch upgrade config:', err);
-        setError(`UserSelection::fetchAvailableUsers: Failed to fetch upgrade config: ${message}`);
+        setError(`Failed to fetch upgrade config: ${message}`);
         setAvailableUsers([]);
       } finally {
         if (isActive) {
@@ -85,37 +88,61 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   };
 
   return (
-    <div className="text-center">
-      <h2 className="mb-8 text-2xl font-semibold text-gray-700">Select Profile</h2>
+    <div className="w-full animate-fade-in">
+      <SectionHeader 
+        title="Select Profile" 
+        description="Identify which profile you are signing as. This determines the Ledger path and configuration used."
+      />
 
-      {/* Step 1: User Type Selection */}
       <div className="mb-8">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {loadingUsers ? (
-            <p className="text-sm text-gray-500">Loading user options...</p>
+            <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-[var(--cds-border)] border-dashed">
+              <div className="flex flex-col items-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--cds-primary)] border-t-transparent mb-4" />
+                <p className="text-sm font-medium text-[var(--cds-text-secondary)]">Loading profiles...</p>
+              </div>
+            </div>
           ) : availableUsers.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No user options available for this network and upgrade ID.
-            </p>
+            <div className="p-8 bg-white rounded-2xl border border-[var(--cds-border)] text-center">
+               <p className="text-sm text-[var(--cds-text-secondary)]">
+                No user profiles found for this network and task.
+              </p>
+            </div>
           ) : (
             availableUsers.map(option => {
               const isSelected = selectedUser?.fileName === option.fileName;
 
               return (
-                <button
+                <Card
                   key={option.fileName}
-                  type="button"
+                  interactive
+                  selected={isSelected}
                   onClick={() => handleUserSelect(option)}
-                  className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-6 py-5 text-base font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
-                    isSelected
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-900 shadow-lg'
-                      : 'border-gray-200 bg-white text-gray-700 shadow-sm hover:-translate-y-0.5 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
-                  }`}
-                  aria-pressed={isSelected}
+                  className="flex items-center justify-between"
                 >
-                  {isSelected && <span className="text-lg font-semibold text-indigo-600">✓</span>}
-                  {option.displayName}
-                </button>
+                  <div className="flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold transition-colors ${isSelected ? 'bg-[var(--cds-primary)] text-white' : 'bg-gray-100 text-[var(--cds-text-tertiary)]'}`}>
+                      {option.displayName.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className={`font-semibold transition-colors ${isSelected ? 'text-[var(--cds-primary)]' : 'text-[var(--cds-text-primary)]'}`}>
+                        {option.displayName}
+                      </h3>
+                      <p className="text-xs text-[var(--cds-text-secondary)] font-mono mt-0.5">
+                        {option.fileName}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {isSelected && (
+                    <div className="h-6 w-6 rounded-full bg-[var(--cds-primary)] text-white flex items-center justify-center">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </Card>
               );
             })
           )}
@@ -123,40 +150,42 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left">
-          <p className="mb-2 text-sm font-semibold text-red-700">❌ Error:</p>
-          <p className="text-sm text-red-600">{error}</p>
-          {error.includes('not found') && (
-            <p className="mt-2 text-xs text-red-600">
-              Run:{' '}
-              <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">
-                make install-eip712sign
-              </code>{' '}
-              in project root
-            </p>
-          )}
+        <div className="mb-6 rounded-lg bg-red-50 p-4 border border-red-100 flex gap-3">
+           <div className="text-[var(--cds-error)] mt-0.5">
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+             </svg>
+           </div>
+           <div className="flex-1">
+              <h4 className="text-sm font-semibold text-[var(--cds-error)] mb-1">Error loading profiles</h4>
+              <p className="text-sm text-red-700 mb-2">{error}</p>
+              {error.includes('not found') && (
+                <div className="text-xs bg-white/50 p-2 rounded border border-red-100 inline-block">
+                  Run <code className="font-mono font-bold">make install-eip712sign</code> in project root
+                </div>
+              )}
+           </div>
         </div>
       )}
 
-      {/* Proceed Button */}
-      {selectedUser && (
-        <div className="mt-6">
-          <p className="mb-3 text-sm text-gray-600">
-            Next, simulate the transaction to confirm it behaves as expected.
-          </p>
-          <button
-            onClick={() => {
-              if (selectedUser) {
-                onSelect(selectedUser);
-              }
-            }}
-            type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
-          >
-            Simulate
-          </button>
-        </div>
-      )}
+      <div className="flex justify-end pt-4 border-t border-[var(--cds-divider)]">
+        <Button
+          disabled={!selectedUser}
+          onClick={() => {
+            if (selectedUser) {
+              onSelect(selectedUser);
+            }
+          }}
+          size="lg"
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          }
+        >
+          Proceed to Validation
+        </Button>
+      </div>
     </div>
   );
 }

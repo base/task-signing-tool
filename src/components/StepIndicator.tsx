@@ -31,18 +31,51 @@ export function StepIndicator({
 
   return (
     <div className="flex items-center justify-center mb-12">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         {SETUP_STEPS.map((step, index) => {
           const isComplete = completionMap[step];
           const isActive = index <= activeIndex || isComplete;
 
           return (
             <Fragment key={step}>
-              <div
-                className={`h-3 w-3 rounded-full ${isActive ? 'bg-indigo-500' : 'bg-gray-300'}`}
-              />
+              <div className="relative">
+                <div
+                  className={`relative z-10 h-5 w-5 rounded-full transition-all duration-500 ${
+                    isActive
+                      ? 'bg-gradient-to-br from-purple-500 to-amber-500 shadow-lg shadow-purple-500/50 scale-110'
+                      : 'bg-gray-300'
+                  }`}
+                >
+                  {isComplete && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg
+                        className="h-3 w-3 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  {isActive && !isComplete && (
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 to-amber-500 animate-pulse opacity-75" />
+                  )}
+                </div>
+              </div>
               {index < SETUP_STEPS.length - 1 && (
-                <div className={`h-0.5 w-12 ${isComplete ? 'bg-indigo-500' : 'bg-gray-300'}`} />
+                <div
+                  className={`h-1 w-16 rounded-full transition-all duration-500 ${
+                    isComplete
+                      ? 'bg-gradient-to-r from-purple-500 to-amber-500 shadow-md'
+                      : 'bg-gray-300'
+                  }`}
+                />
               )}
             </Fragment>
           );
