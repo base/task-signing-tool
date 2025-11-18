@@ -1,13 +1,18 @@
-import { ReactNode } from 'react';
+import { ReactNode, HTMLAttributes } from 'react';
 
-interface CardProps {
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
-  className?: string;
   elevated?: boolean;
   interactive?: boolean;
 }
 
-export function Card({ children, className = '', elevated = false, interactive = false }: CardProps) {
+export function Card({ 
+  children, 
+  className = '', 
+  elevated = false, 
+  interactive = false,
+  ...props 
+}: CardProps) {
   const baseClasses = 'bg-white rounded-xl border border-gray-200';
   const elevatedClasses = elevated ? 'shadow-lg' : 'shadow-sm';
   const interactiveClasses = interactive 
@@ -15,7 +20,10 @@ export function Card({ children, className = '', elevated = false, interactive =
     : '';
   
   return (
-    <div className={`${baseClasses} ${elevatedClasses} ${interactiveClasses} ${className}`}>
+    <div 
+      className={`${baseClasses} ${elevatedClasses} ${interactiveClasses} ${className}`}
+      {...props}
+    >
       {children}
     </div>
   );
