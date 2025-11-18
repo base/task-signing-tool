@@ -103,9 +103,7 @@ function parseSignatureOutput(output?: string) {
     return null;
   }
 
-  const signature = signatureMatch[1].startsWith('0x')
-    ? signatureMatch[1]
-    : `0x${signatureMatch[1]}`;
+  const signature = signatureMatch[1];
 
   return {
     signature,
