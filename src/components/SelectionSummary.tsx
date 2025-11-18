@@ -1,4 +1,5 @@
 import { ConfigOption } from './UserSelection';
+import { Badge } from './ui/Badge';
 
 interface SelectionSummaryProps {
   selectedUser?: ConfigOption;
@@ -19,52 +20,52 @@ export function SelectionSummary({
 }: SelectionSummaryProps) {
   if (!selectedUser && !selectedNetwork && !selectedWallet) return null;
 
-  const badgeBaseClasses =
-    'inline-flex items-center gap-2 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300 relative overflow-hidden';
-  const clickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-700 hover:via-pink-700 hover:to-amber-600 hover:-translate-y-1 hover:shadow-xl hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2`;
-  const nonClickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500`;
-
   const renderBadge = (
     label: string | null | undefined,
-    options: { onClick?: () => void; icon?: string; title: string }
+    options: { onClick?: () => void; title: string }
   ) => {
     if (!label) return null;
 
-    const { onClick, icon, title } = options;
-    const content = (
-      <>
-        {icon ? <span>{icon}</span> : null}
-        {label}
-      </>
-    );
+    const { onClick, title } = options;
+    const content = label;
 
-    return onClick ? (
-      <button type="button" onClick={onClick} className={clickableBadgeClasses} title={title}>
+    if (onClick) {
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          className="inline-flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 transition-all hover:bg-blue-200 hover:shadow-md focus-ring"
+          title={title}
+        >
+          {content}
+        </button>
+      );
+    }
+
+    return (
+      <Badge variant="info" className="px-4 py-2">
         {content}
-      </button>
-    ) : (
-      <span className={nonClickableBadgeClasses}>{content}</span>
+      </Badge>
     );
   };
 
   return (
-    <div className="mb-8 rounded-2xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-pink-50/60 to-amber-50/80 p-6 backdrop-blur-xl shadow-lg ring-1 ring-white/50">
-      <h3 className="mb-4 text-center text-xs font-bold uppercase tracking-widest text-purple-700">
-        Your Selections
+    <div className="mb-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+      <h3 className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
+        Current Selection
       </h3>
       <div className="flex flex-wrap justify-center gap-3">
-        {renderBadge(selectedNetwork, {
+        {selectedNetwork && renderBadge(selectedNetwork, {
           onClick: onNetworkClick,
-          icon: '🌐',
-          title: 'Click to change network selection',
+          title: 'Click to change network',
         })}
-        {renderBadge(selectedWallet, {
+        {selectedWallet && renderBadge(selectedWallet, {
           onClick: onWalletClick,
-          title: 'Click to change wallet selection',
+          title: 'Click to change task',
         })}
-        {renderBadge(selectedUser?.displayName, {
+        {selectedUser?.displayName && renderBadge(selectedUser.displayName, {
           onClick: onUserClick,
-          title: 'Click to change user selection',
+          title: 'Click to change profile',
         })}
       </div>
     </div>

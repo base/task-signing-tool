@@ -2,15 +2,16 @@ import { TaskStatus } from '@/lib/types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Card } from './ui/Card';
+import { Badge } from './ui/Badge';
+import { Button } from './ui/Button';
 
-const STATUS_CLASS_MAP: Record<TaskStatus, string> = {
-  [TaskStatus.Executed]: 'border-emerald-300 bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-800 shadow-sm',
-  [TaskStatus.ReadyToSign]: 'border-amber-300 bg-gradient-to-r from-amber-100 to-amber-50 text-amber-900 shadow-sm',
-  [TaskStatus.Pending]: 'border-gray-300 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-800 shadow-sm',
+const STATUS_VARIANT_MAP: Record<TaskStatus, 'success' | 'warning' | 'info'> = {
+  [TaskStatus.Executed]: 'success',
+  [TaskStatus.ReadyToSign]: 'warning',
+  [TaskStatus.Pending]: 'info',
 };
 
-const BADGE_BASE_CLASSES =
-  'inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 shadow-sm';
 const DESCRIPTION_CHAR_LIMIT = 200;
 
 interface ExecutionLink {
@@ -92,46 +93,41 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-10 text-center">
-        <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 shadow-lg" />
-        <p className="mt-4 text-base font-medium text-gray-600">Loading upgrades...</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+        <p className="mt-4 text-base font-medium text-gray-600">Loading tasks...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center p-10 text-center">
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 p-4">
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-6 max-w-md">
           <p className="text-sm font-medium text-red-700">{error}</p>
         </div>
-        <button
-          type="button"
-          onClick={fetchUpgrades}
-          disabled={loading}
-          className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-70"
-        >
+        <Button onClick={fetchUpgrades} disabled={loading}>
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (upgradeOptions.length === 0) {
     return (
-      <div className="p-10 text-center">
-        <p className="text-sm text-gray-500">No tasks ready to sign</p>
+      <div className="py-16 text-center">
+        <p className="text-base text-gray-500">No tasks ready to sign</p>
       </div>
     );
   }
 
   return (
-    <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
+    <div>
+      <h2 className="mb-8 text-center text-2xl font-bold text-gray-900">
         Select Task
       </h2>
 
-      <div className="mb-8 flex max-h-[400px] flex-col gap-5 overflow-y-auto pr-2 scrollbar-hide">
+      <div className="flex max-h-[600px] flex-col gap-4 overflow-y-auto pr-2 scrollbar-hide">
         {upgradeOptions.map(option => {
           const isSelected = selectedWallet === option.id && selectedNetwork === option.network;
           const isExpanded = !!expandedCards[option.id];
@@ -139,7 +135,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
           const collapsed = isTruncated && !isExpanded;
 
           return (
-            <div
+            <Card
               key={`${option.network}-${option.id}`}
               onClick={() => onSelect(option.id, option.network)}
               onKeyDown={e => {
@@ -150,44 +146,34 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
               }}
               role="button"
               tabIndex={0}
-              className={`upgrade-card group relative w-full cursor-pointer rounded-3xl p-8 text-left transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
+              interactive
+              elevated={isSelected}
+              className={`relative p-6 transition-all duration-200 focus-ring ${
                 isSelected
-                  ? 'border-2 border-transparent bg-gradient-to-br from-purple-600 via-pink-600 to-amber-500 text-white shadow-[0_20px_50px_rgba(139,92,246,0.4)] scale-[1.02] ring-2 ring-purple-300/50'
-                  : 'border border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
+                  ? 'border-2 border-blue-600 bg-blue-50/50 ring-2 ring-blue-100'
+                  : 'hover:border-gray-300'
               }`}
               data-selected={isSelected ? 'true' : 'false'}
             >
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="mb-2 text-2xl font-bold leading-tight">{option.name}</div>
+                  <div className={`mb-2 text-xl font-bold leading-tight ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                    {option.name}
+                  </div>
                   <div className="mb-1 flex items-center gap-3">
-                    <div
-                      className={`text-sm font-medium ${
-                        isSelected ? 'text-white/90' : 'text-gray-600'
-                      }`}
-                    >
+                    <div className={`text-sm font-medium ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
                       {option.date}
                     </div>
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
-                        isSelected
-                          ? 'bg-white/25 text-white backdrop-blur-sm'
-                          : 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700'
-                      }`}
-                    >
+                    <Badge variant="info" size="sm">
                       {option.network.charAt(0).toUpperCase() + option.network.slice(1)}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
 
                 <StatusBadge status={option.status} executionLinks={option.executionLinks} />
               </div>
 
-              <div
-                className={`relative text-base leading-relaxed ${
-                  isSelected ? 'text-white/95' : 'text-gray-600'
-                }`}
-              >
+              <div className={`relative text-sm leading-relaxed ${isSelected ? 'text-blue-900' : 'text-gray-700'}`}>
                 <div className={`markdown-content ${collapsed ? 'collapsed line-clamp-5' : ''}`}>
                   <Markdown
                     remarkPlugins={[remarkGfm]}
@@ -200,6 +186,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                           }}
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 underline"
                         />
                       ),
                     }}
@@ -209,13 +196,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                 </div>
 
                 {collapsed && (
-                  <div
-                    className={`pointer-events-none absolute inset-x-0 bottom-0 h-9 ${
-                      isSelected
-                        ? 'bg-gradient-to-b from-transparent to-white/20'
-                        : 'bg-gradient-to-b from-transparent to-gray-100'
-                    }`}
-                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-white" />
                 )}
               </div>
 
@@ -226,25 +207,27 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                     e.stopPropagation();
                     setExpandedCards(prev => ({ ...prev, [option.id]: !isExpanded }));
                   }}
-                  className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 ${
+                  className={`mt-3 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition focus-ring ${
                     isSelected
-                      ? 'border-white/60 bg-white/20 text-white hover:bg-white/30 focus-visible:ring-white/80'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 focus-visible:ring-indigo-500'
+                      ? 'border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   aria-expanded={isExpanded}
                   aria-label={isExpanded ? 'Show less description' : 'Show full description'}
                 >
                   {isExpanded ? 'Show less' : 'Show more'}
-                  <span className="text-sm">{isExpanded ? '▲' : '▼'}</span>
+                  <span className="text-xs">{isExpanded ? '▲' : '▼'}</span>
                 </button>
               )}
 
               {isSelected && (
-                <div className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-lg font-bold shadow-lg ring-2 ring-white/50">
-                  ✓
+                <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-md">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
               )}
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -292,8 +275,7 @@ const StatusBadge: React.FC<{
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const resolvedStatusClasses = STATUS_CLASS_MAP[status] ?? STATUS_CLASS_MAP[TaskStatus.Pending];
-  const badgeClasses = `${BADGE_BASE_CLASSES} ${resolvedStatusClasses}`;
+  const variant = STATUS_VARIANT_MAP[status] ?? 'info';
 
   // If it's executed and has links
   if (status === TaskStatus.Executed && executionLinks && executionLinks.length > 0) {
@@ -302,13 +284,11 @@ const StatusBadge: React.FC<{
       return (
         <button
           type="button"
-          className={`${badgeClasses} cursor-pointer hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
           onClick={e => handleLinkClick(executionLinks[0].url, e)}
           title={`View transaction: ${executionLinks[0].label}`}
-          aria-haspopup="menu"
-          aria-expanded="false"
+          className="focus-ring"
         >
-          {status}
+          <Badge variant={variant}>{status}</Badge>
         </button>
       );
     }
@@ -318,21 +298,22 @@ const StatusBadge: React.FC<{
       <div ref={dropdownRef} className="relative inline-block">
         <button
           type="button"
-          className={`${badgeClasses} cursor-pointer hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
-          title="Multiple transactions available - click to see options"
-          aria-haspopup="menu"
-          aria-expanded={showDropdown}
           onClick={e => {
             e.stopPropagation();
             setShowDropdown(prev => !prev);
           }}
+          className="focus-ring"
+          aria-haspopup="menu"
+          aria-expanded={showDropdown}
         >
-          {status} ({executionLinks.length})
+          <Badge variant={variant}>
+            {status} ({executionLinks.length})
+          </Badge>
         </button>
 
         {showDropdown && (
           <div
-            className="absolute left-0 top-full z-50 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-xl"
+            className="absolute right-0 top-full z-50 mt-1 w-56 rounded-lg border border-gray-200 bg-white shadow-lg"
             role="menu"
           >
             <div className="py-1">
@@ -341,7 +322,7 @@ const StatusBadge: React.FC<{
                   type="button"
                   key={`${link.url}-${index}`}
                   onClick={e => handleLinkClick(link.url, e)}
-                  className="flex w-full flex-col items-start px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  className="flex w-full flex-col items-start px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 focus-ring-inset"
                   role="menuitem"
                 >
                   <div className="font-medium">{link.label}</div>
@@ -358,5 +339,5 @@ const StatusBadge: React.FC<{
   }
 
   // Regular status badge (not executed or no links)
-  return <span className={badgeClasses}>{status}</span>;
+  return <Badge variant={variant}>{status}</Badge>;
 };

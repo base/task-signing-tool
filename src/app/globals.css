@@ -1,14 +1,76 @@
 @import 'tailwindcss';
 
+/* ============================================
+   Coinbase Design System
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --luxury-gold: #d4af37;
-  --luxury-purple: #6b46c1;
-  --luxury-blue: #1e40af;
-  --luxury-gradient-start: #0f172a;
-  --luxury-gradient-mid: #1e1b4b;
-  --luxury-gradient-end: #312e81;
+  /* Coinbase Blue Palette */
+  --cb-blue-primary: #0052FF;
+  --cb-blue-dark: #0A2540;
+  --cb-blue-light: #1652F0;
+  --cb-blue-accent: #0066FF;
+  --cb-blue-subtle: #E6F0FF;
+  
+  /* Neutrals */
+  --cb-white: #FFFFFF;
+  --cb-gray-50: #F7F9FC;
+  --cb-gray-100: #EDF1F7;
+  --cb-gray-200: #E4E9F2;
+  --cb-gray-300: #C5CEE0;
+  --cb-gray-400: #8F9BB3;
+  --cb-gray-500: #2E3A59;
+  --cb-gray-600: #222B45;
+  --cb-gray-700: #192038;
+  --cb-gray-900: #151A30;
+  
+  /* Semantic Colors */
+  --cb-success: #00D4AA;
+  --cb-success-light: #E6FBF7;
+  --cb-warning: #FFB020;
+  --cb-warning-light: #FFF8E6;
+  --cb-error: #F44336;
+  --cb-error-light: #FFEBEE;
+  
+  /* Backgrounds */
+  --cb-bg-primary: #FFFFFF;
+  --cb-bg-secondary: #F7F9FC;
+  --cb-bg-elevated: #FFFFFF;
+  
+  /* Text */
+  --cb-text-primary: #192038;
+  --cb-text-secondary: #2E3A59;
+  --cb-text-tertiary: #8F9BB3;
+  
+  /* Borders */
+  --cb-border-light: #E4E9F2;
+  --cb-border-medium: #C5CEE0;
+  
+  /* Shadows */
+  --cb-shadow-sm: 0 1px 2px 0 rgba(22, 82, 240, 0.05);
+  --cb-shadow-md: 0 4px 6px -1px rgba(22, 82, 240, 0.1), 0 2px 4px -1px rgba(22, 82, 240, 0.06);
+  --cb-shadow-lg: 0 10px 15px -3px rgba(22, 82, 240, 0.1), 0 4px 6px -2px rgba(22, 82, 240, 0.05);
+  --cb-shadow-xl: 0 20px 25px -5px rgba(22, 82, 240, 0.1), 0 10px 10px -5px rgba(22, 82, 240, 0.04);
+  
+  /* Spacing Scale */
+  --cb-space-xs: 0.25rem;
+  --cb-space-sm: 0.5rem;
+  --cb-space-md: 1rem;
+  --cb-space-lg: 1.5rem;
+  --cb-space-xl: 2rem;
+  --cb-space-2xl: 3rem;
+  --cb-space-3xl: 4rem;
+  
+  /* Border Radius */
+  --cb-radius-sm: 0.375rem;
+  --cb-radius-md: 0.5rem;
+  --cb-radius-lg: 0.75rem;
+  --cb-radius-xl: 1rem;
+  --cb-radius-2xl: 1.5rem;
+  
+  /* Typography */
+  --cb-font-sans: var(--font-geist-sans);
+  --cb-font-mono: var(--font-geist-mono);
 }
 
 @theme inline {
@@ -16,90 +78,63 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base Styles */
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
+  background: var(--cb-bg-secondary);
+  color: var(--cb-text-primary);
+  font-family: var(--cb-font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
 }
 
 button {
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
 }
 
 button:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-/* Premium animations */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
+/* Subtle animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
   }
-  50% {
-    box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-.animate-shimmer {
-  animation: shimmer 3s infinite;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  background-size: 1000px 100%;
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Glassmorphism utility */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.glass-dark {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
+/* Utility Classes */
 @utility line-clamp-5 {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -107,17 +142,19 @@ button:disabled {
   overflow: hidden;
 }
 
+/* Component Styles */
 @layer components {
+  /* Markdown content in upgrade cards */
   .upgrade-card .markdown-content a {
-    @apply font-semibold text-amber-400 underline decoration-2 underline-offset-2 transition-all duration-200;
+    @apply font-semibold text-blue-600 underline decoration-2 underline-offset-2 transition-colors;
   }
 
   .upgrade-card .markdown-content a:hover {
-    @apply text-amber-300 scale-105;
+    @apply text-blue-700;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content a {
-    @apply text-amber-200;
+    @apply text-blue-100;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content a:hover {
@@ -125,15 +162,15 @@ button:disabled {
   }
 
   .upgrade-card .markdown-content code {
-    @apply rounded-md border border-purple-200 bg-purple-50/50 px-2 py-0.5 font-mono text-[0.9em] text-purple-900 shadow-sm;
+    @apply rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 font-mono text-[0.9em] text-gray-800;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content code {
-    @apply border-white/50 bg-white/20 text-white backdrop-blur-sm;
+    @apply border-white/30 bg-white/20 text-white;
   }
 
   .upgrade-card .markdown-content pre {
-    @apply mb-3 overflow-auto rounded-lg border border-gray-800 border-l-4 border-l-purple-500 bg-gray-900/90 p-3 text-gray-200 shadow-lg backdrop-blur-sm;
+    @apply mb-3 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800;
   }
 
   .upgrade-card .markdown-content pre code {
@@ -141,7 +178,7 @@ button:disabled {
   }
 
   .upgrade-card[data-selected='true'] .markdown-content pre {
-    @apply border border-white/30 border-l-4 border-l-amber-400 bg-white/10 text-white shadow-xl backdrop-blur-md;
+    @apply border-white/30 bg-white/10 text-white;
   }
 
   .upgrade-card .markdown-content p {
@@ -175,47 +212,15 @@ button:disabled {
   }
 
   .upgrade-card .markdown-content blockquote {
-    @apply mb-3 rounded-md border-l-4 border-purple-300 bg-purple-50/50 px-3 py-2 text-gray-700 backdrop-blur-sm;
+    @apply mb-3 rounded-md border-l-4 border-blue-200 bg-blue-50 px-3 py-2 text-gray-700;
   }
 
   .upgrade-card[data-selected='true'] .markdown-content blockquote {
-    @apply border-l-4 border-amber-400 bg-white/15 text-slate-50 backdrop-blur-md;
+    @apply border-l-4 border-blue-300 bg-white/20 text-white;
   }
 
   .upgrade-card .markdown-content.collapsed a {
     @apply cursor-default pointer-events-none;
-  }
-
-  /* Premium button styles */
-  .btn-premium {
-    @apply relative overflow-hidden rounded-xl px-8 py-4 font-semibold text-white shadow-2xl transition-all duration-300;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    background-size: 200% 200%;
-  }
-
-  .btn-premium:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
-    background-position: right center;
-  }
-
-  .btn-premium:active {
-    transform: translateY(0);
-  }
-
-  .btn-premium::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s;
-  }
-
-  .btn-premium:hover::before {
-    left: 100%;
   }
 }
 
@@ -227,5 +232,14 @@ button:disabled {
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* Focus styles for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  
+  .focus-ring-inset {
+    @apply focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500;
   }
 }

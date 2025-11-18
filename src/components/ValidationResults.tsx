@@ -11,6 +11,9 @@ import {
 } from '@/lib/validation-results-utils';
 import { ValidationData } from '@/lib/types';
 import { ComparisonCard } from './ComparisonCard';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import { Badge } from './ui/Badge';
 
 interface ValidationResultsProps {
   userType: string;
@@ -75,8 +78,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 h-16 w-16 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 shadow-lg" />
-        <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <div className="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+        <h3 className="text-xl font-bold text-gray-900">
           {loadingTitle}
         </h3>
       </div>
@@ -86,25 +89,19 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   if (error) {
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-rose-100 p-6 text-rose-600">
-          <h3 className="mb-2 text-xl font-semibold">❌ Validation Failed</h3>
-          <p className="text-base">{error}</p>
-        </div>
+        <Card className="mx-auto mb-6 max-w-xl border-red-200 bg-red-50 p-6">
+          <h3 className="mb-2 text-xl font-semibold text-red-700">Validation Failed</h3>
+          <p className="text-base text-red-600">{error}</p>
+        </Card>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <button
-            onClick={() => runValidation()}
-            className="rounded-xl bg-slate-100 px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-200"
-          >
+          <Button onClick={() => runValidation()} variant="secondary">
             Retry Validation
-          </button>
+          </Button>
 
-          <button
-            onClick={onBackToSetup}
-            className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
-          >
+          <Button onClick={onBackToSetup}>
             Back to Setup
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -113,18 +110,15 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   if (!validationResult || totalItems === 0) {
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-amber-100 p-6 text-amber-700">
-          <h3 className="mb-2 text-xl font-semibold">⚠️ No Changes Found</h3>
-          <p className="text-base">
+        <Card className="mx-auto mb-6 max-w-xl border-yellow-200 bg-yellow-50 p-6">
+          <h3 className="mb-2 text-xl font-semibold text-yellow-700">No Changes Found</h3>
+          <p className="text-base text-yellow-600">
             No state changes or overrides were found in the validation data.
           </p>
-        </div>
-        <button
-          onClick={onBackToSetup}
-          className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
-        >
+        </Card>
+        <Button onClick={onBackToSetup}>
           Back to Setup
-        </button>
+        </Button>
       </div>
     );
   }
@@ -135,17 +129,17 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="mb-3 text-5xl font-black text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 bg-clip-text">
+        <h2 className="mb-4 text-3xl font-bold text-gray-900">
           Validation Results
         </h2>
-        <div className="text-base text-gray-600">
+        <div className="text-sm text-gray-600">
           <div className="mb-2">
-            <span className="font-bold text-gray-700">
+            <span className="font-semibold text-gray-700">
               Step {stepInfo.currentStep}: {currentEntry ? STEP_LABELS[currentEntry.kind] : ''}
             </span>{' '}
             • Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
           </div>
-          <div className="text-sm font-medium text-gray-500">
+          <div className="text-xs text-gray-500">
             Step 1: {stepCounts.signing} items • Step 2: {stepCounts.overrides} items • Step 3:{' '}
             {stepCounts.changes} items • Step 4: {stepCounts.balance} items
           </div>
@@ -153,33 +147,24 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <button
+        <Button
           onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
           disabled={currentIndex === 0}
-          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
-            currentIndex === 0
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 hover:-translate-y-0.5 hover:shadow-lg'
-          }`}
+          variant="secondary"
         >
           ← Previous
-        </button>
+        </Button>
 
-        <div className="rounded-full bg-gradient-to-r from-purple-100 to-pink-100 px-5 py-2.5 text-sm font-bold text-purple-700 shadow-md ring-1 ring-purple-200">
+        <Badge variant="info" className="px-4 py-2 text-sm font-semibold">
           {getContractNameForEntry(currentEntry, itemsByStep)}
-        </div>
+        </Badge>
 
-        <button
+        <Button
           onClick={() => setCurrentIndex(prev => Math.min(totalItems - 1, prev + 1))}
           disabled={currentIndex === totalItems - 1}
-          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
-            currentIndex === totalItems - 1
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
-          }`}
         >
           Next →
-        </button>
+        </Button>
       </div>
 
       {evaluation && (
@@ -190,132 +175,130 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       {descriptionContent && (
-        <div
-          className={`rounded-2xl border-2 p-6 shadow-md ${
+        <Card
+          className={`border-2 p-6 ${
             descriptionContent.variant === 'expected-difference'
-              ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100'
-              : 'border-sky-200 bg-gradient-to-r from-sky-50 to-sky-100'
+              ? 'border-green-200 bg-green-50'
+              : 'border-blue-200 bg-blue-50'
           }`}
         >
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 text-2xl">{descriptionContent.icon}</span>
+            <div className={`mt-0.5 text-lg ${
+              descriptionContent.variant === 'expected-difference' ? 'text-green-600' : 'text-blue-600'
+            }`}>
+              {descriptionContent.icon}
+            </div>
             <div className="flex-1">
               <h4
-                className={`mb-2 text-sm font-bold uppercase tracking-wider ${
+                className={`mb-2 text-xs font-bold uppercase tracking-wider ${
                   descriptionContent.variant === 'expected-difference'
-                    ? 'text-emerald-700'
-                    : 'text-sky-700'
+                    ? 'text-green-700'
+                    : 'text-blue-700'
                 }`}
               >
                 {descriptionContent.title}
               </h4>
               <p
-                className={`text-base font-medium leading-relaxed whitespace-pre-wrap ${
+                className={`text-sm leading-relaxed whitespace-pre-wrap ${
                   descriptionContent.variant === 'expected-difference'
-                    ? 'text-emerald-900'
-                    : 'text-sky-900'
+                    ? 'text-green-900'
+                    : 'text-blue-900'
                 }`}
               >
                 {descriptionContent.text}
               </p>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {matchStatus && (
         <div className="text-center">
-          <div
-            className={`inline-flex items-center gap-2 rounded-full px-8 py-4 text-lg font-bold text-white ${matchStatus.bgClass}`}
+          <Badge
+            variant={matchStatus.text.includes('Match') ? 'success' : 'error'}
+            className="px-6 py-3 text-base font-semibold"
           >
-            <span>{matchStatus.icon}</span> {matchStatus.text}
-          </div>
+            <span className="mr-2">{matchStatus.icon}</span>
+            {matchStatus.text}
+          </Badge>
         </div>
       )}
 
       {currentIndex === totalItems - 1 && (
         <div className="mt-12 text-center">
-          <div
-            className={`mx-auto mb-6 max-w-md rounded-2xl border-2 p-6 ${
+          <Card
+            className={`mx-auto mb-6 max-w-md border-2 p-6 ${
               blockingErrorsExist
-                ? 'border-rose-200 bg-gradient-to-r from-rose-100 to-rose-200'
-                : 'border-emerald-200 bg-gradient-to-r from-emerald-100 to-emerald-200'
+                ? 'border-red-200 bg-red-50'
+                : 'border-green-200 bg-green-50'
             }`}
           >
             <div className="mb-3 flex items-center justify-center gap-3">
-              <span className="text-3xl">{blockingErrorsExist ? '🚫' : '✅'}</span>
+              <div className={`text-2xl ${blockingErrorsExist ? 'text-red-600' : 'text-green-600'}`}>
+                {blockingErrorsExist ? '🚫' : '✅'}
+              </div>
               <h3
                 className={`text-xl font-bold ${
-                  blockingErrorsExist ? 'text-rose-600' : 'text-emerald-700'
+                  blockingErrorsExist ? 'text-red-700' : 'text-green-700'
                 }`}
               >
                 {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
               </h3>
             </div>
             {blockingErrorsExist && (
-              <p className="text-sm text-rose-600">
+              <p className="text-sm text-red-600">
                 Found <strong>Missing</strong> or <strong>Different</strong> instances. Contact
                 developers before continuing.
               </p>
             )}
-          </div>
+          </Card>
 
           {!blockingErrorsExist &&
             validationResult.expected?.domainAndMessageHashes?.domainHash &&
             validationResult.expected?.domainAndMessageHashes?.messageHash && (
-              <button
+              <Button
                 onClick={() => onProceedToLedgerSigning(validationResult)}
-                className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 px-12 py-5 text-lg font-bold text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(139,92,246,0.4)] hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+                size="lg"
+                className="gap-2"
               >
-                <span className="text-2xl">🔐</span>
+                <span>🔐</span>
                 Sign with Ledger →
-              </button>
+              </Button>
             )}
 
           {(!validationResult.expected?.domainAndMessageHashes ||
             !validationResult.expected?.domainAndMessageHashes?.domainHash ||
             !validationResult.expected?.domainAndMessageHashes?.messageHash) && (
-            <div className="mt-6 rounded-lg border border-amber-300 bg-amber-100 p-4 text-left">
-              <p className="mb-2 text-sm font-semibold text-amber-800">⚠️ Signing Not Available</p>
-              <p className="text-sm text-amber-800">
+            <Card className="mt-6 border-yellow-200 bg-yellow-50 p-4 text-left">
+              <p className="mb-2 text-sm font-semibold text-yellow-800">⚠️ Signing Not Available</p>
+              <p className="text-sm text-yellow-800">
                 Domain and message hashes are required for signing but were not generated during
                 validation. This may indicate an issue with the script execution or validation
                 process.
               </p>
-            </div>
+            </Card>
           )}
         </div>
       )}
 
       <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          onClick={onBackToSetup}
-          className="flex items-center gap-2 rounded-xl bg-slate-100 px-6 py-3 text-base font-medium text-slate-600 transition hover:bg-slate-200"
-        >
+        <Button onClick={onBackToSetup} variant="secondary">
           ← Back to Setup
-        </button>
+        </Button>
 
-        <button
-          onClick={runValidation}
-          disabled={isLoading}
-          className={`flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition-all duration-200 ${
-            isLoading
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
-          }`}
-        >
+        <Button onClick={runValidation} disabled={isLoading} className="gap-2">
           {isLoading ? (
             <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               Running Validation...
             </>
           ) : (
             <>
-              <span className="text-base">🔄</span>
+              <span>🔄</span>
               Rerun Validation
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

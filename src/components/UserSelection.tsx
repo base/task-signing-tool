@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Card } from './ui/Card';
+import { Button } from './ui/Button';
 
 export interface ConfigOption {
   fileName: string;
@@ -85,39 +87,56 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   };
 
   return (
-    <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
+    <div>
+      <h2 className="mb-8 text-center text-2xl font-bold text-gray-900">
         Select Profile
       </h2>
 
-      {/* Step 1: User Type Selection */}
       <div className="mb-8">
         <div className="flex flex-col gap-4">
           {loadingUsers ? (
-            <p className="text-base font-medium text-gray-600">Loading user options...</p>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+              <p className="mt-4 text-base font-medium text-gray-600">Loading profiles...</p>
+            </div>
           ) : availableUsers.length === 0 ? (
-            <p className="text-base font-medium text-gray-600">
-              No user options available for this network and upgrade ID.
-            </p>
+            <div className="py-12 text-center">
+              <p className="text-base text-gray-600">
+                No profiles available for this network and upgrade.
+              </p>
+            </div>
           ) : (
             availableUsers.map(option => {
               const isSelected = selectedUser?.fileName === option.fileName;
 
               return (
-                <button
+                <Card
                   key={option.fileName}
-                  type="button"
                   onClick={() => handleUserSelect(option)}
-                  className={`inline-flex w-full items-center justify-center gap-3 rounded-2xl border-2 px-8 py-6 text-base font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
+                  interactive
+                  elevated={isSelected}
+                  className={`p-6 transition-all duration-200 focus-ring ${
                     isSelected
-                      ? 'border-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white shadow-xl scale-[1.02] ring-2 ring-purple-300/50'
-                      : 'border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
+                      ? 'border-2 border-blue-600 bg-blue-50/50 ring-2 ring-blue-100'
+                      : 'hover:border-gray-300'
                   }`}
+                  role="button"
+                  tabIndex={0}
                   aria-pressed={isSelected}
                 >
-                  {isSelected && <span className="text-xl font-bold">✓</span>}
-                  {option.displayName}
-                </button>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-lg font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                      {option.displayName}
+                    </span>
+                    {isSelected && (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </Card>
               );
             })
           )}
@@ -125,8 +144,8 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left">
-          <p className="mb-2 text-sm font-semibold text-red-700">❌ Error:</p>
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="mb-2 text-sm font-semibold text-red-700">Error</p>
           <p className="text-sm text-red-600">{error}</p>
           {error.includes('not found') && (
             <p className="mt-2 text-xs text-red-600">
@@ -140,23 +159,21 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
         </div>
       )}
 
-      {/* Proceed Button */}
       {selectedUser && (
-        <div className="mt-6">
-          <p className="mb-3 text-sm text-gray-600">
+        <div className="mt-8 text-center">
+          <p className="mb-4 text-sm text-gray-600">
             Next, simulate the transaction to confirm it behaves as expected.
           </p>
-          <button
+          <Button
             onClick={() => {
               if (selectedUser) {
                 onSelect(selectedUser);
               }
             }}
-            type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-10 py-5 text-base font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-2xl hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+            size="lg"
           >
-            Simulate →
-          </button>
+            Simulate Transaction →
+          </Button>
         </div>
       )}
     </div>
