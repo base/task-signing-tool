@@ -9,7 +9,7 @@ function printUsage(): void {
 Generate a validation JSON file from a forge run output.
 
 Usage:
-  tsx scripts/genValidationFile.ts --rpc-url <URL> --workdir <DIR> --forge-cmd "<CMD>" [--out <FILE>]
+  tsx scripts/genValidationFile.ts --rpc-url <URL> --workdir <DIR> --forge-cmd "<CMD>" [--ledger-id <ID>] [--out <FILE>]
 
 Required flags:
   --rpc-url, -r     HTTPS RPC URL used to resolve chainId for decoding
@@ -17,8 +17,9 @@ Required flags:
   --forge-cmd, -f   Full forge command to execute (quoted); e.g. "forge script ... --json"
 
 Optional flags:
-  --out, -o         Output file path for the resulting JSON (defaults to stdout)
-  --help, -h        Show this help message
+  --ledger-id, -l    Ledger account index to use in the validation JSON (defaults to 0)
+  --out, -o          Output file path for the resulting JSON (defaults to stdout)
+  --help, -h         Show this help message
 
 Examples:
   tsx scripts/genValidationFile.ts \
@@ -37,6 +38,7 @@ async function main() {
       'rpc-url': { type: 'string', short: 'r' },
       workdir: { type: 'string', short: 'w' },
       'forge-cmd': { type: 'string', short: 'f' },
+      'ledger-id': { type: 'string', short: 'l' },
       out: { type: 'string', short: 'o' },
       help: { type: 'boolean', short: 'h' },
     },
@@ -54,6 +56,7 @@ async function main() {
   const rpcUrl = values['rpc-url'] ?? '';
   const workdirFlag = values.workdir ?? '';
   const forgeCmdFlag = values['forge-cmd'] ?? '';
+  const ledgerIdFlag = values['ledger-id'];
   const outFlag = values.out;
 
   if (!rpcUrl || !workdirFlag || !forgeCmdFlag) {
@@ -65,6 +68,14 @@ async function main() {
 
   const workdir = path.resolve(process.cwd(), workdirFlag);
 
+  const ledgerId = ledgerIdFlag ? Number.parseInt(ledgerIdFlag, 10) : 0;
+
+  if (!Number.isInteger(ledgerId) || ledgerId < 0) {
+    console.error('--ledger-id must be a non-negative integer');
+    process.exitCode = 1;
+    return;
+  }
+
   const tokens = shellParse(forgeCmdFlag);
   const forgeCmdParts: string[] = tokens.map(t => {
     if (typeof t !== 'string') {
@@ -75,7 +86,7 @@ async function main() {
     return t;
   });
 
-  const sdc = new StateDiffClient();
+  const sdc = new StateDiffClient(ledgerId);
   const { result } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
   const output = JSON.stringify(result, null, 2);

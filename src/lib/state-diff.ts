@@ -59,6 +59,12 @@ type ContractCfg = { name: string; slots: Record<string, SlotCfg> };
 type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> };
 
 export class StateDiffClient {
+  private readonly ledgerId: number;
+
+  constructor(ledgerId: number = 0) {
+    this.ledgerId = ledgerId;
+  }
+
   async simulate(
     rpcUrl: string,
     forgeCmdParts: string[],
@@ -586,23 +592,12 @@ export class StateDiffClient {
     balanceChanges: BalanceChange[];
     parentMap: Map<Hex, Hex>;
   }): TaskConfig {
-    const {
-      cmd,
-      rpcUrl,
-      parsed,
-      domainHash,
-      messageHash,
-      config,
-      chainIdStr,
-      payload,
-      diffs,
-      balanceChanges,
-      parentMap,
-    } = params;
+    const { cmd, rpcUrl, parsed, domainHash, messageHash, config, chainIdStr, payload, diffs, balanceChanges, parentMap } =
+      params;
 
     return {
       cmd,
-      ledgerId: 0,
+      ledgerId: this.ledgerId,
       rpcUrl,
       expectedDomainAndMessageHashes: {
         address: parsed.targetSafe,
