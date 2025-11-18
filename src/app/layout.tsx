@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Task Signer Tool',
-  description: 'A utility for improving the signer UX in Base smart contract ops processes',
+  description: 'Professional signing utility for Base smart contract operations',
   icons: {
     icon: '/base.jpg',
     shortcut: '/base.jpg',
@@ -30,7 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--cds-background)] text-[var(--cds-text-primary)] min-h-screen flex flex-col`}>
+        {children}
+      </body>
     </html>
   );
 }
