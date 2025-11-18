@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Button, Card, SectionHeader, Badge } from './ui';
 
 export interface ConfigOption {
   fileName: string;
@@ -19,7 +20,6 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Fetch available users when network and upgradeId change
   useEffect(() => {
     const resetState = () => {
       setAvailableUsers([]);
@@ -85,80 +85,77 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   };
 
   return (
-    <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
-        Select Profile
-      </h2>
-
-      {/* Step 1: User Type Selection */}
-      <div className="mb-8">
-        <div className="flex flex-col gap-4">
-          {loadingUsers ? (
-            <p className="text-base font-medium text-gray-600">Loading user options...</p>
-          ) : availableUsers.length === 0 ? (
-            <p className="text-base font-medium text-gray-600">
-              No user options available for this network and upgrade ID.
-            </p>
+    <section className="space-y-6">
+      <SectionHeader
+        eyebrow="Step 2"
+        title="Choose which signer profile to simulate"
+        description="Profiles are sourced from the validation config and include ledger paths."
+        aside={
+          selectedUser ? (
+            <Badge tone="success">Profile locked</Badge>
           ) : (
-            availableUsers.map(option => {
-              const isSelected = selectedUser?.fileName === option.fileName;
+            <Badge tone="neutral">Select to continue</Badge>
+          )
+        }
+      />
 
-              return (
-                <button
-                  key={option.fileName}
-                  type="button"
+      <div className="grid gap-4">
+        {loadingUsers ? (
+          <Card className="text-sm text-[var(--color-text-muted)]">Loading signer configs…</Card>
+        ) : availableUsers.length === 0 ? (
+          <Card className="text-sm text-[var(--color-text-muted)]">
+            No signer profiles found for this upgrade. Confirm the validation configs exist.
+          </Card>
+        ) : (
+          availableUsers.map(option => {
+            const isSelected = selectedUser?.fileName === option.fileName;
+            return (
+              <Card
+                key={option.fileName}
+                className={`flex items-center justify-between border-2 transition ${
+                  isSelected
+                    ? 'border-[var(--color-primary)] shadow-[0_25px_50px_rgba(0,82,255,0.12)]'
+                    : 'border-[var(--color-border)] hover:-translate-y-1 hover:border-[var(--color-primary)]/50'
+                }`}
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text)]">
+                    {option.displayName}
+                  </p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[var(--color-text-soft)]">
+                    Ledger #{option.ledgerId}
+                  </p>
+                </div>
+                <Button
+                  variant={isSelected ? 'primary' : 'secondary'}
+                  size="sm"
                   onClick={() => handleUserSelect(option)}
-                  className={`inline-flex w-full items-center justify-center gap-3 rounded-2xl border-2 px-8 py-6 text-base font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
-                    isSelected
-                      ? 'border-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white shadow-xl scale-[1.02] ring-2 ring-purple-300/50'
-                      : 'border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
-                  }`}
-                  aria-pressed={isSelected}
                 >
-                  {isSelected && <span className="text-xl font-bold">✓</span>}
-                  {option.displayName}
-                </button>
-              );
-            })
-          )}
-        </div>
+                  {isSelected ? 'Selected' : 'Select'}
+                </Button>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left">
-          <p className="mb-2 text-sm font-semibold text-red-700">❌ Error:</p>
-          <p className="text-sm text-red-600">{error}</p>
-          {error.includes('not found') && (
-            <p className="mt-2 text-xs text-red-600">
-              Run:{' '}
-              <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">
-                make install-eip712sign
-              </code>{' '}
-              in project root
-            </p>
-          )}
-        </div>
+        <Card className="border-[var(--color-danger)] bg-[var(--color-danger-soft)] text-sm text-[var(--color-danger)]">
+          {error}
+        </Card>
       )}
 
-      {/* Proceed Button */}
-      {selectedUser && (
-        <div className="mt-6">
-          <p className="mb-3 text-sm text-gray-600">
-            Next, simulate the transaction to confirm it behaves as expected.
+      <div className="flex items-center justify-between rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-5">
+        <div>
+          <p className="text-sm font-semibold text-[var(--color-text)]">Run validation next</p>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            We will fetch expected vs. actual state diffs for this profile.
           </p>
-          <button
-            onClick={() => {
-              if (selectedUser) {
-                onSelect(selectedUser);
-              }
-            }}
-            type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-10 py-5 text-base font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-2xl hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
-          >
-            Simulate →
-          </button>
         </div>
-      )}
-    </div>
+        <Button disabled={!selectedUser} onClick={() => selectedUser && onSelect(selectedUser)}>
+          Run validation
+        </Button>
+      </div>
+    </section>
   );
 }

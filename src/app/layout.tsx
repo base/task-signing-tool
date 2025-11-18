@@ -30,7 +30,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div className="min-h-screen bg-[var(--color-app-bg)] text-[var(--color-text)]">
+          <div className="relative isolate min-h-screen overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 opacity-60">
+              <div className="absolute inset-y-0 left-1/2 h-[120%] w-[70%] -translate-x-1/2 rounded-[40%] bg-[radial-gradient(circle_at_top,var(--color-primary-transparent),transparent_60%)] blur-3xl" />
+              <div className="absolute top-0 right-0 h-[50%] w-[40%] rounded-full bg-[radial-gradient(circle,var(--color-accent-transparent),transparent_60%)] blur-3xl" />
+            </div>
+            <div className="relative flex min-h-screen flex-col">{children}</div>
+          </div>
+        </div>
+      </body>
     </html>
   );
 }

@@ -1,10 +1,12 @@
-import { Fragment } from 'react';
+const STEPS = [
+  { id: 'upgrade', title: 'Task', description: 'Select upgrade + network' },
+  { id: 'user', title: 'Profile', description: 'Choose signer config' },
+  { id: 'validation', title: 'Validate', description: 'Review diffs & deltas' },
+  { id: 'ledger', title: 'Sign', description: 'Authorize via Ledger' },
+  { id: 'signing', title: 'Confirm', description: 'Capture evidence' },
+] as const;
 
-const SETUP_STEPS = ['upgrade', 'user'] as const;
-const HIDDEN_STEPS = new Set(['validation', 'ledger', 'signing']);
-
-type SetupStep = (typeof SETUP_STEPS)[number];
-type Step = SetupStep | 'validation' | 'ledger' | 'signing';
+type Step = (typeof STEPS)[number]['id'];
 
 interface StepIndicatorProps {
   currentStep: Step;
@@ -13,74 +15,59 @@ interface StepIndicatorProps {
   hasUser: boolean;
 }
 
-export function StepIndicator({
-  currentStep,
-  hasNetwork,
-  hasUpgrade,
-  hasUser,
-}: StepIndicatorProps) {
-  if (HIDDEN_STEPS.has(currentStep)) return null;
-
-  const activeStep = currentStep as SetupStep;
-  const activeIndex = SETUP_STEPS.indexOf(activeStep);
-
-  const completionMap: Record<SetupStep, boolean> = {
-    upgrade: hasUpgrade,
-    user: hasUser,
+const completionRules: Record<Step, (flags: Pick<StepIndicatorProps, 'hasNetwork' | 'hasUpgrade' | 'hasUser'>) => boolean> =
+  {
+    upgrade: ({ hasUpgrade }) => hasUpgrade,
+    user: ({ hasUser }) => hasUser,
+    validation: () => false,
+    ledger: () => false,
+    signing: () => false,
   };
 
+export function StepIndicator({ currentStep, hasNetwork, hasUpgrade, hasUser }: StepIndicatorProps) {
+  const currentIndex = STEPS.findIndex(step => step.id === currentStep);
+
   return (
-    <div className="flex items-center justify-center mb-12">
-      <div className="flex items-center gap-6">
-        {SETUP_STEPS.map((step, index) => {
-          const isComplete = completionMap[step];
-          const isActive = index <= activeIndex || isComplete;
+    <div className="rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_18px_40px_rgba(6,20,58,0.05)]">
+      <ol className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+        {STEPS.map((step, index) => {
+          const isActive = index === currentIndex;
+          const isComplete = completionRules[step.id]({ hasNetwork, hasUpgrade, hasUser });
+          const isPast = index < currentIndex;
 
           return (
-            <Fragment key={step}>
-              <div className="relative">
-                <div
-                  className={`relative z-10 h-5 w-5 rounded-full transition-all duration-500 ${
+            <li
+              key={step.id}
+              className="flex items-start gap-3 rounded-2xl border border-transparent px-3 py-2"
+              aria-current={isActive ? 'step' : undefined}
+            >
+              <span
+                className={`mt-0.5 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-2xl text-xs font-semibold ${
+                  isComplete
+                    ? 'bg-[var(--color-primary)] text-white'
+                    : isPast
+                      ? 'bg-[var(--color-primary-soft)] text-[var(--color-primary)]'
+                      : 'bg-[var(--color-surface-muted)] text-[var(--color-text-soft)]'
+                }`}
+              >
+                {isComplete ? '✓' : index + 1}
+              </span>
+              <div>
+                <p
+                  className={`text-sm font-semibold ${
                     isActive
-                      ? 'bg-gradient-to-br from-purple-500 to-amber-500 shadow-lg shadow-purple-500/50 scale-110'
-                      : 'bg-gray-300'
+                      ? 'text-[var(--color-primary)]'
+                      : 'text-[var(--color-text)]'
                   }`}
                 >
-                  {isComplete && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <svg
-                        className="h-3 w-3 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                  {isActive && !isComplete && (
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 to-amber-500 animate-pulse opacity-75" />
-                  )}
-                </div>
+                  {step.title}
+                </p>
+                <p className="text-xs text-[var(--color-text-muted)]">{step.description}</p>
               </div>
-              {index < SETUP_STEPS.length - 1 && (
-                <div
-                  className={`h-1 w-16 rounded-full transition-all duration-500 ${
-                    isComplete
-                      ? 'bg-gradient-to-r from-purple-500 to-amber-500 shadow-md'
-                      : 'bg-gray-300'
-                  }`}
-                />
-              )}
-            </Fragment>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </div>
   );
 }

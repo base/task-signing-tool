@@ -1,4 +1,5 @@
 import { ConfigOption } from './UserSelection';
+import { Badge, Card, SectionHeader } from './ui';
 
 interface SelectionSummaryProps {
   selectedUser?: ConfigOption;
@@ -9,6 +10,8 @@ interface SelectionSummaryProps {
   onWalletClick?: () => void;
 }
 
+const placeholder = 'Awaiting selection';
+
 export function SelectionSummary({
   selectedUser,
   selectedNetwork,
@@ -17,56 +20,61 @@ export function SelectionSummary({
   onNetworkClick,
   onWalletClick,
 }: SelectionSummaryProps) {
-  if (!selectedUser && !selectedNetwork && !selectedWallet) return null;
-
-  const badgeBaseClasses =
-    'inline-flex items-center gap-2 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg transition-all duration-300 relative overflow-hidden';
-  const clickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-700 hover:via-pink-700 hover:to-amber-600 hover:-translate-y-1 hover:shadow-xl hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2`;
-  const nonClickableBadgeClasses = `${badgeBaseClasses} bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500`;
-
-  const renderBadge = (
-    label: string | null | undefined,
-    options: { onClick?: () => void; icon?: string; title: string }
-  ) => {
-    if (!label) return null;
-
-    const { onClick, icon, title } = options;
-    const content = (
-      <>
-        {icon ? <span>{icon}</span> : null}
-        {label}
-      </>
-    );
-
-    return onClick ? (
-      <button type="button" onClick={onClick} className={clickableBadgeClasses} title={title}>
-        {content}
-      </button>
-    ) : (
-      <span className={nonClickableBadgeClasses}>{content}</span>
-    );
-  };
-
   return (
-    <div className="mb-8 rounded-2xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-pink-50/60 to-amber-50/80 p-6 backdrop-blur-xl shadow-lg ring-1 ring-white/50">
-      <h3 className="mb-4 text-center text-xs font-bold uppercase tracking-widest text-purple-700">
-        Your Selections
-      </h3>
-      <div className="flex flex-wrap justify-center gap-3">
-        {renderBadge(selectedNetwork, {
-          onClick: onNetworkClick,
-          icon: '🌐',
-          title: 'Click to change network selection',
-        })}
-        {renderBadge(selectedWallet, {
-          onClick: onWalletClick,
-          title: 'Click to change wallet selection',
-        })}
-        {renderBadge(selectedUser?.displayName, {
-          onClick: onUserClick,
-          title: 'Click to change user selection',
-        })}
-      </div>
-    </div>
+    <Card variant="outline" padding="lg">
+      <SectionHeader
+        eyebrow="Session state"
+        title="Selections overview"
+        description="You may revisit prior steps without losing progress."
+        aside={
+          <Badge tone="neutral" className="text-[var(--color-text-soft)]">
+            {selectedUser || selectedWallet || selectedNetwork ? 'In progress' : 'Awaiting input'}
+          </Badge>
+        }
+      />
+
+      <dl className="mt-8 grid gap-4 sm:grid-cols-3">
+        {[
+          {
+            label: 'Network',
+            value: selectedNetwork ?? placeholder,
+            action: onNetworkClick,
+          },
+          {
+            label: 'Task / Upgrade',
+            value: selectedWallet ?? placeholder,
+            action: onWalletClick,
+          },
+          {
+            label: 'Signer profile',
+            value: selectedUser?.displayName ?? placeholder,
+            action: onUserClick,
+          },
+        ].map(({ label, value, action }) => (
+          <div
+            key={label}
+            className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]/60 p-4"
+          >
+            <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-soft)]">
+              {label}
+            </dt>
+            <dd className="mt-2 flex items-center justify-between text-sm font-medium text-[var(--color-text)]">
+              <span className={value === placeholder ? 'text-[var(--color-text-soft)]' : undefined}>
+                {value}
+              </span>
+              {action && value !== placeholder && (
+                <button
+                  type="button"
+                  onClick={action}
+                  className="text-xs font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
+                >
+                  Edit
+                </button>
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Card>
   );
 }

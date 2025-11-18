@@ -53,7 +53,7 @@ interface ValueSectionProps {
 
 const ValueSection = ({ label, value, diffs, toneClasses, className }: ValueSectionProps) => (
   <div className={className}>
-    <label className="text-[10px] font-semibold uppercase text-gray-500 tracking-[0.05em]">
+    <label className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-soft)]">
       {label}
     </label>
     <div className={getValueClasses(value, diffs, toneClasses)}>
@@ -64,20 +64,20 @@ const ValueSection = ({ label, value, diffs, toneClasses, className }: ValueSect
 
 const variants = {
   expected: {
-    container: 'bg-blue-50 border-blue-300',
-    header: 'text-blue-700',
+    container: 'bg-[var(--color-surface-muted)] border-[var(--color-border)]',
+    header: 'text-[var(--color-primary)]',
     icon: '✅',
     title: 'Expected',
-    contract: 'bg-blue-100',
-    border: 'border-blue-300',
+    contract: 'bg-white',
+    border: 'border-[var(--color-border)]',
   },
   actual: {
-    container: 'bg-sky-50 border-sky-300',
-    header: 'text-sky-700',
+    container: 'bg-white border-[var(--color-border-strong)] shadow-[0_20px_40px_rgba(6,20,58,0.05)]',
+    header: 'text-[var(--color-text)]',
     icon: '🔍',
     title: 'Actual',
-    contract: 'bg-sky-100',
-    border: 'border-sky-300',
+    contract: 'bg-[var(--color-surface-muted)]',
+    border: 'border-[var(--color-border-strong)]',
   },
 } as const;
 
@@ -111,7 +111,7 @@ export function ComparisonCard({
           label="Storage Key"
           value={storageKey}
           diffs={storageKeyDiffs}
-          toneClasses="bg-gray-50 text-gray-800"
+          toneClasses="bg-[var(--color-surface-muted)] text-[var(--color-text)]"
           className="mb-4"
         />
 
@@ -120,7 +120,7 @@ export function ComparisonCard({
             label="Before"
             value={beforeValue}
             diffs={beforeValueDiffs}
-            toneClasses="bg-amber-100 text-amber-600"
+            toneClasses="bg-[var(--color-warning-soft)] text-[var(--color-warning)]"
             className="mb-4"
           />
         )}
@@ -129,7 +129,7 @@ export function ComparisonCard({
           label={beforeValue ? 'After' : 'Value'}
           value={afterValue}
           diffs={afterValueDiffs}
-          toneClasses="bg-blue-50 text-blue-700"
+          toneClasses="bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
         />
       </div>
     </div>

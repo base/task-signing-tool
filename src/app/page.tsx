@@ -19,14 +19,6 @@ import { LedgerSigningResult } from '@/lib/ledger-signing';
 type UpgradeType = string | null;
 type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
 
-const STEP_LAYOUT_WIDTH: Record<Step, string> = {
-  upgrade: '900px',
-  user: '600px',
-  validation: '1200px',
-  ledger: '800px',
-  signing: '800px',
-};
-
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('upgrade');
   const [selectedUser, setSelectedUser] = useState<ConfigOption>();
@@ -99,80 +91,81 @@ export default function Home() {
     currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing';
 
   return (
-    <>
-      <Layout maxWidth={STEP_LAYOUT_WIDTH[currentStep]}>
-        <Header />
-
-        <StepIndicator
-          currentStep={currentStep}
-          hasNetwork={!!selectedNetwork}
-          hasUpgrade={!!selectedUpgrade}
-          hasUser={!!selectedUser}
-        />
-
-        <SelectionSummary
-          selectedUser={selectedUser}
-          selectedNetwork={selectedNetwork}
-          selectedWallet={selectedUpgrade}
-          onNetworkClick={undefined}
-          onWalletClick={canEditUpgrade ? handleGoToUpgradeSelection : undefined}
-          onUserClick={canEditUser ? handleGoToUserSelection : undefined}
-        />
-
-        {currentStep === 'upgrade' && (
-          <UpgradeSelection
-            selectedWallet={selectedUpgrade}
+    <Layout>
+      <Header />
+      <div className="grid gap-8 lg:grid-cols-[320px,minmax(0,1fr)]">
+        <div className="space-y-6">
+          <StepIndicator
+            currentStep={currentStep}
+            hasNetwork={!!selectedNetwork}
+            hasUpgrade={!!selectedUpgrade}
+            hasUser={!!selectedUser}
+          />
+          <SelectionSummary
+            selectedUser={selectedUser}
             selectedNetwork={selectedNetwork}
-            onSelect={handleUpgradeSelection}
+            selectedWallet={selectedUpgrade}
+            onWalletClick={canEditUpgrade ? handleGoToUpgradeSelection : undefined}
+            onUserClick={canEditUser ? handleGoToUserSelection : undefined}
           />
-        )}
+        </div>
 
-        {currentStep === 'user' && selectedNetwork && selectedUpgrade && (
-          <UserSelection
-            network={selectedNetwork}
-            upgradeId={selectedUpgrade}
-            onSelect={handleUserSelection}
-          />
-        )}
+        <div className="space-y-10">
+          {currentStep === 'upgrade' && (
+            <UpgradeSelection
+              selectedWallet={selectedUpgrade}
+              selectedNetwork={selectedNetwork}
+              onSelect={handleUpgradeSelection}
+            />
+          )}
 
-        {currentStep === 'validation' && (
-          <ValidationResults
-            userType={selectedUser?.fileName || ''}
-            network={selectedNetwork || ''}
-            selectedUpgrade={{
-              id: selectedUpgrade || '',
-              name: selectedUpgrade || '',
-            }}
-            onBackToSetup={handleGoToUpgradeSelection}
-            onProceedToLedgerSigning={handleProceedToLedgerSigning}
-          />
-        )}
+          {currentStep === 'user' && selectedNetwork && selectedUpgrade && (
+            <UserSelection
+              network={selectedNetwork}
+              upgradeId={selectedUpgrade}
+              onSelect={handleUserSelection}
+            />
+          )}
 
-        {currentStep === 'ledger' && validationData && (
-          <LedgerSigning
-            domainHash={validationData.expected?.domainAndMessageHashes?.domainHash || ''}
-            messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
-            ledgerAccount={userLedgerAccount}
-            onSigningComplete={handleLedgerSigningComplete}
-            onCancel={handleBackToValidation}
-          />
-        )}
+          {currentStep === 'validation' && (
+            <ValidationResults
+              userType={selectedUser?.fileName || ''}
+              network={selectedNetwork || ''}
+              selectedUpgrade={{
+                id: selectedUpgrade || '',
+                name: selectedUpgrade || '',
+              }}
+              onBackToSetup={handleGoToUpgradeSelection}
+              onProceedToLedgerSigning={handleProceedToLedgerSigning}
+            />
+          )}
 
-        {currentStep === 'signing' && (
-          <SigningConfirmation
-            user={selectedUser}
-            network={selectedNetwork || ''}
-            selectedUpgrade={{
-              id: selectedUpgrade || '',
-              name: selectedUpgrade || '',
-            }}
-            signingData={signingData}
-            onBackToValidation={handleBackToValidation}
-            onBackToLedger={signingData ? handleBackToLedger : undefined}
-            onBackToSetup={handleGoToUpgradeSelection}
-          />
-        )}
-      </Layout>
-    </>
+          {currentStep === 'ledger' && validationData && (
+            <LedgerSigning
+              domainHash={validationData.expected?.domainAndMessageHashes?.domainHash || ''}
+              messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
+              ledgerAccount={userLedgerAccount}
+              onSigningComplete={handleLedgerSigningComplete}
+              onCancel={handleBackToValidation}
+            />
+          )}
+
+          {currentStep === 'signing' && (
+            <SigningConfirmation
+              user={selectedUser}
+              network={selectedNetwork || ''}
+              selectedUpgrade={{
+                id: selectedUpgrade || '',
+                name: selectedUpgrade || '',
+              }}
+              signingData={signingData}
+              onBackToValidation={handleBackToValidation}
+              onBackToLedger={signingData ? handleBackToLedger : undefined}
+              onBackToSetup={handleGoToUpgradeSelection}
+            />
+          )}
+        </div>
+      </div>
+    </Layout>
   );
 }
