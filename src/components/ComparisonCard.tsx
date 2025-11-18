@@ -64,20 +64,22 @@ const ValueSection = ({ label, value, diffs, toneClasses, className }: ValueSect
 
 const variants = {
   expected: {
-    container: 'bg-blue-50 border-blue-300',
-    header: 'text-blue-700',
+    containerBg: 'var(--cb-primary-light)',
+    containerBorder: 'var(--cb-primary)',
+    headerColor: 'var(--cb-primary)',
     icon: '✅',
     title: 'Expected',
-    contract: 'bg-blue-100',
-    border: 'border-blue-300',
+    contractBg: 'rgba(0, 82, 255, 0.05)',
+    border: '1px solid var(--cb-primary)',
   },
   actual: {
-    container: 'bg-sky-50 border-sky-300',
-    header: 'text-sky-700',
+    containerBg: 'var(--cb-surface)',
+    containerBorder: 'var(--cb-border-strong)',
+    headerColor: 'var(--cb-text-primary)',
     icon: '🔍',
     title: 'Actual',
-    contract: 'bg-sky-100',
-    border: 'border-sky-300',
+    contractBg: 'var(--cb-surface)',
+    border: '1px solid var(--cb-border)',
   },
 } as const;
 
@@ -94,25 +96,46 @@ export function ComparisonCard({
 }: ComparisonCardProps) {
   const variant = variants[type];
   return (
-    <div className={`rounded-2xl border-2 p-6 ${variant.container}`}>
-      <h3 className={`mb-4 flex items-center gap-2 text-lg font-bold ${variant.header}`}>
+    <div 
+      className="rounded-xl p-5"
+      style={{
+        background: variant.containerBg,
+        border: `1px solid ${variant.containerBorder}`,
+        boxShadow: 'var(--cb-shadow-sm)'
+      }}
+    >
+      <h3 
+        className="mb-4 flex items-center gap-2 text-base font-bold"
+        style={{ color: variant.headerColor }}
+      >
         <span>{variant.icon}</span> {variant.title}
       </h3>
 
-      <div className={`mb-4 rounded-xl p-4 ${variant.contract}`}>
-        <h4 className="mb-2 font-semibold text-gray-800">{contractName}</h4>
-        <p className="m-0 break-all font-mono text-xs text-gray-500">
+      <div 
+        className="mb-4 rounded-lg p-3"
+        style={{ background: variant.contractBg }}
+      >
+        <h4 className="mb-1 font-semibold text-sm" style={{ color: 'var(--cb-text-primary)' }}>
+          {contractName}
+        </h4>
+        <p className="m-0 break-all font-mono text-xs" style={{ color: 'var(--cb-text-tertiary)' }}>
           {toChecksumAddressSafe(contractAddress)}
         </p>
       </div>
 
-      <div className={`rounded-xl border bg-white p-4 ${variant.border}`}>
+      <div 
+        className="rounded-lg p-3"
+        style={{
+          background: 'var(--cb-surface-elevated)',
+          border: variant.border
+        }}
+      >
         <ValueSection
           label="Storage Key"
           value={storageKey}
           diffs={storageKeyDiffs}
           toneClasses="bg-gray-50 text-gray-800"
-          className="mb-4"
+          className="mb-3"
         />
 
         {beforeValue && (
@@ -121,7 +144,7 @@ export function ComparisonCard({
             value={beforeValue}
             diffs={beforeValueDiffs}
             toneClasses="bg-amber-100 text-amber-600"
-            className="mb-4"
+            className="mb-3"
           />
         )}
 

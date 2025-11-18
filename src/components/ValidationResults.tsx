@@ -75,8 +75,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 h-16 w-16 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 shadow-lg" />
-        <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <div 
+          className="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-3"
+          style={{
+            borderColor: 'var(--cb-border)',
+            borderTopColor: 'var(--cb-primary)'
+          }}
+        />
+        <h3 className="text-xl font-bold" style={{ color: 'var(--cb-text-primary)' }}>
           {loadingTitle}
         </h3>
       </div>
@@ -86,22 +92,39 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   if (error) {
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-rose-100 p-6 text-rose-600">
+        <div 
+          className="mx-auto mb-6 max-w-xl rounded-xl p-6"
+          style={{
+            background: 'var(--cb-error-light)',
+            border: '1px solid var(--cb-error)',
+            color: 'var(--cb-error)'
+          }}
+        >
           <h3 className="mb-2 text-xl font-semibold">❌ Validation Failed</h3>
           <p className="text-base">{error}</p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => runValidation()}
-            className="rounded-xl bg-slate-100 px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-200"
+            className="rounded-lg px-6 py-2.5 font-semibold transition hover:-translate-y-0.5"
+            style={{
+              background: 'var(--cb-surface)',
+              color: 'var(--cb-text-primary)',
+              border: '1px solid var(--cb-border)',
+              boxShadow: 'var(--cb-shadow-sm)'
+            }}
           >
             Retry Validation
           </button>
 
           <button
             onClick={onBackToSetup}
-            className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
+            className="rounded-lg px-6 py-2.5 font-semibold text-white transition hover:-translate-y-0.5"
+            style={{
+              background: 'var(--cb-primary)',
+              boxShadow: 'var(--cb-shadow-sm)'
+            }}
           >
             Back to Setup
           </button>
@@ -113,7 +136,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   if (!validationResult || totalItems === 0) {
     return (
       <div className="py-16 text-center">
-        <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-amber-100 p-6 text-amber-700">
+        <div 
+          className="mx-auto mb-6 max-w-xl rounded-xl p-6"
+          style={{
+            background: 'var(--cb-warning-light)',
+            border: '1px solid var(--cb-warning)',
+            color: 'var(--cb-warning)'
+          }}
+        >
           <h3 className="mb-2 text-xl font-semibold">⚠️ No Changes Found</h3>
           <p className="text-base">
             No state changes or overrides were found in the validation data.
@@ -121,7 +151,11 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         </div>
         <button
           onClick={onBackToSetup}
-          className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
+          className="rounded-lg px-6 py-2.5 font-semibold text-white transition hover:-translate-y-0.5"
+          style={{
+            background: 'var(--cb-primary)',
+            boxShadow: 'var(--cb-shadow-sm)'
+          }}
         >
           Back to Setup
         </button>
@@ -133,50 +167,59 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const descriptionContent = evaluation?.description;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="text-center">
-        <h2 className="mb-3 text-5xl font-black text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 bg-clip-text">
+        <h2 className="mb-3 text-4xl font-bold" style={{ color: 'var(--cb-text-primary)' }}>
           Validation Results
         </h2>
-        <div className="text-base text-gray-600">
+        <div className="text-base" style={{ color: 'var(--cb-text-secondary)' }}>
           <div className="mb-2">
-            <span className="font-bold text-gray-700">
+            <span className="font-semibold" style={{ color: 'var(--cb-text-primary)' }}>
               Step {stepInfo.currentStep}: {currentEntry ? STEP_LABELS[currentEntry.kind] : ''}
             </span>{' '}
             • Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
           </div>
-          <div className="text-sm font-medium text-gray-500">
+          <div className="text-sm font-medium" style={{ color: 'var(--cb-text-tertiary)' }}>
             Step 1: {stepCounts.signing} items • Step 2: {stepCounts.overrides} items • Step 3:{' '}
             {stepCounts.changes} items • Step 4: {stepCounts.balance} items
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <button
           onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
           disabled={currentIndex === 0}
-          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
-            currentIndex === 0
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 hover:-translate-y-0.5 hover:shadow-lg'
-          }`}
+          className="rounded-lg px-6 py-2.5 font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 hover:-translate-y-0.5"
+          style={{
+            background: currentIndex === 0 ? 'var(--cb-surface)' : 'var(--cb-surface)',
+            color: currentIndex === 0 ? 'var(--cb-text-tertiary)' : 'var(--cb-text-primary)',
+            border: '1px solid var(--cb-border)',
+            boxShadow: 'var(--cb-shadow-sm)'
+          }}
         >
           ← Previous
         </button>
 
-        <div className="rounded-full bg-gradient-to-r from-purple-100 to-pink-100 px-5 py-2.5 text-sm font-bold text-purple-700 shadow-md ring-1 ring-purple-200">
+        <div 
+          className="rounded-lg px-4 py-2 text-sm font-semibold"
+          style={{
+            background: 'var(--cb-primary-light)',
+            color: 'var(--cb-primary)',
+            border: '1px solid var(--cb-primary)'
+          }}
+        >
           {getContractNameForEntry(currentEntry, itemsByStep)}
         </div>
 
         <button
           onClick={() => setCurrentIndex(prev => Math.min(totalItems - 1, prev + 1))}
           disabled={currentIndex === totalItems - 1}
-          className={`rounded-xl px-6 py-3 font-semibold transition-all duration-200 ${
-            currentIndex === totalItems - 1
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
-          }`}
+          className="rounded-lg px-6 py-2.5 font-semibold text-white transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 hover:-translate-y-0.5"
+          style={{
+            background: currentIndex === totalItems - 1 ? 'var(--cb-border)' : 'var(--cb-primary)',
+            boxShadow: 'var(--cb-shadow-sm)'
+          }}
         >
           Next →
         </button>
@@ -191,30 +234,37 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
       {descriptionContent && (
         <div
-          className={`rounded-2xl border-2 p-6 shadow-md ${
-            descriptionContent.variant === 'expected-difference'
-              ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100'
-              : 'border-sky-200 bg-gradient-to-r from-sky-50 to-sky-100'
-          }`}
+          className="rounded-xl p-5"
+          style={{
+            background: descriptionContent.variant === 'expected-difference' 
+              ? 'var(--cb-success-light)' 
+              : 'var(--cb-primary-light)',
+            border: descriptionContent.variant === 'expected-difference'
+              ? '1px solid var(--cb-success)'
+              : '1px solid var(--cb-primary)',
+            boxShadow: 'var(--cb-shadow-sm)'
+          }}
         >
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 text-2xl">{descriptionContent.icon}</span>
+            <span className="mt-0.5 text-xl">{descriptionContent.icon}</span>
             <div className="flex-1">
               <h4
-                className={`mb-2 text-sm font-bold uppercase tracking-wider ${
-                  descriptionContent.variant === 'expected-difference'
-                    ? 'text-emerald-700'
-                    : 'text-sky-700'
-                }`}
+                className="mb-2 text-xs font-bold uppercase tracking-wider"
+                style={{
+                  color: descriptionContent.variant === 'expected-difference'
+                    ? 'var(--cb-success)'
+                    : 'var(--cb-primary)'
+                }}
               >
                 {descriptionContent.title}
               </h4>
               <p
-                className={`text-base font-medium leading-relaxed whitespace-pre-wrap ${
-                  descriptionContent.variant === 'expected-difference'
-                    ? 'text-emerald-900'
-                    : 'text-sky-900'
-                }`}
+                className="text-sm font-medium leading-relaxed whitespace-pre-wrap"
+                style={{
+                  color: descriptionContent.variant === 'expected-difference'
+                    ? 'var(--cb-success)'
+                    : 'var(--cb-primary)'
+                }}
               >
                 {descriptionContent.text}
               </p>
@@ -226,7 +276,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       {matchStatus && (
         <div className="text-center">
           <div
-            className={`inline-flex items-center gap-2 rounded-full px-8 py-4 text-lg font-bold text-white ${matchStatus.bgClass}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-base font-bold text-white ${matchStatus.bgClass}`}
           >
             <span>{matchStatus.icon}</span> {matchStatus.text}
           </div>
@@ -234,26 +284,26 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       {currentIndex === totalItems - 1 && (
-        <div className="mt-12 text-center">
+        <div className="mt-10 text-center">
           <div
-            className={`mx-auto mb-6 max-w-md rounded-2xl border-2 p-6 ${
-              blockingErrorsExist
-                ? 'border-rose-200 bg-gradient-to-r from-rose-100 to-rose-200'
-                : 'border-emerald-200 bg-gradient-to-r from-emerald-100 to-emerald-200'
-            }`}
+            className="mx-auto mb-6 max-w-md rounded-xl p-6"
+            style={{
+              background: blockingErrorsExist ? 'var(--cb-error-light)' : 'var(--cb-success-light)',
+              border: blockingErrorsExist ? '1px solid var(--cb-error)' : '1px solid var(--cb-success)',
+              boxShadow: 'var(--cb-shadow-md)'
+            }}
           >
             <div className="mb-3 flex items-center justify-center gap-3">
-              <span className="text-3xl">{blockingErrorsExist ? '🚫' : '✅'}</span>
+              <span className="text-2xl">{blockingErrorsExist ? '🚫' : '✅'}</span>
               <h3
-                className={`text-xl font-bold ${
-                  blockingErrorsExist ? 'text-rose-600' : 'text-emerald-700'
-                }`}
+                className="text-xl font-bold"
+                style={{ color: blockingErrorsExist ? 'var(--cb-error)' : 'var(--cb-success)' }}
               >
                 {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
               </h3>
             </div>
             {blockingErrorsExist && (
-              <p className="text-sm text-rose-600">
+              <p className="text-sm" style={{ color: 'var(--cb-error)' }}>
                 Found <strong>Missing</strong> or <strong>Different</strong> instances. Contact
                 developers before continuing.
               </p>
@@ -265,9 +315,13 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             validationResult.expected?.domainAndMessageHashes?.messageHash && (
               <button
                 onClick={() => onProceedToLedgerSigning(validationResult)}
-                className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 px-12 py-5 text-lg font-bold text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(139,92,246,0.4)] hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+                className="inline-flex items-center gap-3 rounded-lg px-10 py-4 text-lg font-bold text-white transition-all duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={{
+                  background: 'var(--cb-primary)',
+                  boxShadow: 'var(--cb-shadow-lg)'
+                }}
               >
-                <span className="text-2xl">🔐</span>
+                <span className="text-xl">🔐</span>
                 Sign with Ledger →
               </button>
             )}
@@ -275,9 +329,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           {(!validationResult.expected?.domainAndMessageHashes ||
             !validationResult.expected?.domainAndMessageHashes?.domainHash ||
             !validationResult.expected?.domainAndMessageHashes?.messageHash) && (
-            <div className="mt-6 rounded-lg border border-amber-300 bg-amber-100 p-4 text-left">
-              <p className="mb-2 text-sm font-semibold text-amber-800">⚠️ Signing Not Available</p>
-              <p className="text-sm text-amber-800">
+            <div 
+              className="mt-6 rounded-lg p-4 text-left"
+              style={{
+                background: 'var(--cb-warning-light)',
+                border: '1px solid var(--cb-warning)',
+                color: 'var(--cb-warning)'
+              }}
+            >
+              <p className="mb-2 text-sm font-semibold">⚠️ Signing Not Available</p>
+              <p className="text-sm">
                 Domain and message hashes are required for signing but were not generated during
                 validation. This may indicate an issue with the script execution or validation
                 process.
@@ -287,10 +348,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         </div>
       )}
 
-      <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={onBackToSetup}
-          className="flex items-center gap-2 rounded-xl bg-slate-100 px-6 py-3 text-base font-medium text-slate-600 transition hover:bg-slate-200"
+          className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-base font-medium transition hover:-translate-y-0.5"
+          style={{
+            background: 'var(--cb-surface)',
+            color: 'var(--cb-text-primary)',
+            border: '1px solid var(--cb-border)',
+            boxShadow: 'var(--cb-shadow-sm)'
+          }}
         >
           ← Back to Setup
         </button>
@@ -298,15 +365,21 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         <button
           onClick={runValidation}
           disabled={isLoading}
-          className={`flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition-all duration-200 ${
-            isLoading
-              ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:-translate-y-0.5 hover:shadow-xl'
-          }`}
+          className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-base font-semibold text-white transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 hover:-translate-y-0.5"
+          style={{
+            background: isLoading ? 'var(--cb-border)' : 'var(--cb-primary)',
+            boxShadow: 'var(--cb-shadow-sm)'
+          }}
         >
           {isLoading ? (
             <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+              <div 
+                className="h-4 w-4 animate-spin rounded-full border-2"
+                style={{
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                  borderTopColor: 'white'
+                }}
+              />
               Running Validation...
             </>
           ) : (

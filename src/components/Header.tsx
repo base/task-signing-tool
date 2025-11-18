@@ -1,15 +1,40 @@
+import Image from 'next/image';
+
 export function Header() {
   return (
-    <div className="mb-12 text-center">
-      <h1 className="relative m-0 bg-gradient-to-r from-amber-400 via-purple-500 via-pink-500 to-amber-400 bg-clip-text text-5xl font-black leading-tight text-transparent md:text-7xl">
-        <span className="relative inline-block">
-          <span className="absolute inset-0 bg-gradient-to-r from-amber-400 via-purple-500 to-amber-400 blur-2xl opacity-50" />
-          <span className="relative">Base Task Signer Tool</span>
-        </span>
-      </h1>
-      <p className="mt-4 text-lg font-medium text-gray-600 md:text-xl">
-        Premium signing experience for secure transactions
-      </p>
-    </div>
+    <header className="mb-10">
+      {/* Top bar with logo */}
+      <div className="mb-8 flex items-center justify-between border-b pb-6" style={{ borderColor: 'var(--cb-border)' }}>
+        <div className="flex items-center gap-4">
+          <div className="relative h-12 w-12 overflow-hidden rounded-xl" style={{ boxShadow: 'var(--cb-shadow-sm)' }}>
+            <Image
+              src="/base.jpg"
+              alt="Base Logo"
+              width={48}
+              height={48}
+              className="rounded-xl"
+            />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--cb-text-primary)' }}>
+              Task Signer
+            </h1>
+            <p className="text-sm" style={{ color: 'var(--cb-text-tertiary)' }}>
+              Base Protocol
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Page title section */}
+      <div className="text-center">
+        <h2 className="mb-3 text-4xl font-bold tracking-tight" style={{ color: 'var(--cb-text-primary)' }}>
+          Sign Protocol Tasks
+        </h2>
+        <p className="text-lg" style={{ color: 'var(--cb-text-secondary)' }}>
+          Securely review and sign smart contract operations with your Ledger device
+        </p>
+      </div>
+    </header>
   );
 }

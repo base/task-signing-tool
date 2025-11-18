@@ -86,18 +86,20 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
 
   return (
     <div className="text-center">
-      <h2 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
+      <h2 className="mb-8 text-3xl font-bold" style={{ color: 'var(--cb-text-primary)' }}>
         Select Profile
       </h2>
 
-      {/* Step 1: User Type Selection */}
+      {/* User Type Selection */}
       <div className="mb-8">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {loadingUsers ? (
-            <p className="text-base font-medium text-gray-600">Loading user options...</p>
+            <p className="text-base font-medium" style={{ color: 'var(--cb-text-secondary)' }}>
+              Loading profiles...
+            </p>
           ) : availableUsers.length === 0 ? (
-            <p className="text-base font-medium text-gray-600">
-              No user options available for this network and upgrade ID.
+            <p className="text-base font-medium" style={{ color: 'var(--cb-text-secondary)' }}>
+              No profiles available for this network and task.
             </p>
           ) : (
             availableUsers.map(option => {
@@ -108,14 +110,28 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
                   key={option.fileName}
                   type="button"
                   onClick={() => handleUserSelect(option)}
-                  className={`inline-flex w-full items-center justify-center gap-3 rounded-2xl border-2 px-8 py-6 text-base font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
-                    isSelected
-                      ? 'border-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white shadow-xl scale-[1.02] ring-2 ring-purple-300/50'
-                      : 'border-purple-200/50 bg-gradient-to-br from-white to-purple-50/30 text-gray-700 shadow-md hover:-translate-y-1 hover:border-purple-300 hover:bg-white hover:shadow-xl hover:ring-1 hover:ring-purple-200'
+                  className={`inline-flex w-full items-center justify-center gap-3 rounded-xl px-6 py-4 text-base font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                    isSelected ? 'scale-[1.01]' : 'hover:-translate-y-0.5'
                   }`}
+                  style={{
+                    background: isSelected ? 'var(--cb-primary)' : 'var(--cb-surface-elevated)',
+                    border: isSelected ? '2px solid var(--cb-primary-dark)' : '1px solid var(--cb-border)',
+                    color: isSelected ? 'white' : 'var(--cb-text-primary)',
+                    boxShadow: isSelected ? 'var(--cb-shadow-lg)' : 'var(--cb-shadow-sm)'
+                  }}
                   aria-pressed={isSelected}
                 >
-                  {isSelected && <span className="text-xl font-bold">✓</span>}
+                  {isSelected && (
+                    <div 
+                      className="flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        border: '2px solid white'
+                      }}
+                    >
+                      ✓
+                    </div>
+                  )}
                   {option.displayName}
                 </button>
               );
@@ -125,13 +141,20 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-left">
-          <p className="mb-2 text-sm font-semibold text-red-700">❌ Error:</p>
-          <p className="text-sm text-red-600">{error}</p>
+        <div 
+          className="mt-4 rounded-lg p-4 text-left"
+          style={{
+            background: 'var(--cb-error-light)',
+            border: '1px solid var(--cb-error)',
+            color: 'var(--cb-error)'
+          }}
+        >
+          <p className="mb-2 text-sm font-semibold">❌ Error:</p>
+          <p className="text-sm">{error}</p>
           {error.includes('not found') && (
-            <p className="mt-2 text-xs text-red-600">
+            <p className="mt-2 text-xs">
               Run:{' '}
-              <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">
+              <code className="rounded px-1.5 py-0.5 font-mono text-xs" style={{ background: 'rgba(215, 58, 73, 0.1)' }}>
                 make install-eip712sign
               </code>{' '}
               in project root
@@ -142,8 +165,8 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
 
       {/* Proceed Button */}
       {selectedUser && (
-        <div className="mt-6">
-          <p className="mb-3 text-sm text-gray-600">
+        <div className="mt-8">
+          <p className="mb-4 text-sm" style={{ color: 'var(--cb-text-secondary)' }}>
             Next, simulate the transaction to confirm it behaves as expected.
           </p>
           <button
@@ -153,9 +176,13 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
               }
             }}
             type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-10 py-5 text-base font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-2xl hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+            className="inline-flex items-center justify-center rounded-lg px-8 py-3 text-base font-semibold text-white transition-all duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{
+              background: 'var(--cb-primary)',
+              boxShadow: 'var(--cb-shadow-md)'
+            }}
           >
-            Simulate →
+            Simulate Transaction →
           </button>
         </div>
       )}

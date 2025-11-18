@@ -20,11 +20,11 @@ type UpgradeType = string | null;
 type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
 
 const STEP_LAYOUT_WIDTH: Record<Step, string> = {
-  upgrade: '900px',
+  upgrade: '800px',
   user: '600px',
-  validation: '1200px',
-  ledger: '800px',
-  signing: '800px',
+  validation: '1400px',
+  ledger: '900px',
+  signing: '900px',
 };
 
 export default function Home() {
