@@ -79,9 +79,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="mb-6 h-16 w-16 animate-spin rounded-full border-4 border-[var(--cds-border)] border-t-[var(--cds-primary)]" />
-        <h3 className="text-xl font-semibold text-[var(--cds-text-primary)]">
-          {loadingTitle}
-        </h3>
+        <h3 className="text-xl font-semibold text-[var(--cds-text-primary)]">{loadingTitle}</h3>
         <p className="mt-2 text-[var(--cds-text-secondary)]">This may take a few moments.</p>
       </div>
     );
@@ -92,7 +90,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-red-50 p-8 border border-red-100">
           <div className="flex justify-center mb-4">
-             <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl">❌</div>
+            <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl">
+              ❌
+            </div>
           </div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--cds-error)]">Validation Failed</h3>
           <p className="text-base text-[var(--cds-text-secondary)]">{error}</p>
@@ -116,7 +116,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-yellow-50 p-8 border border-yellow-100">
           <div className="flex justify-center mb-4">
-             <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 text-xl">⚠️</div>
+            <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 text-xl">
+              ⚠️
+            </div>
           </div>
           <h3 className="mb-2 text-xl font-semibold text-yellow-800">No Changes Found</h3>
           <p className="text-base text-yellow-700">
@@ -137,25 +139,27 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-4">
         <div>
-          <h2 className="text-3xl font-bold text-[var(--cds-text-primary)] tracking-tight mb-2">Validation Results</h2>
+          <h2 className="text-3xl font-bold text-[var(--cds-text-primary)] tracking-tight mb-2">
+            Validation Results
+          </h2>
           <div className="text-sm text-[var(--cds-text-secondary)] flex flex-wrap gap-3">
-             <span>Step 1: {stepCounts.signing} items</span>
-             <span className="text-[var(--cds-text-tertiary)]">•</span>
-             <span>Step 2: {stepCounts.overrides} items</span>
-             <span className="text-[var(--cds-text-tertiary)]">•</span>
-             <span>Step 3: {stepCounts.changes} items</span>
-             <span className="text-[var(--cds-text-tertiary)]">•</span>
-             <span>Step 4: {stepCounts.balance} items</span>
+            <span>Step 1: {stepCounts.signing} items</span>
+            <span className="text-[var(--cds-text-tertiary)]">•</span>
+            <span>Step 2: {stepCounts.overrides} items</span>
+            <span className="text-[var(--cds-text-tertiary)]">•</span>
+            <span>Step 3: {stepCounts.changes} items</span>
+            <span className="text-[var(--cds-text-tertiary)]">•</span>
+            <span>Step 4: {stepCounts.balance} items</span>
           </div>
         </div>
-        
+
         <div className="mt-4 md:mt-0 text-right">
-           <div className="text-sm font-medium text-[var(--cds-text-secondary)] mb-1">
-              Step {stepInfo.currentStep}: {currentEntry ? STEP_LABELS[currentEntry.kind] : ''}
-           </div>
-           <div className="text-xs text-[var(--cds-text-tertiary)]">
-              Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
-           </div>
+          <div className="text-sm font-medium text-[var(--cds-text-secondary)] mb-1">
+            Step {stepInfo.currentStep}: {currentEntry ? STEP_LABELS[currentEntry.kind] : ''}
+          </div>
+          <div className="text-xs text-[var(--cds-text-tertiary)]">
+            Item {stepInfo.currentStepIndex} of {stepInfo.currentStepItems}
+          </div>
         </div>
       </div>
 
@@ -171,7 +175,11 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             Previous
           </Button>
 
-          <Badge variant="primary" size="md" className="font-mono text-xs sm:text-sm max-w-[200px] truncate">
+          <Badge
+            variant="primary"
+            size="md"
+            className="font-mono text-xs sm:text-sm max-w-[200px] truncate"
+          >
             {getContractNameForEntry(currentEntry, itemsByStep)}
           </Badge>
 
@@ -184,6 +192,23 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             Next →
           </Button>
         </div>
+
+        {matchStatus && (
+          <div
+            className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
+              matchStatus.status === 'match'
+                ? 'bg-green-100/50 border-green-200 text-green-900'
+                : matchStatus.status === 'mismatch'
+                ? 'bg-red-100/50 border-red-200 text-red-900'
+                : matchStatus.status === 'missing'
+                ? 'bg-red-100/50 border-red-200 text-red-900'
+                : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
+            }`}
+          >
+            <span className="text-2xl">{matchStatus.icon}</span>
+            <span className="text-lg font-bold">{matchStatus.text}</span>
+          </div>
+        )}
 
         {evaluation && (
           <div className="grid gap-6 md:grid-cols-2">
@@ -225,28 +250,20 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         )}
       </Card>
 
-      {matchStatus && (
-        <div className="flex justify-center">
-          <div
-            className={`inline-flex items-center gap-2 rounded-full px-6 py-2 text-sm font-bold text-white shadow-sm ${matchStatus.bgClass}`}
-          >
-            <span>{matchStatus.icon}</span> {matchStatus.text}
-          </div>
-        </div>
-      )}
-
       {currentIndex === totalItems - 1 && (
         <div className="mt-12 flex flex-col items-center animate-fade-in">
-          <Card className={`w-full max-w-lg p-8 text-center mb-8 ${
-              blockingErrorsExist
-                ? 'border-red-200 bg-red-50'
-                : 'border-green-200 bg-green-50'
-            }`}>
+          <Card
+            className={`w-full max-w-lg p-8 text-center mb-8 ${
+              blockingErrorsExist ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
+            }`}
+          >
             <div className="mb-4 flex items-center justify-center gap-3">
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center text-2xl ${
-                 blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-              }`}>
-                 {blockingErrorsExist ? '🚫' : '✅'}
+              <div
+                className={`h-12 w-12 rounded-full flex items-center justify-center text-2xl ${
+                  blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                }`}
+              >
+                {blockingErrorsExist ? '🚫' : '✅'}
               </div>
               <h3
                 className={`text-2xl font-bold ${
@@ -256,16 +273,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
               </h3>
             </div>
-            
+
             {blockingErrorsExist ? (
               <p className="text-sm text-red-700">
-                Found <strong>Missing</strong> or <strong>Different</strong> instances. <br/>
+                Found <strong>Missing</strong> or <strong>Different</strong> instances. <br />
                 Contact developers before continuing.
               </p>
             ) : (
-               <p className="text-sm text-green-700">
-                  All validations passed successfully. You can proceed to signing.
-               </p>
+              <p className="text-sm text-green-700">
+                All validations passed successfully. You can proceed to signing.
+              </p>
             )}
           </Card>
 
@@ -284,24 +301,21 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
           {(!validationResult.expected?.domainAndMessageHashes ||
             !validationResult.expected?.domainAndMessageHashes?.domainHash ||
-            !validationResult.expected?.domainAndMessageHashes?.messageHash) && !blockingErrorsExist && (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg">
-              <p className="mb-1 text-sm font-bold text-yellow-800">⚠️ Signing Not Available</p>
-              <p className="text-sm text-yellow-700">
-                Domain and message hashes are required for signing but were not generated during
-                validation.
-              </p>
-            </div>
-          )}
+            !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
+            !blockingErrorsExist && (
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg">
+                <p className="mb-1 text-sm font-bold text-yellow-800">⚠️ Signing Not Available</p>
+                <p className="text-sm text-yellow-700">
+                  Domain and message hashes are required for signing but were not generated during
+                  validation.
+                </p>
+              </div>
+            )}
         </div>
       )}
 
       <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-8 border-t border-[var(--cds-divider)]">
-        <Button
-          onClick={onBackToSetup}
-          variant="secondary"
-          icon={<span>←</span>}
-        >
+        <Button onClick={onBackToSetup} variant="secondary" icon={<span>←</span>}>
           Back to Setup
         </Button>
 

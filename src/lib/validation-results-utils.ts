@@ -344,9 +344,9 @@ const defaultContractAddress = (address?: string) =>
   address && address.trim().length > 0 ? address : 'Unknown Address';
 
 const STATUS_STYLES: Record<ValidationMatchStatus['status'], { bgClass: string; icon: string }> = {
-  match: { bgClass: 'bg-blue-700', icon: '✅' },
+  match: { bgClass: 'bg-green-600', icon: '✅' },
   mismatch: { bgClass: 'bg-red-600', icon: '❌' },
-  missing: { bgClass: 'bg-blue-500', icon: '❌' },
+  missing: { bgClass: 'bg-red-500', icon: '❌' },
   'expected-difference': { bgClass: 'bg-emerald-600', icon: '✅' },
 };
 
