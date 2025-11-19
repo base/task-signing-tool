@@ -17,10 +17,10 @@ interface ComparisonCardProps {
 }
 
 const baseValueClasses =
-  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-pre-wrap border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
+  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-nowrap border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
 
 const getValueClasses = (): string => {
-  return [baseValueClasses, 'break-all overflow-hidden'].filter(Boolean).join(' ');
+  return [baseValueClasses, 'overflow-hidden'].filter(Boolean).join(' ');
 };
 
 interface ValueSectionProps {
