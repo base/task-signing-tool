@@ -20,7 +20,7 @@ export function SelectionSummary({ selectedUpgrade }: SelectionSummaryProps) {
           <Markdown
             remarkPlugins={[remarkGfm]}
             components={{
-              a: ({ node, ...props }) => (
+              a: ({ ...props }) => (
                 <a
                   {...props}
                   target="_blank"
@@ -29,23 +29,21 @@ export function SelectionSummary({ selectedUpgrade }: SelectionSummaryProps) {
                   onClick={e => e.stopPropagation()}
                 />
               ),
-              p: ({ node, ...props }) => (
-                <p {...props} className="mb-2 last:mb-0 leading-relaxed" />
-              ),
-              ul: ({ node, ...props }) => (
+              p: ({ ...props }) => <p {...props} className="mb-2 last:mb-0 leading-relaxed" />,
+              ul: ({ ...props }) => (
                 <ul {...props} className="list-disc list-inside mb-2 space-y-1" />
               ),
-              ol: ({ node, ...props }) => (
+              ol: ({ ...props }) => (
                 <ol {...props} className="list-decimal list-inside mb-2 space-y-1" />
               ),
-              li: ({ node, ...props }) => <li {...props} className="ml-1" />,
-              code: ({ node, ...props }) => (
+              li: ({ ...props }) => <li {...props} className="ml-1" />,
+              code: ({ ...props }) => (
                 <code
                   {...props}
                   className="text-[var(--cds-text-primary)] bg-gray-100 px-1 py-0.5 rounded font-mono text-xs"
                 />
               ),
-              pre: ({ node, ...props }) => (
+              pre: ({ ...props }) => (
                 <pre
                   {...props}
                   className="bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-x-auto my-2 text-xs text-[var(--cds-text-primary)] [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-inherit"
