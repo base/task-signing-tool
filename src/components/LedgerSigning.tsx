@@ -232,9 +232,8 @@ export function LedgerSigning({
                 disabled={loading || !hasRequiredFields}
                 isLoading={loading}
                 className="flex-[2]"
-                icon={!loading ? <span>🔐</span> : undefined}
               >
-                Sign on Ledger
+                Sign
               </Button>
             </div>
           </Card>

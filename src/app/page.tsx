@@ -87,8 +87,6 @@ export default function Home() {
     currentStep === 'validation' ||
     currentStep === 'ledger' ||
     currentStep === 'signing';
-  const canEditUser =
-    currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing';
 
   // Map current step to step indicator format
   const steps = [
