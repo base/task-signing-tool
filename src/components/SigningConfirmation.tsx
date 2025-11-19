@@ -13,8 +13,6 @@ interface SigningConfirmationProps {
     name: string;
   };
   signingData?: LedgerSigningResult | null;
-  onBackToValidation: () => void;
-  onBackToLedger?: () => void;
   onBackToSetup: () => void;
 }
 
@@ -29,8 +27,6 @@ export function SigningConfirmation({
   network,
   selectedUpgrade,
   signingData,
-  onBackToValidation,
-  onBackToLedger,
   onBackToSetup,
 }: SigningConfirmationProps) {
   const [copied, setCopied] = useState(false);
@@ -116,7 +112,7 @@ export function SigningConfirmation({
     <div className="max-w-3xl mx-auto animate-fade-in pb-20">
       <div className="text-center mb-12">
         <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-green-100 text-green-600 text-4xl mb-6 shadow-sm">
-           ✨
+          ✨
         </div>
         <h2 className="text-4xl font-bold text-[var(--cds-text-primary)] tracking-tight mb-2">
           Signing Complete
@@ -134,9 +130,18 @@ export function SigningConfirmation({
         </div>
         <div className="p-6 space-y-4">
           {summaryItems.map(({ label, value, monospace }) => (
-            <div key={label} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+            <div
+              key={label}
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1"
+            >
               <span className="text-sm font-medium text-[var(--cds-text-secondary)]">{label}</span>
-              <span className={`text-sm text-[var(--cds-text-primary)] ${monospace ? 'font-mono bg-gray-50 px-2 py-0.5 rounded border border-gray-100' : 'font-semibold'}`}>
+              <span
+                className={`text-sm text-[var(--cds-text-primary)] ${
+                  monospace
+                    ? 'font-mono bg-gray-50 px-2 py-0.5 rounded border border-gray-100'
+                    : 'font-semibold'
+                }`}
+              >
                 {value}
               </span>
             </div>
@@ -147,37 +152,41 @@ export function SigningConfirmation({
       {signingData ? (
         <div className="space-y-6 mb-12">
           <Card className="border-green-200 bg-green-50/30 overflow-visible">
-             <div className="px-6 py-4 border-b border-green-100 flex justify-between items-center">
-               <div className="flex items-center gap-2">
-                 <div className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">✓</div>
-                 <h3 className="text-base font-bold text-green-900">Ledger Signature Generated</h3>
-               </div>
-               
-               <Button
-                 onClick={handleCopySignature}
-                 size="sm"
-                 variant={copied ? 'primary' : 'secondary'}
-                 className={copied ? 'bg-green-600 hover:bg-green-700 border-transparent' : ''}
-                 icon={!copied ? <span>📋</span> : <span>✓</span>}
-               >
-                 {copied ? 'Copied!' : 'Copy Signature'}
-               </Button>
-             </div>
-             
-             <div className="p-6">
-               <div className="bg-white border border-green-200 rounded-xl p-4 shadow-sm overflow-x-auto">
-                 <div className="space-y-3">
-                   {signatureItems.map(({ label, value }) => (
-                     <div key={label} className="flex flex-col gap-1">
-                       <span className="text-xs font-bold text-[var(--cds-text-tertiary)] uppercase">{label}</span>
-                       <div className="font-mono text-xs text-[var(--cds-text-primary)] break-all">
-                         {value}
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             </div>
+            <div className="px-6 py-4 border-b border-green-100 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">
+                  ✓
+                </div>
+                <h3 className="text-base font-bold text-green-900">Ledger Signature Generated</h3>
+              </div>
+
+              <Button
+                onClick={handleCopySignature}
+                size="sm"
+                variant={copied ? 'primary' : 'secondary'}
+                className={copied ? 'bg-green-600 hover:bg-green-700 border-transparent' : ''}
+                icon={!copied ? <span>📋</span> : <span>✓</span>}
+              >
+                {copied ? 'Copied!' : 'Copy Signature'}
+              </Button>
+            </div>
+
+            <div className="p-6">
+              <div className="bg-white border border-green-200 rounded-xl p-4 shadow-sm overflow-x-auto">
+                <div className="space-y-3">
+                  {signatureItems.map(({ label, value }) => (
+                    <div key={label} className="flex flex-col gap-1">
+                      <span className="text-xs font-bold text-[var(--cds-text-tertiary)] uppercase">
+                        {label}
+                      </span>
+                      <div className="font-mono text-xs text-[var(--cds-text-primary)] break-all">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </Card>
 
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 flex gap-4">
@@ -200,18 +209,8 @@ export function SigningConfirmation({
       )}
 
       <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8 border-t border-[var(--cds-divider)]">
-        {onBackToLedger && (
-           <Button onClick={onBackToLedger} variant="secondary">
-             Back to Ledger
-           </Button>
-        )}
-        
-        <Button onClick={onBackToValidation} variant="secondary">
-           Back to Validation
-        </Button>
-
         <Button onClick={onBackToSetup} variant="primary">
-           Start New Validation
+          Start New Validation
         </Button>
       </div>
     </div>

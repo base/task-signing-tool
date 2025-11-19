@@ -73,10 +73,6 @@ export default function Home() {
     setCurrentStep('validation');
   };
 
-  const handleBackToLedger = () => {
-    setCurrentStep('ledger');
-  };
-
   const handleGoToUpgradeSelection = () => {
     resetSelectionsFrom('upgrade');
     setCurrentStep('upgrade');
@@ -193,8 +189,6 @@ export default function Home() {
               name: selectedUpgrade?.name || '',
             }}
             signingData={signingData}
-            onBackToValidation={handleBackToValidation}
-            onBackToLedger={signingData ? handleBackToLedger : undefined}
             onBackToSetup={handleGoToUpgradeSelection}
           />
         )}
