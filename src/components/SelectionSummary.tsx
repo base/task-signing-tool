@@ -16,8 +16,45 @@ export function SelectionSummary({ selectedUpgrade }: SelectionSummaryProps) {
         <h2 className="text-xl font-semibold text-[var(--cds-text-primary)]">
           {selectedUpgrade.name}
         </h2>
-        <div className="text-sm text-[var(--cds-text-secondary)] prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-          <Markdown remarkPlugins={[remarkGfm]}>{selectedUpgrade.description}</Markdown>
+        <div className="text-sm text-[var(--cds-text-secondary)]">
+          <Markdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: ({ node, ...props }) => (
+                <a
+                  {...props}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--cds-primary)] underline font-medium hover:text-[var(--cds-primary-hover)] break-all"
+                  onClick={e => e.stopPropagation()}
+                />
+              ),
+              p: ({ node, ...props }) => (
+                <p {...props} className="mb-2 last:mb-0 leading-relaxed" />
+              ),
+              ul: ({ node, ...props }) => (
+                <ul {...props} className="list-disc list-inside mb-2 space-y-1" />
+              ),
+              ol: ({ node, ...props }) => (
+                <ol {...props} className="list-decimal list-inside mb-2 space-y-1" />
+              ),
+              li: ({ node, ...props }) => <li {...props} className="ml-1" />,
+              code: ({ node, ...props }) => (
+                <code
+                  {...props}
+                  className="text-[var(--cds-text-primary)] bg-gray-100 px-1 py-0.5 rounded font-mono text-xs"
+                />
+              ),
+              pre: ({ node, ...props }) => (
+                <pre
+                  {...props}
+                  className="bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-x-auto my-2 text-xs text-[var(--cds-text-primary)] [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-inherit"
+                />
+              ),
+            }}
+          >
+            {selectedUpgrade.description}
+          </Markdown>
         </div>
       </div>
     </Card>
