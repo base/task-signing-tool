@@ -3,17 +3,17 @@
   "name": "Base Task Signer Tool",
   "icons": [
     {
-      "src": "base.jpg",
+      "src": "favicon.png",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/jpeg"
     },
     {
-      "src": "base.jpg",
+      "src": "favicon.png",
       "type": "image/jpeg",
       "sizes": "192x192"
     },
     {
-      "src": "base.jpg",
+      "src": "favicon.png",
       "type": "image/jpeg",
       "sizes": "512x512"
     }
