@@ -201,10 +201,31 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </Button>
         </div>
 
+        {matchStatus && (
+          <div
+            className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
+              matchStatus.status === 'match'
+                ? 'bg-green-100/50 border-green-200 text-green-900'
+                : matchStatus.status === 'mismatch'
+                ? 'bg-red-100/50 border-red-200 text-red-900'
+                : matchStatus.status === 'missing'
+                ? 'bg-red-100/50 border-red-200 text-red-900'
+                : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
+            }`}
+          >
+            <span className="text-2xl">{matchStatus.icon}</span>
+            <span className="text-lg font-bold">{matchStatus.text}</span>
+          </div>
+        )}
+
         {evaluation && (
           <div className="grid gap-6 md:grid-cols-2">
             <ComparisonCard type="expected" {...evaluation.cards.expected} />
-            <ComparisonCard type="actual" {...evaluation.cards.actual} />
+            <ComparisonCard
+              type="actual"
+              {...evaluation.cards.actual}
+              matchStatus={matchStatus?.status}
+            />
           </div>
         )}
 

@@ -14,6 +14,7 @@ interface ComparisonCardProps {
   beforeValueDiffs?: StringDiff[];
   afterValue: string;
   afterValueDiffs?: StringDiff[];
+  matchStatus?: 'match' | 'mismatch' | 'missing' | 'expected-difference';
 }
 
 const HEX_SEGMENT_WRAP_THRESHOLD = 66;
@@ -21,10 +22,7 @@ const HEX_SEGMENT_WRAP_THRESHOLD = 66;
 const baseValueClasses =
   'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-pre-wrap border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
 
-const getValueClasses = (
-  value: string | undefined,
-  diffs: StringDiff[] | undefined,
-): string => {
+const getValueClasses = (value: string | undefined, diffs: StringDiff[] | undefined): string => {
   const content = diffs && diffs.length > 0 ? diffs.map(diff => diff.value).join('') : value ?? '';
   let shouldWrap = false;
 
@@ -84,11 +82,22 @@ export function ComparisonCard({
   beforeValueDiffs,
   afterValue,
   afterValueDiffs,
+  matchStatus,
 }: ComparisonCardProps) {
   const variant = variants[type];
-  
+
+  const statusStyles =
+    matchStatus && type === 'actual'
+      ? {
+          match: 'border-green-200 bg-green-50/50',
+          'expected-difference': 'border-emerald-200 bg-emerald-50/50',
+          mismatch: 'border-red-200 bg-red-50/50',
+          missing: 'border-red-200 bg-red-50/50',
+        }[matchStatus]
+      : '';
+
   return (
-    <Card className="h-full">
+    <Card className={`h-full ${statusStyles}`}>
       <div className="flex items-center gap-2 mb-4">
         <Badge variant={variant.badgeVariant} size="sm" className="font-bold px-2.5 py-1">
           {variant.icon} {variant.title}
@@ -96,25 +105,19 @@ export function ComparisonCard({
       </div>
 
       <div className="mb-4 rounded-xl bg-gray-50 p-4 border border-[var(--cds-border)]">
-        <h4 className="mb-1 text-sm font-semibold text-[var(--cds-text-primary)]">{contractName}</h4>
+        <h4 className="mb-1 text-sm font-semibold text-[var(--cds-text-primary)]">
+          {contractName}
+        </h4>
         <p className="m-0 break-all font-mono text-[10px] text-[var(--cds-text-secondary)]">
           {toChecksumAddressSafe(contractAddress)}
         </p>
       </div>
 
       <div className="space-y-4">
-        <ValueSection
-          label="Storage Key"
-          value={storageKey}
-          diffs={storageKeyDiffs}
-        />
+        <ValueSection label="Storage Key" value={storageKey} diffs={storageKeyDiffs} />
 
         {beforeValue && (
-          <ValueSection
-            label="Before"
-            value={beforeValue}
-            diffs={beforeValueDiffs}
-          />
+          <ValueSection label="Before" value={beforeValue} diffs={beforeValueDiffs} />
         )}
 
         <ValueSection
