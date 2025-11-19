@@ -285,7 +285,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             </div>
             <h3
               className={`text-2xl font-bold ${
-                blockingErrorsExist ? 'text-red-700' : 'text-green-700'
+                blockingErrorsExist ? 'text-red-700' : 'text-[var(--cds-text-primary)]'
               }`}
             >
               {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
@@ -298,7 +298,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
               Contact developers before continuing.
             </p>
           ) : (
-            <p className="text-sm text-green-700 mb-6">
+            <p className="text-sm text-[var(--cds-text-secondary)] mb-6">
               All validations passed successfully. You can proceed to signing.
             </p>
           )}
