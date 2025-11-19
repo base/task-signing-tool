@@ -22,7 +22,6 @@ interface ValidationResultsProps {
     id: string;
     name: string;
   };
-  onBackToSetup: () => void;
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
 
@@ -30,7 +29,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   userType,
   network,
   selectedUpgrade,
-  onBackToSetup,
   onProceedToLedgerSigning,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -306,17 +304,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             )}
         </div>
       )}
-
-      <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-8 border-t border-[var(--cds-divider)]">
-        <Button
-          onClick={runValidation}
-          disabled={isLoading}
-          variant="secondary"
-          icon={isLoading ? undefined : <span>🔄</span>}
-        >
-          {isLoading ? 'Running Validation...' : 'Rerun Validation'}
-        </Button>
-      </div>
     </div>
   );
 };

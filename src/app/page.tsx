@@ -82,11 +82,6 @@ export default function Home() {
     setCurrentStep('upgrade');
   };
 
-  const handleGoToUserSelection = () => {
-    resetSelectionsFrom('user');
-    setCurrentStep('user');
-  };
-
   const canEditUpgrade =
     currentStep === 'user' ||
     currentStep === 'validation' ||
@@ -177,7 +172,6 @@ export default function Home() {
               id: selectedUpgrade?.id || '',
               name: selectedUpgrade?.name || '',
             }}
-            onBackToSetup={handleGoToUpgradeSelection}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
         )}
