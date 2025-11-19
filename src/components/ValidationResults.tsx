@@ -163,15 +163,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         </div>
       </div>
 
-      <Card
-        className={`transition-colors duration-200 ${
-          matchStatus?.status === 'match' || matchStatus?.status === 'expected-difference'
-            ? 'bg-green-50 border border-green-200'
-            : matchStatus?.status === 'mismatch' || matchStatus?.status === 'missing'
-            ? 'bg-red-50 border border-red-200'
-            : 'bg-gray-50/50'
-        }`}
-      >
+      <Card className="bg-gray-50/50">
         <div className="flex items-center justify-between gap-4 mb-6">
           <Button
             onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
