@@ -281,15 +281,6 @@ export function LedgerSigning({
       )}
 
       {renderStepContent()}
-
-      <div className="mt-8 flex justify-center">
-        <button
-          onClick={onCancel}
-          className="text-sm font-medium text-[var(--cds-text-secondary)] hover:text-[var(--cds-text-primary)] transition-colors cursor-pointer"
-        >
-          Cancel Signing Process
-        </button>
-      </div>
     </div>
   );
 }
