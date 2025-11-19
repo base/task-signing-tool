@@ -184,13 +184,48 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                   </h3>
 
                   <div
-                    className={`text-sm text-[var(--cds-text-secondary)] prose prose-sm max-w-none 
-                    prose-a:text-[var(--cds-primary)] prose-a:underline prose-a:font-medium hover:prose-a:text-[var(--cds-primary-hover)]
-                    prose-code:text-[var(--cds-text-primary)] prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-xs prose-code:before:content-none prose-code:after:content-none
-                    prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:rounded-lg prose-pre:p-3
-                    ${!isExpanded ? 'line-clamp-2' : ''}`}
+                    className={`text-sm text-[var(--cds-text-secondary)] ${
+                      !isExpanded ? 'line-clamp-2' : ''
+                    }`}
                   >
-                    <Markdown remarkPlugins={[remarkGfm]}>{option.description}</Markdown>
+                    <Markdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a
+                            {...props}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[var(--cds-primary)] underline font-medium hover:text-[var(--cds-primary-hover)] break-all"
+                            onClick={e => e.stopPropagation()}
+                          />
+                        ),
+                        p: ({ node, ...props }) => (
+                          <p {...props} className="mb-2 last:mb-0 leading-relaxed" />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul {...props} className="list-disc list-inside mb-2 space-y-1" />
+                        ),
+                        ol: ({ node, ...props }) => (
+                          <ol {...props} className="list-decimal list-inside mb-2 space-y-1" />
+                        ),
+                        li: ({ node, ...props }) => <li {...props} className="ml-1" />,
+                        code: ({ node, ...props }) => (
+                          <code
+                            {...props}
+                            className="text-[var(--cds-text-primary)] bg-gray-100 px-1 py-0.5 rounded font-mono text-xs"
+                          />
+                        ),
+                        pre: ({ node, ...props }) => (
+                          <pre
+                            {...props}
+                            className="bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-x-auto my-2 text-xs text-[var(--cds-text-primary)] [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-inherit"
+                          />
+                        ),
+                      }}
+                    >
+                      {option.description}
+                    </Markdown>
                   </div>
 
                   {option.description.length > 150 && (
