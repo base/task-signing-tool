@@ -14,7 +14,6 @@ interface ComparisonCardProps {
   beforeValueDiffs?: StringDiff[];
   afterValue: string;
   afterValueDiffs?: StringDiff[];
-  matchStatus?: 'match' | 'mismatch' | 'missing' | 'expected-difference';
 }
 
 const HEX_SEGMENT_WRAP_THRESHOLD = 66;
@@ -82,22 +81,11 @@ export function ComparisonCard({
   beforeValueDiffs,
   afterValue,
   afterValueDiffs,
-  matchStatus,
 }: ComparisonCardProps) {
   const variant = variants[type];
 
-  const statusStyles =
-    matchStatus && type === 'actual'
-      ? {
-          match: 'border-green-200 bg-green-50/50',
-          'expected-difference': 'border-emerald-200 bg-emerald-50/50',
-          mismatch: 'border-red-200 bg-red-50/50',
-          missing: 'border-red-200 bg-red-50/50',
-        }[matchStatus]
-      : '';
-
   return (
-    <Card className={`h-full ${statusStyles}`}>
+    <Card className="h-full">
       <div className="flex items-center gap-2 mb-4">
         <Badge variant={variant.badgeVariant} size="sm" className="font-bold px-2.5 py-1">
           {variant.icon} {variant.title}
