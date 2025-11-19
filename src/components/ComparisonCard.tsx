@@ -16,28 +16,11 @@ interface ComparisonCardProps {
   afterValueDiffs?: StringDiff[];
 }
 
-const HEX_SEGMENT_WRAP_THRESHOLD = 66;
-
 const baseValueClasses =
   'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-pre-wrap border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
 
-const getValueClasses = (value: string | undefined, diffs: StringDiff[] | undefined): string => {
-  const content = diffs && diffs.length > 0 ? diffs.map(diff => diff.value).join('') : value ?? '';
-  let shouldWrap = false;
-
-  if (content) {
-    shouldWrap = content.split(/\r?\n/).some(segment => {
-      const trimmed = segment.trim();
-      return /^0x[0-9a-fA-F]+$/.test(trimmed) && trimmed.length > HEX_SEGMENT_WRAP_THRESHOLD;
-    });
-  }
-
-  return [
-    baseValueClasses,
-    shouldWrap ? 'break-words overflow-hidden' : 'break-normal overflow-x-auto scrollbar-hide',
-  ]
-    .filter(Boolean)
-    .join(' ');
+const getValueClasses = (): string => {
+  return [baseValueClasses, 'break-all overflow-hidden'].filter(Boolean).join(' ');
 };
 
 interface ValueSectionProps {
@@ -52,7 +35,7 @@ const ValueSection = ({ label, value, diffs, className }: ValueSectionProps) => 
     <label className="text-[10px] font-bold uppercase text-[var(--cds-text-tertiary)] tracking-wider">
       {label}
     </label>
-    <div className={getValueClasses(value, diffs)}>
+    <div className={getValueClasses()}>
       {diffs ? <HighlightedText diffs={diffs} /> : checksummizeAddressesInText(value)}
     </div>
   </div>
