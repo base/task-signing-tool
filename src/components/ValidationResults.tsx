@@ -1,4 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  ChevronRight,
+  Coins,
+  Lightbulb,
+  XCircle,
+} from 'lucide-react';
 
 import { useValidationRunner } from '@/hooks/useValidationRunner';
 import { useValidationSummary } from '@/hooks/useValidationSummary';
@@ -24,6 +34,22 @@ interface ValidationResultsProps {
   };
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
+
+const getIcon = (iconName: string, size: number = 24, className?: string) => {
+  const props = { size, className };
+  switch (iconName) {
+    case 'check':
+      return <CheckCircle {...props} />;
+    case 'x':
+      return <XCircle {...props} />;
+    case 'lightbulb':
+      return <Lightbulb {...props} />;
+    case 'coins':
+      return <Coins {...props} />;
+    default:
+      return null;
+  }
+};
 
 export const ValidationResults: React.FC<ValidationResultsProps> = ({
   userType,
@@ -88,8 +114,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-red-50 p-8 border border-red-100">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl">
-              ❌
+            <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+              <XCircle size={32} />
             </div>
           </div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--cds-error)]">Validation Failed</h3>
@@ -110,8 +136,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-yellow-50 p-8 border border-yellow-100">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 text-xl">
-              ⚠️
+            <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+              <AlertTriangle size={32} />
             </div>
           </div>
           <h3 className="mb-2 text-xl font-semibold text-yellow-800">No Changes Found</h3>
@@ -164,11 +190,11 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             >
               <div className="mb-4 flex items-center justify-center gap-3">
                 <div
-                  className={`h-12 w-12 rounded-full flex items-center justify-center text-2xl ${
+                  className={`h-12 w-12 rounded-full flex items-center justify-center ${
                     blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                   }`}
                 >
-                  {blockingErrorsExist ? '🚫' : '✅'}
+                  {blockingErrorsExist ? <XCircle size={24} /> : <CheckCircle size={24} />}
                 </div>
                 <h3
                   className={`text-2xl font-bold ${
@@ -196,7 +222,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
               !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
               !blockingErrorsExist && (
                 <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg">
-                  <p className="mb-1 text-sm font-bold text-yellow-800">⚠️ Signing Not Available</p>
+                  <p className="mb-1 text-sm font-bold text-yellow-800 flex items-center gap-1">
+                    <AlertTriangle size={16} /> Signing Not Available
+                  </p>
                   <p className="text-sm text-yellow-700">
                     Domain and message hashes are required for signing but were not generated during
                     validation.
@@ -212,16 +240,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 <Button
                   onClick={() => onProceedToLedgerSigning(validationResult)}
                   size="lg"
-                  icon={
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  }
+                  icon={<ChevronRight size={20} />}
                 >
                   Proceed to signing
                 </Button>
@@ -237,7 +256,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             disabled={currentIndex === 0}
             variant="secondary"
             size="sm"
-            icon={<span>←</span>}
+            icon={<ArrowLeft size={16} />}
           >
             Previous
           </Button>
@@ -256,7 +275,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             variant="primary"
             size="sm"
           >
-            Next →
+            Next <ArrowRight size={16} className="inline ml-1" />
           </Button>
         </div>
 
@@ -272,7 +291,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
             }`}
           >
-            <span className="text-2xl">{matchStatus.icon}</span>
+            {getIcon(matchStatus.icon, 24)}
             <span className="text-lg font-bold">{matchStatus.text}</span>
           </div>
         )}
@@ -292,7 +311,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 : 'border-blue-200 bg-blue-50'
             }`}
           >
-            <span className="text-xl mt-0.5">{descriptionContent.icon}</span>
+            <div className="mt-0.5">{getIcon(descriptionContent.icon, 24)}</div>
             <div className="flex-1">
               <h4
                 className={`mb-1 text-xs font-bold uppercase tracking-wider ${

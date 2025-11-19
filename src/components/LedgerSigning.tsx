@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRight, Lightbulb, XCircle } from 'lucide-react';
 import type { LedgerSigningResult } from '@/lib/ledger-signing';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -142,7 +143,7 @@ export function LedgerSigning({
               disabled={!hasRequiredFields}
               fullWidth
               size="lg"
-              icon={<span>→</span>}
+              icon={<ArrowRight size={16} />}
             >
               Continue
             </Button>
@@ -163,7 +164,9 @@ export function LedgerSigning({
 
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 mb-6">
               <div className="flex gap-3">
-                <div className="text-blue-600 text-xl">💡</div>
+                <div className="text-blue-600">
+                  <Lightbulb size={24} />
+                </div>
                 <div>
                   <p className="text-sm font-bold text-blue-900 mb-1">Verification Required</p>
                   <p className="text-sm text-blue-800">
@@ -201,7 +204,9 @@ export function LedgerSigning({
             {errorMessage && (
               <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100">
                 <div className="flex gap-3">
-                  <span className="text-red-500 text-lg">❌</span>
+                  <div className="text-red-500">
+                    <XCircle size={24} />
+                  </div>
                   <div>
                     <p className="text-sm font-bold text-[var(--cds-error)] mb-1">Signing Error</p>
                     <p className="text-sm text-red-700 mb-2">{errorMessage}</p>
@@ -270,7 +275,9 @@ export function LedgerSigning({
       {configurationError && (
         <div className="max-w-2xl mx-auto mb-8 rounded-xl border border-red-200 bg-red-50 p-4">
           <div className="flex gap-3">
-            <span className="text-xl">❌</span>
+            <div className="text-red-500">
+              <XCircle size={24} />
+            </div>
             <div>
               <p className="text-sm font-bold text-[var(--cds-error)]">Configuration Error</p>
               <p className="text-sm text-red-700 mt-1">{configurationError}</p>

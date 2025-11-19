@@ -345,10 +345,10 @@ const defaultContractAddress = (address?: string) =>
   address && address.trim().length > 0 ? address : 'Unknown Address';
 
 const STATUS_STYLES: Record<ValidationMatchStatus['status'], { bgClass: string; icon: string }> = {
-  match: { bgClass: 'bg-green-600', icon: '✅' },
-  mismatch: { bgClass: 'bg-red-600', icon: '❌' },
-  missing: { bgClass: 'bg-red-500', icon: '❌' },
-  'expected-difference': { bgClass: 'bg-emerald-600', icon: '✅' },
+  match: { bgClass: 'bg-green-600', icon: 'check' },
+  mismatch: { bgClass: 'bg-red-600', icon: 'x' },
+  missing: { bgClass: 'bg-red-500', icon: 'x' },
+  'expected-difference': { bgClass: 'bg-emerald-600', icon: 'check' },
 };
 
 const createMatchStatus = (
@@ -384,7 +384,7 @@ export const evaluateValidationEntry = (
         item.expected.description && item.expected.description.trim().length > 0
           ? ({
               variant: 'info',
-              icon: '💡',
+              icon: 'lightbulb',
               title: 'What this does',
               text: item.expected.description,
             } satisfies ValidationDescription)
@@ -429,7 +429,7 @@ export const evaluateValidationEntry = (
         item.expected.description && item.expected.description.trim().length > 0
           ? ({
               variant: 'info',
-              icon: '💡',
+              icon: 'lightbulb',
               title: 'What this does',
               text: item.expected.description,
             } satisfies ValidationDescription)
@@ -487,7 +487,7 @@ export const evaluateValidationEntry = (
         item.expected.description && item.expected.description.trim().length > 0
           ? ({
               variant: expectedDifference ? 'expected-difference' : 'info',
-              icon: expectedDifference ? '✅' : '💡',
+              icon: expectedDifference ? 'check' : 'lightbulb',
               title: expectedDifference ? 'Expected Difference - This is Fine' : 'What this does',
               text: item.expected.description,
             } satisfies ValidationDescription)
@@ -564,7 +564,7 @@ export const evaluateValidationEntry = (
       const description: ValidationDescription | undefined = descriptionParts.length
         ? {
             variant: expectedDifference ? 'expected-difference' : 'info',
-            icon: expectedDifference ? '✅' : '💰',
+            icon: expectedDifference ? 'check' : 'coins',
             title: expectedDifference
               ? 'Expected Difference - Balance Change OK'
               : 'Balance Change Details',

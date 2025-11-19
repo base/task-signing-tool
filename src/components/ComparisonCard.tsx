@@ -1,3 +1,4 @@
+import { CheckCircle, Search } from 'lucide-react';
 import { StringDiff } from '@/lib/types/index';
 import { toChecksumAddressSafe, checksummizeAddressesInText } from '@/lib/format';
 import { HighlightedText } from './HighlightedText';
@@ -50,12 +51,12 @@ const ValueSection = ({ label, value, diffs, className, shouldWrap }: ValueSecti
 
 const variants = {
   expected: {
-    icon: '✅',
+    icon: <CheckCircle size={14} className="mr-1" />,
     title: 'Expected',
     badgeVariant: 'success' as const,
   },
   actual: {
-    icon: '🔍',
+    icon: <Search size={14} className="mr-1" />,
     title: 'Actual',
     badgeVariant: 'primary' as const,
   },
@@ -78,7 +79,11 @@ export function ComparisonCard({
   return (
     <Card className="h-full">
       <div className="flex items-center gap-2 mb-4">
-        <Badge variant={variant.badgeVariant} size="sm" className="font-bold px-2.5 py-1">
+        <Badge
+          variant={variant.badgeVariant}
+          size="sm"
+          className="font-bold px-2.5 py-1 flex items-center"
+        >
           {variant.icon} {variant.title}
         </Badge>
       </div>
