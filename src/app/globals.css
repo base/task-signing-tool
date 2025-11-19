@@ -1,21 +1,21 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   /* Coinbase Design System (CDS) inspired tokens */
-  --cds-primary: #0052FF;
-  --cds-primary-hover: #0045CC;
-  --cds-background: #FFFFFF;
-  --cds-surface: #FFFFFF;
-  --cds-surface-raised: #FFFFFF;
-  --cds-text-primary: #050F19;
-  --cds-text-secondary: #5B616E;
-  --cds-text-tertiary: #8A919E;
-  --cds-border: #EBECEF;
-  --cds-border-active: #0052FF;
-  --cds-success: #05B169;
-  --cds-warning: #F0B90B;
-  --cds-error: #DF3349;
-  --cds-divider: #EEF0F3;
+  --cds-primary: #0052ff;
+  --cds-primary-hover: #0045cc;
+  --cds-background: #ffffff;
+  --cds-surface: #ffffff;
+  --cds-surface-raised: #ffffff;
+  --cds-text-primary: #050f19;
+  --cds-text-secondary: #5b616e;
+  --cds-text-tertiary: #8a919e;
+  --cds-border: #ebecef;
+  --cds-border-active: #0052ff;
+  --cds-success: #05b169;
+  --cds-warning: #f0b90b;
+  --cds-error: #df3349;
+  --cds-divider: #eef0f3;
 
   /* Elevation (Shadows) */
   --cds-shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.02), 0px 1px 2px rgba(0, 0, 0, 0.04);
@@ -53,7 +53,7 @@
 }
 
 body {
-  background-color: #FAFBFC; /* Light gray background for contrast with white cards */
+  background-color: #fafbfc; /* Light gray background for contrast with white cards */
   color: var(--cds-text-primary);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -70,7 +70,7 @@ body {
 
 .cds-card:hover {
   box-shadow: var(--cds-shadow-md);
-  border-color: #D0D5DD;
+  border-color: #d0d5dd;
 }
 
 /* Primary Button */
@@ -81,6 +81,7 @@ body {
   padding: 12px 24px;
   font-weight: 600;
   transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
 .cds-button-primary:hover {
@@ -101,17 +102,24 @@ body {
   padding: 12px 24px;
   font-weight: 600;
   transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
 }
 
 .cds-button-secondary:hover {
   border-color: var(--cds-text-secondary);
-  background-color: #F5F8FF;
+  background-color: #f5f8ff;
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {

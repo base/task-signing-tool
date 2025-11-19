@@ -14,7 +14,7 @@ export function NetworkSelection({ onSelect }: NetworkSelectionProps) {
           <button
             key={option}
             onClick={() => onSelect(option)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white p-5 text-base font-medium text-gray-700 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white p-5 text-base font-medium text-gray-700 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 cursor-pointer"
           >
             <span aria-hidden="true">🌐</span> {option.charAt(0).toUpperCase() + option.slice(1)}
           </button>
