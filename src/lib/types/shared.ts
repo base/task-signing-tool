@@ -8,3 +8,18 @@ export enum TaskStatus {
   ReadyToSign = 'READY TO SIGN',
   Pending = 'PENDING',
 }
+
+export interface ExecutionLink {
+  url: string;
+  label: string;
+}
+
+export interface Upgrade {
+  id: string;
+  name: string;
+  description: string;
+  date: string;
+  network: string;
+  status?: TaskStatus;
+  executionLinks?: ExecutionLink[];
+}

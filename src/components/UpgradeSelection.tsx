@@ -1,4 +1,4 @@
-import { TaskStatus } from '@/lib/types';
+import { TaskStatus, Upgrade, ExecutionLink } from '@/lib/types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,25 +12,10 @@ const STATUS_VARIANT_MAP: Record<TaskStatus, 'success' | 'warning' | 'neutral'> 
   [TaskStatus.Pending]: 'neutral',
 };
 
-interface ExecutionLink {
-  url: string;
-  label: string;
-}
-
-interface Upgrade {
-  id: string;
-  name: string;
-  description: string;
-  date: string;
-  network: string;
-  status?: TaskStatus;
-  executionLinks?: ExecutionLink[];
-}
-
 interface UpgradeSelectionProps {
   selectedWallet: string | null;
   selectedNetwork: string | null;
-  onSelect: (upgradeId: string, network: string) => void;
+  onSelect: (upgrade: Upgrade) => void;
 }
 
 export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
@@ -163,7 +148,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
               key={`${option.network}-${option.id}`}
               interactive
               selected={isSelected}
-              onClick={() => onSelect(option.id, option.network)}
+              onClick={() => onSelect(option)}
               className="relative group"
             >
               <div className="flex items-start justify-between gap-6">
