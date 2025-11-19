@@ -14,13 +14,19 @@ interface ComparisonCardProps {
   beforeValueDiffs?: StringDiff[];
   afterValue: string;
   afterValueDiffs?: StringDiff[];
+  shouldWrap?: boolean;
 }
 
 const baseValueClasses =
-  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-nowrap border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
+  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
 
-const getValueClasses = (): string => {
-  return [baseValueClasses, 'overflow-hidden'].filter(Boolean).join(' ');
+const getValueClasses = (shouldWrap: boolean = false): string => {
+  return [
+    baseValueClasses,
+    shouldWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-nowrap overflow-hidden',
+  ]
+    .filter(Boolean)
+    .join(' ');
 };
 
 interface ValueSectionProps {
@@ -28,14 +34,15 @@ interface ValueSectionProps {
   value: string;
   diffs?: StringDiff[];
   className?: string;
+  shouldWrap?: boolean;
 }
 
-const ValueSection = ({ label, value, diffs, className }: ValueSectionProps) => (
+const ValueSection = ({ label, value, diffs, className, shouldWrap }: ValueSectionProps) => (
   <div className={className}>
     <label className="text-[10px] font-bold uppercase text-[var(--cds-text-tertiary)] tracking-wider">
       {label}
     </label>
-    <div className={getValueClasses()}>
+    <div className={getValueClasses(shouldWrap)}>
       {diffs ? <HighlightedText diffs={diffs} /> : checksummizeAddressesInText(value)}
     </div>
   </div>
@@ -64,6 +71,7 @@ export function ComparisonCard({
   beforeValueDiffs,
   afterValue,
   afterValueDiffs,
+  shouldWrap,
 }: ComparisonCardProps) {
   const variant = variants[type];
 
@@ -85,16 +93,27 @@ export function ComparisonCard({
       </div>
 
       <div className="space-y-4">
-        <ValueSection label="Storage Key" value={storageKey} diffs={storageKeyDiffs} />
+        <ValueSection
+          label="Storage Key"
+          value={storageKey}
+          diffs={storageKeyDiffs}
+          shouldWrap={shouldWrap}
+        />
 
         {beforeValue && (
-          <ValueSection label="Before" value={beforeValue} diffs={beforeValueDiffs} />
+          <ValueSection
+            label="Before"
+            value={beforeValue}
+            diffs={beforeValueDiffs}
+            shouldWrap={shouldWrap}
+          />
         )}
 
         <ValueSection
           label={beforeValue ? 'After' : 'Value'}
           value={afterValue}
           diffs={afterValueDiffs}
+          shouldWrap={shouldWrap}
         />
       </div>
     </Card>
