@@ -97,7 +97,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
         <p className="mb-4 text-sm font-medium text-[var(--cds-text-primary)]">{error}</p>
         <button
           onClick={fetchUpgrades}
-          className="text-sm font-semibold text-[var(--cds-primary)] hover:underline cursor-pointer"
+          className="text-sm font-semibold text-[var(--cds-primary)] hover:underline focus:outline-none focus-visible:underline cursor-pointer"
         >
           Try again
         </button>
@@ -219,7 +219,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                         e.stopPropagation();
                         setExpandedCards(prev => ({ ...prev, [option.id]: !isExpanded }));
                       }}
-                      className="mt-2 text-xs font-medium text-[var(--cds-primary)] hover:text-[var(--cds-primary-hover)] focus:outline-none cursor-pointer"
+                      className="mt-2 text-xs font-medium text-[var(--cds-primary)] hover:text-[var(--cds-primary-hover)] focus:outline-none focus-visible:underline cursor-pointer"
                     >
                       {isExpanded ? 'Show less' : 'Show more'}
                     </button>

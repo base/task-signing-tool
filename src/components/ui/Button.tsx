@@ -20,17 +20,17 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-sans font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer';
+    'inline-flex items-center justify-center font-sans font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer';
 
   const variants = {
     primary:
-      'bg-[var(--cds-primary)] text-white hover:bg-[var(--cds-primary-hover)] active:bg-[var(--cds-primary-hover)] focus:ring-[var(--cds-primary)] rounded-full shadow-sm hover:shadow-md',
+      'bg-[var(--cds-primary)] text-white hover:bg-[var(--cds-primary-hover)] active:bg-[var(--cds-primary-hover)] focus-visible:ring-[var(--cds-primary)] rounded-full shadow-sm hover:shadow-md',
     secondary:
-      'bg-white text-[var(--cds-text-primary)] border border-[var(--cds-border)] hover:border-[var(--cds-text-secondary)] hover:bg-gray-50 focus:ring-gray-200 rounded-full',
+      'bg-white text-[var(--cds-text-primary)] border border-[var(--cds-border)] hover:border-[var(--cds-text-secondary)] hover:bg-gray-50 focus-visible:ring-gray-200 rounded-full',
     danger:
-      'bg-[var(--cds-error)] text-white hover:bg-red-700 focus:ring-[var(--cds-error)] rounded-full',
+      'bg-[var(--cds-error)] text-white hover:bg-red-700 focus-visible:ring-[var(--cds-error)] rounded-full',
     ghost:
-      'bg-transparent text-[var(--cds-primary)] hover:bg-blue-50 focus:ring-blue-100 rounded-md',
+      'bg-transparent text-[var(--cds-primary)] hover:bg-blue-50 focus-visible:ring-blue-100 rounded-md',
   };
 
   const sizes = {
