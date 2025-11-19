@@ -242,64 +242,76 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       </Card>
 
       {currentIndex === totalItems - 1 && (
-        <div className="mt-12 flex flex-col items-center animate-fade-in">
-          <Card
-            className={`w-full max-w-lg p-8 text-center mb-8 ${
-              blockingErrorsExist ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
-            }`}
-          >
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <div
-                className={`h-12 w-12 rounded-full flex items-center justify-center text-2xl ${
-                  blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                }`}
-              >
-                {blockingErrorsExist ? '🚫' : '✅'}
+        <div className="mt-12 animate-fade-in">
+          <div className="flex flex-col items-center mb-8">
+            <Card
+              className={`w-full max-w-lg p-8 text-center ${
+                blockingErrorsExist ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
+              }`}
+            >
+              <div className="mb-4 flex items-center justify-center gap-3">
+                <div
+                  className={`h-12 w-12 rounded-full flex items-center justify-center text-2xl ${
+                    blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                  }`}
+                >
+                  {blockingErrorsExist ? '🚫' : '✅'}
+                </div>
+                <h3
+                  className={`text-2xl font-bold ${
+                    blockingErrorsExist ? 'text-red-700' : 'text-green-700'
+                  }`}
+                >
+                  {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
+                </h3>
               </div>
-              <h3
-                className={`text-2xl font-bold ${
-                  blockingErrorsExist ? 'text-red-700' : 'text-green-700'
-                }`}
-              >
-                {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
-              </h3>
-            </div>
 
-            {blockingErrorsExist ? (
-              <p className="text-sm text-red-700">
-                Found <strong>Missing</strong> or <strong>Different</strong> instances. <br />
-                Contact developers before continuing.
-              </p>
-            ) : (
-              <p className="text-sm text-green-700">
-                All validations passed successfully. You can proceed to signing.
-              </p>
-            )}
-          </Card>
+              {blockingErrorsExist ? (
+                <p className="text-sm text-red-700">
+                  Found <strong>Missing</strong> or <strong>Different</strong> instances. <br />
+                  Contact developers before continuing.
+                </p>
+              ) : (
+                <p className="text-sm text-green-700">
+                  All validations passed successfully. You can proceed to signing.
+                </p>
+              )}
+            </Card>
+
+            {(!validationResult.expected?.domainAndMessageHashes ||
+              !validationResult.expected?.domainAndMessageHashes?.domainHash ||
+              !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
+              !blockingErrorsExist && (
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg">
+                  <p className="mb-1 text-sm font-bold text-yellow-800">⚠️ Signing Not Available</p>
+                  <p className="text-sm text-yellow-700">
+                    Domain and message hashes are required for signing but were not generated during
+                    validation.
+                  </p>
+                </div>
+              )}
+          </div>
 
           {!blockingErrorsExist &&
             validationResult.expected?.domainAndMessageHashes?.domainHash &&
             validationResult.expected?.domainAndMessageHashes?.messageHash && (
-              <Button
-                onClick={() => onProceedToLedgerSigning(validationResult)}
-                size="lg"
-                className="px-12 py-6 text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
-                icon={<span className="text-xl mr-2">🔐</span>}
-              >
-                Sign with Ledger
-              </Button>
-            )}
-
-          {(!validationResult.expected?.domainAndMessageHashes ||
-            !validationResult.expected?.domainAndMessageHashes?.domainHash ||
-            !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
-            !blockingErrorsExist && (
-              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg">
-                <p className="mb-1 text-sm font-bold text-yellow-800">⚠️ Signing Not Available</p>
-                <p className="text-sm text-yellow-700">
-                  Domain and message hashes are required for signing but were not generated during
-                  validation.
-                </p>
+              <div className="flex justify-end pt-4 border-t border-[var(--cds-divider)]">
+                <Button
+                  onClick={() => onProceedToLedgerSigning(validationResult)}
+                  size="lg"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  }
+                >
+                  Proceed to signing
+                </Button>
               </div>
             )}
         </div>
