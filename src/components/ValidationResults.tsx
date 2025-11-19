@@ -24,6 +24,7 @@ import { ComparisonCard } from './ComparisonCard';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import { Modal } from './ui/Modal';
 
 interface ValidationResultsProps {
   userType: string;
@@ -58,6 +59,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   onProceedToLedgerSigning,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
   const {
     error,
@@ -152,6 +154,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const matchStatus = evaluation?.matchStatus;
   const descriptionContent = evaluation?.description;
 
+  const handleNext = () => {
+    if (currentIndex === totalItems - 1) {
+      setIsResultModalOpen(true);
+    } else {
+      setCurrentIndex(prev => Math.min(totalItems - 1, prev + 1));
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-4">
@@ -180,75 +190,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         </div>
       </div>
 
-      {currentIndex === totalItems - 1 && (
-        <div className="animate-fade-in">
-          <div className="flex flex-col items-center mb-8">
-            <Card
-              className={`w-full max-w-lg p-8 text-center ${
-                blockingErrorsExist ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
-              }`}
-            >
-              <div className="mb-4 flex items-center justify-center gap-3">
-                <div
-                  className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                    blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                  }`}
-                >
-                  {blockingErrorsExist ? <XCircle size={24} /> : <CheckCircle size={24} />}
-                </div>
-                <h3
-                  className={`text-2xl font-bold ${
-                    blockingErrorsExist ? 'text-red-700' : 'text-green-700'
-                  }`}
-                >
-                  {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
-                </h3>
-              </div>
-
-              {blockingErrorsExist ? (
-                <p className="text-sm text-red-700">
-                  Found <strong>Missing</strong> or <strong>Different</strong> instances. <br />
-                  Contact developers before continuing.
-                </p>
-              ) : (
-                <p className="text-sm text-green-700">
-                  All validations passed successfully. You can proceed to signing.
-                </p>
-              )}
-            </Card>
-
-            {(!validationResult.expected?.domainAndMessageHashes ||
-              !validationResult.expected?.domainAndMessageHashes?.domainHash ||
-              !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
-              !blockingErrorsExist && (
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg">
-                  <p className="mb-1 text-sm font-bold text-yellow-800 flex items-center gap-1">
-                    <AlertTriangle size={16} /> Signing Not Available
-                  </p>
-                  <p className="text-sm text-yellow-700">
-                    Domain and message hashes are required for signing but were not generated during
-                    validation.
-                  </p>
-                </div>
-              )}
-          </div>
-
-          {!blockingErrorsExist &&
-            validationResult.expected?.domainAndMessageHashes?.domainHash &&
-            validationResult.expected?.domainAndMessageHashes?.messageHash && (
-              <div className="flex justify-end pt-4 border-t border-[var(--cds-divider)]">
-                <Button
-                  onClick={() => onProceedToLedgerSigning(validationResult)}
-                  size="lg"
-                  icon={<ChevronRight size={20} />}
-                >
-                  Proceed to signing
-                </Button>
-              </div>
-            )}
-        </div>
-      )}
-
       <Card className="bg-gray-50/50">
         <div className="flex items-center justify-between gap-4 mb-6">
           <Button
@@ -269,13 +210,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             {getContractNameForEntry(currentEntry, itemsByStep)}
           </Badge>
 
-          <Button
-            onClick={() => setCurrentIndex(prev => Math.min(totalItems - 1, prev + 1))}
-            disabled={currentIndex === totalItems - 1}
-            variant="primary"
-            size="sm"
-          >
-            Next <ArrowRight size={16} className="inline ml-1" />
+          <Button onClick={handleNext} variant="primary" size="sm">
+            {currentIndex === totalItems - 1 ? 'Next' : 'Next'}{' '}
+            <ArrowRight size={16} className="inline ml-1" />
           </Button>
         </div>
 
@@ -335,6 +272,68 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </div>
         )}
       </Card>
+
+      <Modal isOpen={isResultModalOpen} onClose={() => setIsResultModalOpen(false)}>
+        <div className="flex flex-col items-center text-center p-4">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div
+              className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+              }`}
+            >
+              {blockingErrorsExist ? <XCircle size={24} /> : <CheckCircle size={24} />}
+            </div>
+            <h3
+              className={`text-2xl font-bold ${
+                blockingErrorsExist ? 'text-red-700' : 'text-[var(--cds-text-primary)]'
+              }`}
+            >
+              {blockingErrorsExist ? 'Cannot Sign' : 'Ready to Sign'}
+            </h3>
+          </div>
+
+          {blockingErrorsExist ? (
+            <p className="text-sm text-red-700 mb-6">
+              Found <strong>Missing</strong> or <strong>Different</strong> instances. <br />
+              Contact developers before continuing.
+            </p>
+          ) : (
+            <p className="text-sm text-[var(--cds-text-secondary)] mb-6">
+              All validations passed successfully. You can proceed to signing.
+            </p>
+          )}
+
+          {(!validationResult.expected?.domainAndMessageHashes ||
+            !validationResult.expected?.domainAndMessageHashes?.domainHash ||
+            !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
+            !blockingErrorsExist && (
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg w-full mb-6">
+                <p className="mb-1 text-sm font-bold text-yellow-800 flex items-center gap-1">
+                  <AlertTriangle size={16} /> Signing Not Available
+                </p>
+                <p className="text-sm text-yellow-700 text-left">
+                  Domain and message hashes are required for signing but were not generated during
+                  validation.
+                </p>
+              </div>
+            )}
+
+          {!blockingErrorsExist &&
+            validationResult.expected?.domainAndMessageHashes?.domainHash &&
+            validationResult.expected?.domainAndMessageHashes?.messageHash && (
+              <div className="w-full flex justify-center">
+                <Button
+                  onClick={() => onProceedToLedgerSigning(validationResult)}
+                  size="lg"
+                  icon={<ChevronRight size={20} />}
+                  fullWidth
+                >
+                  Proceed to signing
+                </Button>
+              </div>
+            )}
+        </div>
+      </Modal>
     </div>
   );
 };
