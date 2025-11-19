@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { Check } from 'lucide-react';
 
 const SETUP_STEPS = ['upgrade', 'user'] as const;
 const HIDDEN_STEPS = new Set(['validation', 'ledger', 'signing']);
@@ -48,19 +49,7 @@ export function StepIndicator({
                 >
                   {isComplete && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <svg
-                        className="h-3 w-3 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
+                      <Check size={12} className="text-white" strokeWidth={3} />
                     </div>
                   )}
                   {isActive && !isComplete && (

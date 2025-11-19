@@ -1,3 +1,4 @@
+import { ArrowRight, Check, Clipboard } from 'lucide-react';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { toChecksumAddressSafe, toDisplaySignature } from '@/lib/format';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
@@ -112,16 +113,7 @@ export function SigningConfirmation({
     <div className="max-w-3xl mx-auto animate-fade-in pb-20">
       <div className="text-center mb-12">
         <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-green-100 text-green-600 mb-6 shadow-sm">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-10 w-10"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
+          <Check size={40} strokeWidth={2} />
         </div>
         <h2 className="text-4xl font-bold text-[var(--cds-text-primary)] tracking-tight mb-2">
           Signing Complete
@@ -164,7 +156,7 @@ export function SigningConfirmation({
             <div className="px-6 py-4 border-b border-green-100 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">
-                  ✓
+                  <Check size={14} />
                 </div>
                 <h3 className="text-base font-bold text-green-900">Ledger Signature Generated</h3>
               </div>
@@ -174,7 +166,7 @@ export function SigningConfirmation({
                 size="sm"
                 variant={copied ? 'primary' : 'secondary'}
                 className={copied ? 'bg-green-600 hover:bg-green-700 border-transparent' : ''}
-                icon={!copied ? <span>📋</span> : <span>✓</span>}
+                icon={!copied ? <Clipboard size={14} /> : <Check size={14} />}
               >
                 {copied ? 'Copied!' : 'Copy Signature'}
               </Button>
@@ -199,7 +191,9 @@ export function SigningConfirmation({
           </Card>
 
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 flex gap-4">
-            <div className="text-2xl">👉</div>
+            <div className="text-2xl text-blue-600">
+              <ArrowRight size={24} />
+            </div>
             <div>
               <h4 className="text-sm font-bold text-blue-900 mb-1">Next Steps</h4>
               <p className="text-sm text-blue-800">
