@@ -102,10 +102,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           <Button onClick={() => runValidation()} variant="secondary">
             Retry Validation
           </Button>
-
-          <Button onClick={onBackToSetup} variant="secondary">
-            Back to Setup
-          </Button>
         </div>
       </div>
     );
@@ -125,9 +121,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             No state changes or overrides were found in the validation data.
           </p>
         </div>
-        <Button onClick={onBackToSetup} variant="secondary">
-          Back to Setup
-        </Button>
       </div>
     );
   }
@@ -315,10 +308,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       )}
 
       <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-8 border-t border-[var(--cds-divider)]">
-        <Button onClick={onBackToSetup} variant="secondary" icon={<span>←</span>}>
-          Back to Setup
-        </Button>
-
         <Button
           onClick={runValidation}
           disabled={isLoading}
