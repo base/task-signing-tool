@@ -9,17 +9,11 @@ type Step = SetupStep | 'validation' | 'ledger' | 'signing';
 
 interface StepIndicatorProps {
   currentStep: Step;
-  hasNetwork: boolean;
   hasUpgrade: boolean;
   hasUser: boolean;
 }
 
-export function StepIndicator({
-  currentStep,
-  hasNetwork,
-  hasUpgrade,
-  hasUser,
-}: StepIndicatorProps) {
+export function StepIndicator({ currentStep, hasUpgrade, hasUser }: StepIndicatorProps) {
   if (HIDDEN_STEPS.has(currentStep)) return null;
 
   const activeStep = currentStep as SetupStep;

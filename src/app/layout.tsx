@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: 'Task Signer Tool',
   description: 'Professional signing utility for Base smart contract operations',
   icons: {
-    icon: '/base.jpg',
-    shortcut: '/base.jpg',
-    apple: '/base.jpg',
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
   },
   manifest: '/manifest.json',
 };
@@ -30,7 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--cds-background)] text-[var(--cds-text-primary)] min-h-screen flex flex-col`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--cds-background)] text-[var(--cds-text-primary)] min-h-screen flex flex-col`}
+      >
         {children}
       </body>
     </html>

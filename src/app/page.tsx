@@ -69,10 +69,6 @@ export default function Home() {
     setCurrentStep('signing');
   };
 
-  const handleBackToValidation = () => {
-    setCurrentStep('validation');
-  };
-
   const handleGoToUpgradeSelection = () => {
     resetSelectionsFrom('upgrade');
     setCurrentStep('upgrade');
@@ -176,7 +172,6 @@ export default function Home() {
             messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
             ledgerAccount={userLedgerAccount}
             onSigningComplete={handleLedgerSigningComplete}
-            onCancel={handleBackToValidation}
           />
         )}
 

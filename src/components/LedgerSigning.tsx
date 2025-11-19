@@ -12,7 +12,6 @@ interface LedgerSigningProps {
   messageHash: string;
   ledgerAccount: number;
   onSigningComplete: (res: LedgerSigningResult) => void;
-  onCancel: () => void;
 }
 
 type LedgerSigningStep = 'connect' | 'sign';
@@ -41,7 +40,6 @@ export function LedgerSigning({
   messageHash,
   ledgerAccount,
   onSigningComplete,
-  onCancel,
 }: LedgerSigningProps) {
   const [currentStep, setCurrentStep] = useState<LedgerSigningStep>('connect');
   const [loading, setLoading] = useState(false);
