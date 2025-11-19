@@ -145,7 +145,7 @@ export default function Home() {
     <PageShell maxWidth={STEP_LAYOUT_WIDTH[currentStep]}>
       <StepIndicator steps={steps} />
 
-      <div className="mt-8 animate-fade-in">
+      <div className="mt-8 animate-fade-in flex-1 flex flex-col min-h-0">
         {canEditUpgrade && <SelectionSummary selectedUpgrade={selectedUpgrade} />}
 
         {currentStep === 'upgrade' && (

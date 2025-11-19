@@ -75,7 +75,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     const loadingTitle = isInstallingDeps ? 'Installing Dependencies' : 'Running Validation';
 
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="flex flex-col items-center justify-center flex-1 h-full text-center">
         <div className="mb-6 h-16 w-16 animate-spin rounded-full border-4 border-[var(--cds-border)] border-t-[var(--cds-primary)]" />
         <h3 className="text-xl font-semibold text-[var(--cds-text-primary)]">{loadingTitle}</h3>
         <p className="mt-2 text-[var(--cds-text-secondary)]">This may take a few moments.</p>
@@ -85,7 +85,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center justify-center flex-1 h-full text-center">
         <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-red-50 p-8 border border-red-100">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl">
@@ -107,7 +107,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   if (!validationResult || totalItems === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center justify-center flex-1 h-full text-center">
         <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-yellow-50 p-8 border border-yellow-100">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 text-xl">
@@ -127,8 +127,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   const descriptionContent = evaluation?.description;
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-4">
+    <div className="flex flex-col flex-1 h-full min-h-0 animate-fade-in">
+      <div className="flex-none flex flex-col md:flex-row md:items-end md:justify-between mb-4">
         <div>
           <h2 className="text-3xl font-bold text-[var(--cds-text-primary)] tracking-tight mb-2">
             Validation Results
@@ -155,23 +155,23 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
       </div>
 
       {currentIndex === totalItems - 1 && (
-        <div className="animate-fade-in">
-          <div className="flex flex-col items-center mb-8">
+        <div className="flex-none animate-fade-in mb-4 overflow-y-auto max-h-[200px]">
+          <div className="flex flex-col items-center">
             <Card
-              className={`w-full max-w-lg p-8 text-center ${
+              className={`w-full max-w-lg p-6 text-center ${
                 blockingErrorsExist ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
               }`}
             >
-              <div className="mb-4 flex items-center justify-center gap-3">
+              <div className="mb-2 flex items-center justify-center gap-3">
                 <div
-                  className={`h-12 w-12 rounded-full flex items-center justify-center text-2xl ${
+                  className={`h-10 w-10 rounded-full flex items-center justify-center text-xl ${
                     blockingErrorsExist ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                   }`}
                 >
                   {blockingErrorsExist ? '🚫' : '✅'}
                 </div>
                 <h3
-                  className={`text-2xl font-bold ${
+                  className={`text-xl font-bold ${
                     blockingErrorsExist ? 'text-red-700' : 'text-green-700'
                   }`}
                 >
@@ -195,7 +195,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
               !validationResult.expected?.domainAndMessageHashes?.domainHash ||
               !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
               !blockingErrorsExist && (
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg">
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg mt-2">
                   <p className="mb-1 text-sm font-bold text-yellow-800">⚠️ Signing Not Available</p>
                   <p className="text-sm text-yellow-700">
                     Domain and message hashes are required for signing but were not generated during
@@ -208,7 +208,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           {!blockingErrorsExist &&
             validationResult.expected?.domainAndMessageHashes?.domainHash &&
             validationResult.expected?.domainAndMessageHashes?.messageHash && (
-              <div className="flex justify-end pt-4 border-t border-[var(--cds-divider)]">
+              <div className="flex justify-end pt-4 border-t border-[var(--cds-divider)] mt-2">
                 <Button
                   onClick={() => onProceedToLedgerSigning(validationResult)}
                   size="lg"
@@ -230,8 +230,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         </div>
       )}
 
-      <Card className="bg-gray-50/50">
-        <div className="flex items-center justify-between gap-4 mb-6">
+      <Card className="flex-1 min-h-0 flex flex-col bg-gray-50/50" padding="none">
+        <div className="flex-none flex items-center justify-between gap-4 p-4 border-b bg-white/50 backdrop-blur-sm">
           <Button
             onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
             disabled={currentIndex === 0}
@@ -260,61 +260,63 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </Button>
         </div>
 
-        {matchStatus && (
-          <div
-            className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
-              matchStatus.status === 'match'
-                ? 'bg-green-100/50 border-green-200 text-green-900'
-                : matchStatus.status === 'mismatch'
-                ? 'bg-red-100/50 border-red-200 text-red-900'
-                : matchStatus.status === 'missing'
-                ? 'bg-red-100/50 border-red-200 text-red-900'
-                : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
-            }`}
-          >
-            <span className="text-2xl">{matchStatus.icon}</span>
-            <span className="text-lg font-bold">{matchStatus.text}</span>
-          </div>
-        )}
-
-        {evaluation && (
-          <div className="grid gap-6 xl:grid-cols-2">
-            <ComparisonCard type="expected" {...evaluation.cards.expected} />
-            <ComparisonCard type="actual" {...evaluation.cards.actual} />
-          </div>
-        )}
-
-        {descriptionContent && (
-          <div
-            className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${
-              descriptionContent.variant === 'expected-difference'
-                ? 'border-green-200 bg-green-50'
-                : 'border-blue-200 bg-blue-50'
-            }`}
-          >
-            <span className="text-xl mt-0.5">{descriptionContent.icon}</span>
-            <div className="flex-1">
-              <h4
-                className={`mb-1 text-xs font-bold uppercase tracking-wider ${
-                  descriptionContent.variant === 'expected-difference'
-                    ? 'text-green-800'
-                    : 'text-blue-800'
-                }`}
-              >
-                {descriptionContent.title}
-              </h4>
-              <p
-                className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${
-                  descriptionContent.variant === 'expected-difference'
-                    ? 'text-green-900'
-                    : 'text-blue-900'
-                }`}
-              >
-                {descriptionContent.text}
-              </p>
+        <div className="flex-1 overflow-y-auto p-6">
+          {matchStatus && (
+            <div
+              className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
+                matchStatus.status === 'match'
+                  ? 'bg-green-100/50 border-green-200 text-green-900'
+                  : matchStatus.status === 'mismatch'
+                  ? 'bg-red-100/50 border-red-200 text-red-900'
+                  : matchStatus.status === 'missing'
+                  ? 'bg-red-100/50 border-red-200 text-red-900'
+                  : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
+              }`}
+            >
+              <span className="text-2xl">{matchStatus.icon}</span>
+              <span className="text-lg font-bold">{matchStatus.text}</span>
             </div>
-          </div>
-        )}
+          )}
+
+          {evaluation && (
+            <div className="grid gap-6 xl:grid-cols-2">
+              <ComparisonCard type="expected" {...evaluation.cards.expected} />
+              <ComparisonCard type="actual" {...evaluation.cards.actual} />
+            </div>
+          )}
+
+          {descriptionContent && (
+            <div
+              className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${
+                descriptionContent.variant === 'expected-difference'
+                  ? 'border-green-200 bg-green-50'
+                  : 'border-blue-200 bg-blue-50'
+              }`}
+            >
+              <span className="text-xl mt-0.5">{descriptionContent.icon}</span>
+              <div className="flex-1">
+                <h4
+                  className={`mb-1 text-xs font-bold uppercase tracking-wider ${
+                    descriptionContent.variant === 'expected-difference'
+                      ? 'text-green-800'
+                      : 'text-blue-800'
+                  }`}
+                >
+                  {descriptionContent.title}
+                </h4>
+                <p
+                  className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${
+                    descriptionContent.variant === 'expected-difference'
+                      ? 'text-green-900'
+                      : 'text-blue-900'
+                  }`}
+                >
+                  {descriptionContent.text}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </Card>
     </div>
   );

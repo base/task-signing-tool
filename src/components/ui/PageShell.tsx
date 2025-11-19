@@ -10,9 +10,9 @@ export const PageShell = ({ children, maxWidth = 'max-w-5xl' }: PageShellProps) 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--cds-background)]">
       <Header />
-      <main className="flex-1 w-full">
+      <main className="flex-1 w-full flex flex-col">
         <div
-          className={`mx-auto px-4 sm:px-6 lg:px-8 py-12 ${maxWidth} transition-all duration-300 ease-in-out`}
+          className={`mx-auto px-4 sm:px-6 lg:px-8 py-12 ${maxWidth} transition-all duration-300 ease-in-out flex-1 flex flex-col`}
         >
           {children}
         </div>
