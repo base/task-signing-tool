@@ -19,7 +19,7 @@ type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
 const STEP_LAYOUT_WIDTH: Record<Step, string> = {
   upgrade: 'max-w-4xl',
   user: 'max-w-3xl',
-  validation: 'max-w-[1600px]',
+  validation: 'max-w-[1200px]',
   ledger: 'max-w-4xl',
   signing: 'max-w-4xl',
 };
