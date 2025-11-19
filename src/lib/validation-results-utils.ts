@@ -48,6 +48,7 @@ export interface ComparisonCardContent {
   beforeValueDiffs?: StringDiff[];
   afterValue: string;
   afterValueDiffs?: StringDiff[];
+  shouldWrap?: boolean;
 }
 
 export interface ValidationEntryEvaluation {
@@ -400,6 +401,7 @@ export const evaluateValidationEntry = (
             contractAddress: defaultContractAddress(item.contractAddress),
             storageKey: 'EIP-712 Data to Sign',
             afterValue: expectedData,
+            shouldWrap: true,
           },
           actual: {
             contractName: item.contractName,
@@ -407,6 +409,7 @@ export const evaluateValidationEntry = (
             storageKey: 'EIP-712 Data to Sign',
             afterValue: actualData,
             afterValueDiffs: getFieldDiffs(expectedData, actualData),
+            shouldWrap: true,
           },
         },
       };

@@ -202,7 +202,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         )}
 
         {evaluation && (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 xl:grid-cols-2">
             <ComparisonCard type="expected" {...evaluation.cards.expected} />
             <ComparisonCard type="actual" {...evaluation.cards.actual} />
           </div>

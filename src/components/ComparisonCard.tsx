@@ -14,27 +14,16 @@ interface ComparisonCardProps {
   beforeValueDiffs?: StringDiff[];
   afterValue: string;
   afterValueDiffs?: StringDiff[];
+  shouldWrap?: boolean;
 }
 
-const HEX_SEGMENT_WRAP_THRESHOLD = 66;
-
 const baseValueClasses =
-  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full whitespace-pre-wrap border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
+  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
 
-const getValueClasses = (value: string | undefined, diffs: StringDiff[] | undefined): string => {
-  const content = diffs && diffs.length > 0 ? diffs.map(diff => diff.value).join('') : value ?? '';
-  let shouldWrap = false;
-
-  if (content) {
-    shouldWrap = content.split(/\r?\n/).some(segment => {
-      const trimmed = segment.trim();
-      return /^0x[0-9a-fA-F]+$/.test(trimmed) && trimmed.length > HEX_SEGMENT_WRAP_THRESHOLD;
-    });
-  }
-
+const getValueClasses = (shouldWrap: boolean = false): string => {
   return [
     baseValueClasses,
-    shouldWrap ? 'break-words overflow-hidden' : 'break-normal overflow-x-auto scrollbar-hide',
+    shouldWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-nowrap overflow-hidden',
   ]
     .filter(Boolean)
     .join(' ');
@@ -45,14 +34,15 @@ interface ValueSectionProps {
   value: string;
   diffs?: StringDiff[];
   className?: string;
+  shouldWrap?: boolean;
 }
 
-const ValueSection = ({ label, value, diffs, className }: ValueSectionProps) => (
+const ValueSection = ({ label, value, diffs, className, shouldWrap }: ValueSectionProps) => (
   <div className={className}>
     <label className="text-[10px] font-bold uppercase text-[var(--cds-text-tertiary)] tracking-wider">
       {label}
     </label>
-    <div className={getValueClasses(value, diffs)}>
+    <div className={getValueClasses(shouldWrap)}>
       {diffs ? <HighlightedText diffs={diffs} /> : checksummizeAddressesInText(value)}
     </div>
   </div>
@@ -81,6 +71,7 @@ export function ComparisonCard({
   beforeValueDiffs,
   afterValue,
   afterValueDiffs,
+  shouldWrap,
 }: ComparisonCardProps) {
   const variant = variants[type];
 
@@ -102,16 +93,27 @@ export function ComparisonCard({
       </div>
 
       <div className="space-y-4">
-        <ValueSection label="Storage Key" value={storageKey} diffs={storageKeyDiffs} />
+        <ValueSection
+          label="Storage Key"
+          value={storageKey}
+          diffs={storageKeyDiffs}
+          shouldWrap={shouldWrap}
+        />
 
         {beforeValue && (
-          <ValueSection label="Before" value={beforeValue} diffs={beforeValueDiffs} />
+          <ValueSection
+            label="Before"
+            value={beforeValue}
+            diffs={beforeValueDiffs}
+            shouldWrap={shouldWrap}
+          />
         )}
 
         <ValueSection
           label={beforeValue ? 'After' : 'Value'}
           value={afterValue}
           diffs={afterValueDiffs}
+          shouldWrap={shouldWrap}
         />
       </div>
     </Card>
