@@ -144,7 +144,7 @@ export function LedgerSigning({
               size="lg"
               icon={<span>→</span>}
             >
-              Continue to Signing
+              Continue
             </Button>
           </Card>
         );
