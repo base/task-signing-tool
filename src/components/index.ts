@@ -5,4 +5,5 @@ export { SelectionSummary } from './SelectionSummary';
 export { SigningConfirmation } from './SigningConfirmation';
 export { UpgradeSelection } from './UpgradeSelection';
 export { UserSelection } from './UserSelection';
+export { UserSummary } from './UserSummary';
 export { ValidationResults } from './ValidationResults';
