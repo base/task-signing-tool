@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { promisify } from 'util';
+import { findContractDeploymentsRoot } from '@/lib/deployments';
 
 const execAsync = promisify(exec);
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     const shouldForceInstall = Boolean(forceInstall);
 
     // Construct the path to the upgrade folder and lib subdirectory
-    const contractDeploymentsPath = path.join(process.cwd(), '..');
+    const contractDeploymentsPath = findContractDeploymentsRoot();
     const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
     const libPath = path.join(upgradePath, 'lib');
 

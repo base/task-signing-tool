@@ -1,6 +1,34 @@
 import fs from 'fs';
 import path from 'path';
 import { NetworkType, TaskStatus } from './types';
+import { availableNetworks } from './constants';
+
+let cachedRoot: string | null = null;
+
+export function findContractDeploymentsRoot(): string {
+  if (cachedRoot) return cachedRoot;
+
+  let currentDir = process.cwd();
+  const root = path.parse(currentDir).root;
+
+  while (currentDir !== root) {
+    const hasNetworkFolders = availableNetworks.some(network => {
+      const netPath = path.join(currentDir, network);
+      return fs.existsSync(netPath) && fs.statSync(netPath).isDirectory();
+    });
+
+    if (hasNetworkFolders) {
+      cachedRoot = currentDir;
+      return currentDir;
+    }
+
+    currentDir = path.dirname(currentDir);
+  }
+
+  // Fallback for default behavior
+  cachedRoot = path.join(process.cwd(), '..');
+  return cachedRoot;
+}
 
 export interface DeploymentInfo {
   id: string;
@@ -146,7 +174,7 @@ function deriveDateFromFolder(folderName: string): string {
 }
 
 export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
-  const contractDeploymentsPath = path.join(process.cwd(), '..');
+  const contractDeploymentsPath = findContractDeploymentsRoot();
   const networkPath = path.join(contractDeploymentsPath, network);
 
   if (!fs.existsSync(networkPath)) {
