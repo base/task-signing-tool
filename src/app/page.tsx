@@ -8,6 +8,7 @@ import {
   LedgerSigning,
   SigningConfirmation,
   SelectionSummary,
+  UserSummary,
 } from '@/components';
 import { PageShell, StepIndicator } from '@/components/ui';
 import { NetworkType, ValidationData, Upgrade } from '@/lib/types';
@@ -74,11 +75,19 @@ export default function Home() {
     setCurrentStep('upgrade');
   };
 
+  const handleGoToUserSelection = () => {
+    resetSelectionsFrom('user');
+    setCurrentStep('user');
+  };
+
   const canEditUpgrade =
     currentStep === 'user' ||
     currentStep === 'validation' ||
     currentStep === 'ledger' ||
     currentStep === 'signing';
+
+  const canEditUser =
+    currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing';
 
   // Map current step to step indicator format
   const steps = [
@@ -136,7 +145,16 @@ export default function Home() {
       <StepIndicator steps={steps} />
 
       <div className="mt-8 animate-fade-in">
-        {canEditUpgrade && <SelectionSummary selectedUpgrade={selectedUpgrade} />}
+        {canEditUpgrade && (
+          <SelectionSummary
+            selectedUpgrade={selectedUpgrade}
+            onChange={handleGoToUpgradeSelection}
+          />
+        )}
+
+        {canEditUser && (
+          <UserSummary selectedUser={selectedUser} onChange={handleGoToUserSelection} />
+        )}
 
         {currentStep === 'upgrade' && (
           <UpgradeSelection
