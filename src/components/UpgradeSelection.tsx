@@ -133,10 +133,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
 
   return (
     <div className="w-full animate-fade-in">
-      <SectionHeader
-        title="Select Task"
-        description="Choose a task to validate and sign. Tasks are fetched from the configured repositories."
-      />
+      <SectionHeader title="Select Task" description="Choose a task to validate and sign." />
 
       <div className="space-y-4">
         {upgradeOptions.map(option => {
