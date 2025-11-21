@@ -18,7 +18,9 @@ export function UserSummary({ selectedUser, onChange }: UserSummaryProps) {
             {selectedUser.displayName.charAt(0)}
           </div>
           <div>
-            <h3 className="font-semibold text-[var(--cds-primary)]">{selectedUser.displayName}</h3>
+            <h3 className="font-semibold text-[var(--cds-text-primary)]">
+              {selectedUser.displayName}
+            </h3>
             <p className="text-xs text-[var(--cds-text-secondary)] font-mono mt-0.5">
               {selectedUser.fileName}
             </p>
