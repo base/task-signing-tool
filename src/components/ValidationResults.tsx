@@ -169,14 +169,16 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           <h2 className="text-3xl font-bold text-[var(--cds-text-primary)] tracking-tight mb-2">
             Validation Results
           </h2>
-          <div className="text-sm text-[var(--cds-text-secondary)] flex flex-wrap gap-3">
-            <span>Step 1: {stepCounts.signing} items</span>
-            <span className="text-[var(--cds-text-tertiary)]">•</span>
-            <span>Step 2: {stepCounts.overrides} items</span>
-            <span className="text-[var(--cds-text-tertiary)]">•</span>
-            <span>Step 3: {stepCounts.changes} items</span>
-            <span className="text-[var(--cds-text-tertiary)]">•</span>
-            <span>Step 4: {stepCounts.balance} items</span>
+          <div className="flex items-center gap-4 mt-2 w-full max-w-md">
+            <div className="h-2 flex-1 rounded-full bg-gray-200 overflow-hidden">
+              <div
+                className="h-full bg-[var(--cds-primary)] transition-all duration-300 ease-out"
+                style={{ width: `${((currentIndex + 1) / totalItems) * 100}%` }}
+              />
+            </div>
+            <span className="text-sm font-medium text-[var(--cds-text-secondary)]">
+              {Math.round(((currentIndex + 1) / totalItems) * 100)}%
+            </span>
           </div>
         </div>
 
