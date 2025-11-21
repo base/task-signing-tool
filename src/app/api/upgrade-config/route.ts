@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { parseFromString } from '@/lib/parser';
 import { NextRequest, NextResponse } from 'next/server';
+import { findContractDeploymentsRoot } from '@/lib/deployments';
 
 const toDisplayName = (name: string) =>
   name
@@ -21,7 +22,12 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const validationsPath = path.resolve(process.cwd(), '..', network, upgradeId, 'validations');
+  const validationsPath = path.resolve(
+    findContractDeploymentsRoot(),
+    network,
+    upgradeId,
+    'validations'
+  );
 
   try {
     const entries = await fs.readdir(validationsPath);

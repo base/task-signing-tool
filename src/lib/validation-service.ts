@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { findContractDeploymentsRoot } from './deployments';
 import { getValidationSummary, parseFromString } from './parser';
 import { StateDiffClient } from './state-diff';
 import {
@@ -17,7 +18,7 @@ export type ValidationServiceOpts = {
   taskConfigFileName: string;
 };
 
-const CONTRACT_DEPLOYMENTS_ROOT = path.join(process.cwd(), '..');
+const CONTRACT_DEPLOYMENTS_ROOT = findContractDeploymentsRoot();
 const stateDiffClient = new StateDiffClient();
 
 async function getConfigData(
