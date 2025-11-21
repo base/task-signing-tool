@@ -136,7 +136,12 @@ export default function Home() {
       <StepIndicator steps={steps} />
 
       <div className="mt-8 animate-fade-in">
-        {canEditUpgrade && <SelectionSummary selectedUpgrade={selectedUpgrade} />}
+        {canEditUpgrade && (
+          <SelectionSummary
+            selectedUpgrade={selectedUpgrade}
+            onChange={handleGoToUpgradeSelection}
+          />
+        )}
 
         {currentStep === 'upgrade' && (
           <UpgradeSelection
