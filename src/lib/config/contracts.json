@@ -176,13 +176,61 @@
         "summary": "Updates EIP 1559 params for the chain",
         "overrideMeaning": "",
         "allowDifference": false
+      },
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of SystemConfig to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
       }
     },
-    "superchainConfig": {},
-    "optimismMintableErc20Factory": {},
-    "l1StandardBridge": {},
-    "optimismPortal": {},
-    "l1Erc20Bridge": {},
-    "addressManager": {}
+    "superchainConfig": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "",
+        "overrideMeaning": "Override the SuperchainConfig implementation address so the version is the U17 expected version.",
+        "allowDifference": false
+      }
+    },
+    "optimismMintableErc20Factory": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of OptimismMintableERC20Factory to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "l1StandardBridge": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of L1StandardBridge to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "optimismPortal": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of OptimismPortal to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "l1Erc20Bridge": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of L1ERC20Bridge to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "addressManager": {
+      "0x515216935740e67dfdda5cf8e248ea32b3277787818ab59153061ac875c9385e": {
+        "type": "address",
+        "summary": "Update address of L1CrossDomainMessenger to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    }
   }
 }
