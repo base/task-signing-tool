@@ -1,5 +1,5 @@
 import { StateDiffClient } from '@/lib/state-diff';
-import { writeFileSync } from 'fs';
+import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { parseArgs } from 'node:util';
 import { parse as shellParse } from 'shell-quote';
@@ -93,6 +93,8 @@ async function main() {
 
   if (outFlag) {
     const outPath = path.resolve(process.cwd(), outFlag);
+    const outDir = path.dirname(outPath);
+    mkdirSync(outDir, { recursive: true });
     writeFileSync(outPath, output + '\n');
     console.log(`Wrote validation JSON to: ${outPath}`);
   } else {
