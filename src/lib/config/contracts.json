@@ -32,6 +32,30 @@
       "0x73a79fab69143498ed3712e519a88a918e1f4072": {
         "name": "System Config - Mainnet",
         "slots": "{{storageLayouts.systemConfig}}"
+      },
+      "0x95703e0982140d16f8eba6d158fccede42f04a4c": {
+        "name": "Superchain Config - Mainnet",
+        "slots": "{{storageLayouts.superchainConfig}}"
+      },
+      "0x05cc379ebd9b30bba19c6fa282ab29218ec61d84": {
+        "name": "OptimismMintableERC20Factory - Mainnet",
+        "slots": "{{storageLayouts.optimismMintableErc20Factory}}"
+      },
+      "0x3154cf16ccdb4c6d922629664174b904d80f2c35": {
+        "name": "L1StandardBridge - Mainnet",
+        "slots": "{{storageLayouts.l1StandardBridge}}"
+      },
+      "0x49048044d57e1c92a77f79988d21fa8faf74e97e": {
+        "name": "OptimismPortal - Mainnet",
+        "slots": "{{storageLayouts.optimismPortal}}"
+      },
+      "0x608d94945a64503e642e6370ec598e519a2c1e53": {
+        "name": "L1ERC20Bridge - Mainnet",
+        "slots": "{{storageLayouts.l1Erc20Bridge}}"
+      },
+      "0x8efb6b5c4767b09dc9aa6af4eaa89f749522bae2": {
+        "name": "AddressManager - Mainnet",
+        "slots": "{{storageLayouts.addressManager}}"
       }
     },
     "11155111": {
@@ -72,6 +96,24 @@
       "0x0000000000000000000000000000000000000000000000000000000000000065": {
         "type": "address",
         "summary": "Updates the `X` implementation address.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      },
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of DisputeGameFactory to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      },
+      "0x4d5a9bd2e41301728d41c8e705190becb4e74abe869f75bdb405b63716a35f9e": {
+        "type": "address",
+        "summary": "Updates the PermissionedDisputeGame implementation address.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      },
+      "0xffdfc1249c027f9191656349feb0761381bb32c9f557e01f419fd08754bf5a1b": {
+        "type": "address",
+        "summary": "Updates the FaultDisputeGame implementation address.",
         "overrideMeaning": "",
         "allowDifference": false
       }
@@ -132,6 +174,60 @@
       "0x000000000000000000000000000000000000000000000000000000000000006a": {
         "type": "hybrid",
         "summary": "Updates EIP 1559 params for the chain",
+        "overrideMeaning": "",
+        "allowDifference": false
+      },
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of SystemConfig to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "superchainConfig": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "",
+        "overrideMeaning": "Override the SuperchainConfig implementation address so the version is the U17 expected version.",
+        "allowDifference": false
+      }
+    },
+    "optimismMintableErc20Factory": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of OptimismMintableERC20Factory to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "l1StandardBridge": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of L1StandardBridge to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "optimismPortal": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of OptimismPortal to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "l1Erc20Bridge": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of L1ERC20Bridge to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false
+      }
+    },
+    "addressManager": {
+      "0x515216935740e67dfdda5cf8e248ea32b3277787818ab59153061ac875c9385e": {
+        "type": "address",
+        "summary": "Update address of L1CrossDomainMessenger to new implementation.",
         "overrideMeaning": "",
         "allowDifference": false
       }
