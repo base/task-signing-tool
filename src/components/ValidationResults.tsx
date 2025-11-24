@@ -204,13 +204,15 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             Previous
           </Button>
 
-          <Badge
-            variant="primary"
-            size="md"
-            className="font-mono text-xs sm:text-sm max-w-[200px] truncate"
-          >
-            {getContractNameForEntry(currentEntry, itemsByStep)}
-          </Badge>
+          <div className="flex-1 flex justify-center min-w-0 px-2">
+            <Badge
+              variant="primary"
+              size="md"
+              className="font-mono text-xs sm:text-sm text-center whitespace-normal h-auto break-words max-w-full"
+            >
+              {getContractNameForEntry(currentEntry, itemsByStep)}
+            </Badge>
+          </div>
 
           <Button onClick={handleNext} variant="primary" size="sm">
             {currentIndex === totalItems - 1 ? 'Next' : 'Next'}{' '}
