@@ -97,25 +97,29 @@
         "type": "address",
         "summary": "Updates the `X` implementation address.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
         "type": "address",
         "summary": "Update address of DisputeGameFactory to new implementation.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x4d5a9bd2e41301728d41c8e705190becb4e74abe869f75bdb405b63716a35f9e": {
         "type": "address",
         "summary": "Updates the PermissionedDisputeGame implementation address.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0xffdfc1249c027f9191656349feb0761381bb32c9f557e01f419fd08754bf5a1b": {
         "type": "address",
         "summary": "Updates the FaultDisputeGame implementation address.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "feeDisburser": {
@@ -123,7 +127,8 @@
         "type": "address",
         "summary": "Updates the proxy admin",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "gnosisSafe": {
@@ -131,43 +136,50 @@
         "type": "address",
         "summary": "Updates the owners mapping",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000003": {
         "type": "uint256",
         "summary": "Updates the owner count",
         "overrideMeaning": "Sets the owner count to 1 so the transaction simulation can occur.",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000004": {
         "type": "uint256",
         "summary": "Updates the execution threshold",
         "overrideMeaning": "Override the threshold to 1 so the transaction simulation can occur.",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000005": {
         "type": "uint256",
         "summary": "Increments the nonce",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x0000000000000000000000000000000000000000000000000000000000000008": {
         "type": "uint256",
         "summary": "Sets an approval for this transaction",
         "overrideMeaning": "Simulates an approval from msg.sender in order for the task simulation to succeed.",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0xe90b7bceb6e7df5418fb78d8ee546e97c83a08bbccc01a0644d599ccd2a7c2e0": {
         "type": "address",
         "summary": "Sets the head of the owners linked list",
         "overrideMeaning": "This is owners[1] -> 0xca11bde05977b3631167028862be2a173976ca11, so the key can be derived from `cast index address 0x0000000000000000000000000000000000000001 2`.",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x316a0aac0d94f5824f0b66f5bbe94a8c360a17699a1d3a233aafcf7146e9f11c": {
         "type": "uint256",
         "summary": "Sets the tail of the owners linked list",
         "overrideMeaning": "This is owners[0xca11bde05977b3631167028862be2a173976ca11] -> 1, so the key can be derived from `cast index address 0xca11bde05977b3631167028862be2a173976ca11 2`.",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "systemConfig": {
@@ -175,13 +187,15 @@
         "type": "hybrid",
         "summary": "Updates EIP 1559 params for the chain",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       },
       "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
         "type": "address",
         "summary": "Update address of SystemConfig to new implementation.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "superchainConfig": {
@@ -189,7 +203,8 @@
         "type": "address",
         "summary": "",
         "overrideMeaning": "Override the SuperchainConfig implementation address so the version is the U17 expected version.",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "optimismMintableErc20Factory": {
@@ -197,7 +212,8 @@
         "type": "address",
         "summary": "Update address of OptimismMintableERC20Factory to new implementation.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "l1StandardBridge": {
@@ -205,7 +221,8 @@
         "type": "address",
         "summary": "Update address of L1StandardBridge to new implementation.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "optimismPortal": {
@@ -213,7 +230,8 @@
         "type": "address",
         "summary": "Update address of OptimismPortal to new implementation.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "l1Erc20Bridge": {
@@ -221,7 +239,8 @@
         "type": "address",
         "summary": "Update address of L1ERC20Bridge to new implementation.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     },
     "addressManager": {
@@ -229,7 +248,8 @@
         "type": "address",
         "summary": "Update address of L1CrossDomainMessenger to new implementation.",
         "overrideMeaning": "",
-        "allowDifference": false
+        "allowDifference": false,
+        "allowOverrideDifference": false
       }
     }
   }

@@ -59,7 +59,7 @@ type SlotCfg = {
   summary: string;
   overrideMeaning: string;
   allowDifference: boolean;
-  allowOverrideDifference?: boolean;
+  allowOverrideDifference: boolean;
 };
 type ContractCfg = { name: string; slots: Record<string, SlotCfg> };
 type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> };
