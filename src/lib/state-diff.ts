@@ -54,7 +54,13 @@ type VmSafeAccountAccess = {
 
 type ParentPreimage = { slot: Hex; parent: Hex; key: Hex };
 
-type SlotCfg = { type: string; summary: string; overrideMeaning: string; allowDifference: boolean };
+type SlotCfg = {
+  type: string;
+  summary: string;
+  overrideMeaning: string;
+  allowDifference: boolean;
+  allowOverrideDifference: boolean;
+};
 type ContractCfg = { name: string; slots: Record<string, SlotCfg> };
 type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> };
 
@@ -452,6 +458,7 @@ export class StateDiffClient {
           key: this.n(s.key),
           value: this.n(s.value),
           description: slotCfg.overrideMeaning,
+          allowDifference: slotCfg.allowOverrideDifference,
         };
       });
       result.push({ name, address: addrLower, overrides: jsonOverrides });
@@ -551,6 +558,7 @@ export class StateDiffClient {
       summary: '<<Summary>>',
       overrideMeaning: '<<OverrideMeaning>>',
       allowDifference: false,
+      allowOverrideDifference: false,
     };
     let current = slot;
     while (true) {
@@ -592,8 +600,19 @@ export class StateDiffClient {
     balanceChanges: BalanceChange[];
     parentMap: Map<Hex, Hex>;
   }): TaskConfig {
-    const { cmd, rpcUrl, parsed, domainHash, messageHash, config, chainIdStr, payload, diffs, balanceChanges, parentMap } =
-      params;
+    const {
+      cmd,
+      rpcUrl,
+      parsed,
+      domainHash,
+      messageHash,
+      config,
+      chainIdStr,
+      payload,
+      diffs,
+      balanceChanges,
+      parentMap,
+    } = params;
 
     return {
       cmd,

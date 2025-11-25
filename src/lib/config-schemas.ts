@@ -14,6 +14,7 @@ export const OverrideSchema = z.object({
   key: HashSchema,
   value: HashSchema,
   description: z.string(),
+  allowDifference: z.boolean().optional(),
 });
 
 export const StateOverrideSchema = z.object({
