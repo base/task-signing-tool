@@ -326,7 +326,8 @@ export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
   if (signingMismatch) return true;
 
   const overrideMismatch = items.overrides.some(
-    override => !override.actual || !matchesOverride(override)
+    override =>
+      !override.actual || (!matchesOverride(override) && !override.expected.allowDifference)
   );
   if (overrideMismatch) return true;
 
@@ -419,18 +420,31 @@ export const evaluateValidationEntry = (
       const actualKey = item.actual?.key ?? NOT_FOUND_TEXT;
       const actualValue = item.actual?.value ?? NOT_FOUND_TEXT;
       const match = matchesOverride(item);
-      const matchStatus: ValidationMatchStatus = item.actual
-        ? match
-          ? createMatchStatus('match', 'Match - This override is correct')
-          : createMatchStatus('mismatch', 'Mismatch - Override values do not match expected')
-        : createMatchStatus('missing', 'Missing - Not found in actual results');
+      const expectedDifference = item.expected.allowDifference;
+
+      let matchStatus: ValidationMatchStatus;
+      if (match) {
+        matchStatus = createMatchStatus('match', 'Match - This override is correct');
+      } else if (expectedDifference) {
+        matchStatus = createMatchStatus(
+          'expected-difference',
+          'Expected Difference - This mismatch is acceptable and expected'
+        );
+      } else if (item.actual) {
+        matchStatus = createMatchStatus(
+          'mismatch',
+          'Mismatch - Override values do not match expected'
+        );
+      } else {
+        matchStatus = createMatchStatus('missing', 'Missing - Not found in actual results');
+      }
 
       const description =
         item.expected.description && item.expected.description.trim().length > 0
           ? ({
-              variant: 'info',
-              icon: 'lightbulb',
-              title: 'What this does',
+              variant: expectedDifference ? 'expected-difference' : 'info',
+              icon: expectedDifference ? 'check' : 'lightbulb',
+              title: expectedDifference ? 'Expected Difference - This is Fine' : 'What this does',
               text: item.expected.description,
             } satisfies ValidationDescription)
           : undefined;
