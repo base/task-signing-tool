@@ -1,5 +1,8 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { join } from 'path';
+import { homedir } from 'os';
+import { existsSync } from 'fs';
 
 export interface LedgerSigningOptions {
   domainHash: string;
@@ -135,8 +138,9 @@ function mapLedgerError(stderr?: string) {
 }
 
 async function runEip712sign(args: string[]): Promise<RunEip712signResult> {
+  const command = getEip712SignPath();
   try {
-    const { stdout } = await execFileAsync('eip712sign', args, {
+    const { stdout } = await execFileAsync(command, args, {
       encoding: 'utf8',
       maxBuffer: 10 * 1024 * 1024,
     });
@@ -157,6 +161,26 @@ async function runEip712sign(args: string[]): Promise<RunEip712signResult> {
 
     throw error;
   }
+}
+
+function getEip712SignPath(): string {
+  // Try GOPATH first
+  if (process.env.GOPATH) {
+    const path = join(process.env.GOPATH, 'bin', 'eip712sign');
+    if (existsSync(path)) {
+      return path;
+    }
+  }
+
+  // Try default GOPATH
+  const home = homedir();
+  const defaultPath = join(home, 'go', 'bin', 'eip712sign');
+  if (existsSync(defaultPath)) {
+    return defaultPath;
+  }
+
+  // Fallback to PATH
+  return 'eip712sign';
 }
 
 function isExecFileError(error: unknown): error is ExecFileError {
