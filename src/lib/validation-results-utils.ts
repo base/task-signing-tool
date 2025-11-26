@@ -468,6 +468,7 @@ export const evaluateValidationEntry = (
             storageKeyDiffs: getFieldDiffs(item.expected.key, actualKey),
             afterValue: actualValue,
             afterValueDiffs: getFieldDiffs(item.expected.value, actualValue),
+            shouldWrap: !match,
           },
         },
       };
@@ -529,6 +530,7 @@ export const evaluateValidationEntry = (
             beforeValueDiffs: getFieldDiffs(item.expected.before, actualBefore),
             afterValue: actualAfter,
             afterValueDiffs: getFieldDiffs(item.expected.after, actualAfter),
+            shouldWrap: !match,
           },
         },
       };
@@ -608,6 +610,7 @@ export const evaluateValidationEntry = (
             beforeValueDiffs: getFieldDiffs(expectedBefore, actualBefore),
             afterValue: actualAfter,
             afterValueDiffs: getFieldDiffs(expectedAfter, actualAfter),
+            shouldWrap: !match,
           },
         },
       };
