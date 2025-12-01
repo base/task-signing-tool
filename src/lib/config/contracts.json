@@ -226,6 +226,13 @@
       }
     },
     "optimismPortal": {
+      "0x0000000000000000000000000000000000000000000000000000000000000001": {
+        "type": "bytes32",
+        "summary": "Updates the ResourceMetering parameters (prevBlockNum, prevBoughtGas, prevBaseFee).",
+        "overrideMeaning": "",
+        "allowDifference": true,
+        "allowOverrideDifference": false
+      },
       "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
         "type": "address",
         "summary": "Update address of OptimismPortal to new implementation.",
