@@ -156,7 +156,7 @@
       "0x0000000000000000000000000000000000000000000000000000000000000005": {
         "type": "uint256",
         "summary": "Increments the nonce",
-        "overrideMeaning": "",
+        "overrideMeaning": "Override the nonce to be our expected value after initial execution.",
         "allowDifference": false,
         "allowOverrideDifference": false
       },
