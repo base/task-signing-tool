@@ -185,7 +185,14 @@
     "systemConfig": {
       "0x000000000000000000000000000000000000000000000000000000000000006a": {
         "type": "hybrid",
-        "summary": "Updates EIP 1559 params for the chain",
+        "summary": "Updates EIP-1559 params (denominator, elasticity) and DA Footprint Gas Scalar for the chain",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      },
+      "0x000000000000000000000000000000000000000000000000000000000000006c": {
+        "type": "hybrid",
+        "summary": "Updates Min Base Fee and Superchain Config address",
         "overrideMeaning": "",
         "allowDifference": false,
         "allowOverrideDifference": false
