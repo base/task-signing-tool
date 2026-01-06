@@ -89,6 +89,44 @@
         "name": "Fee Disburser - Base Mainnet",
         "slots": "{{storageLayouts.feeDisburser}}"
       }
+    },
+    "84532": {
+      "0x4200000000000000000000000000000000000007": {
+        "name": "L2CrossDomainMessenger - Base Sepolia",
+        "slots": "{{storageLayouts.l2CrossDomainMessenger}}"
+      },
+      "0x4200000000000000000000000000000000000010": {
+        "name": "L2StandardBridge - Base Sepolia",
+        "slots": "{{storageLayouts.l2StandardBridge}}"
+      },
+      "0x4200000000000000000000000000000000000011": {
+        "name": "SequencerFeeVault - Base Sepolia",
+        "slots": "{{storageLayouts.feeVault}}"
+      },
+      "0x4200000000000000000000000000000000000012": {
+        "name": "OptimismMintableERC20Factory - Base Sepolia",
+        "slots": "{{storageLayouts.optimismMintableErc20Factory}}"
+      },
+      "0x4200000000000000000000000000000000000016": {
+        "name": "L2ToL1MessagePasser - Base Sepolia",
+        "slots": "{{storageLayouts.l2ToL1MessagePasser}}"
+      },
+      "0x4200000000000000000000000000000000000018": {
+        "name": "BaseFeeVault - Base Sepolia",
+        "slots": "{{storageLayouts.feeVault}}"
+      },
+      "0x4200000000000000000000000000000000000019": {
+        "name": "L1FeeVault - Base Sepolia",
+        "slots": "{{storageLayouts.feeVault}}"
+      },
+      "0x420000000000000000000000000000000000001a": {
+        "name": "SchemaRegistry - Base Sepolia",
+        "slots": "{{storageLayouts.schemaRegistry}}"
+      },
+      "0x4200000000000000000000000000000000000021": {
+        "name": "EAS - Base Sepolia",
+        "slots": "{{storageLayouts.eas}}"
+      }
     }
   },
   "storageLayouts": {
@@ -128,6 +166,67 @@
         "summary": "Updates the proxy admin",
         "overrideMeaning": "",
         "allowDifference": false,
+        "allowOverrideDifference": false
+      }
+    },
+    "feeVault": {
+      "0x0000000000000000000000000000000000000000000000000000000000000000": {
+        "type": "uint256",
+        "summary": "Updates the total processed amount",
+        "overrideMeaning": "",
+        "allowDifference": true,
+        "allowOverrideDifference": false
+      },
+      "0x0000000000000000000000000000000000000000000000000000000000000001": {
+        "type": "address",
+        "summary": "Updates the recipient address",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      }
+    },
+    "l2CrossDomainMessenger": {
+      "0x00000000000000000000000000000000000000000000000000000000000000cf": {
+        "type": "uint256",
+        "summary": "Updates the message nonce",
+        "overrideMeaning": "",
+        "allowDifference": true,
+        "allowOverrideDifference": false
+      }
+    },
+    "l2StandardBridge": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of L2StandardBridge to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      }
+    },
+    "l2ToL1MessagePasser": {
+      "0x0000000000000000000000000000000000000000000000000000000000000000": {
+        "type": "uint256",
+        "summary": "Updates the message nonce",
+        "overrideMeaning": "",
+        "allowDifference": true,
+        "allowOverrideDifference": false
+      }
+    },
+    "schemaRegistry": {
+      "0x0000000000000000000000000000000000000000000000000000000000000001": {
+        "type": "bytes32",
+        "summary": "Updates the schema registry state",
+        "overrideMeaning": "",
+        "allowDifference": true,
+        "allowOverrideDifference": false
+      }
+    },
+    "eas": {
+      "0x0000000000000000000000000000000000000000000000000000000000000001": {
+        "type": "bytes32",
+        "summary": "Updates the EAS state",
+        "overrideMeaning": "",
+        "allowDifference": true,
         "allowOverrideDifference": false
       }
     },
