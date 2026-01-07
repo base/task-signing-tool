@@ -16,6 +16,21 @@ const pathExists = async (targetPath: string) => {
   }
 };
 
+const resolveSafePath = (root: string, ...segments: string[]): string => {
+  const resolvedPath = path.resolve(root, ...segments);
+
+  // Ensure the resolved path is within the root directory
+  const normalizedRoot = path.resolve(root);
+  if (
+    resolvedPath !== normalizedRoot &&
+    !resolvedPath.startsWith(normalizedRoot + path.sep)
+  ) {
+    throw new Error('Invalid path segments');
+  }
+
+  return resolvedPath;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
@@ -33,8 +48,8 @@ export async function POST(req: NextRequest) {
 
     // Construct the path to the upgrade folder and lib subdirectory
     const contractDeploymentsPath = findContractDeploymentsRoot();
-    const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
-    const libPath = path.join(upgradePath, 'lib');
+    const upgradePath = resolveSafePath(contractDeploymentsPath, actualNetwork, upgradeId);
+    const libPath = resolveSafePath(upgradePath, 'lib');
 
     // Check if the upgrade folder exists
     const upgradePathExists = await pathExists(upgradePath);

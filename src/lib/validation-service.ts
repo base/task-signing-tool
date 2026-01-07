@@ -24,7 +24,16 @@ const stateDiffClient = new StateDiffClient();
 async function getConfigData(
   opts: ValidationServiceOpts
 ): Promise<{ cfg: TaskConfig; scriptPath: string }> {
-  const upgradePath = path.join(CONTRACT_DEPLOYMENTS_ROOT, opts.network, opts.upgradeId);
+  const upgradePath = path.resolve(CONTRACT_DEPLOYMENTS_ROOT, opts.network, opts.upgradeId);
+
+  // Ensure the resolved upgradePath stays within the deployments root to prevent directory traversal
+  const normalizedRoot = path.resolve(CONTRACT_DEPLOYMENTS_ROOT) + path.sep;
+  if (!upgradePath.startsWith(normalizedRoot)) {
+    throw new Error(
+      `ValidationService::getConfigData: Invalid upgradeId, resolved path escapes deployments root`
+    );
+  }
+
   const configFileName = `${opts.taskConfigFileName}.json`;
   const configPath = path.join(upgradePath, 'validations', configFileName);
 
