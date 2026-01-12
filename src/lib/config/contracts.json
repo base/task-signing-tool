@@ -56,6 +56,10 @@
       "0x8efb6b5c4767b09dc9aa6af4eaa89f749522bae2": {
         "name": "AddressManager - Mainnet",
         "slots": "{{storageLayouts.addressManager}}"
+      },
+      "0x909f6cf47ed12f010a796527f562bfc26c7f4e72": {
+        "name": "AnchorStateRegistry - Mainnet",
+        "slots": "{{storageLayouts.anchorStateRegistry}}"
       }
     },
     "11155111": {
@@ -78,6 +82,18 @@
       "0x5dfeb066334b67355a15dc9b67317fd2a2e1f77f": {
         "name": "CB Signer Safe - Sepolia",
         "slots": "{{storageLayouts.gnosisSafe}}"
+      },
+      "0x2ff5cc82dbf333ea30d8ee462178ab1707315355": {
+        "name": "AnchorStateRegistry - Sepolia",
+        "slots": "{{storageLayouts.anchorStateRegistry}}"
+      },
+      "0x49f53e41452c74589e85ca1677426ba426459e85": {
+        "name": "OptimismPortal - Sepolia",
+        "slots": "{{storageLayouts.optimismPortal}}"
+      },
+      "0xd6e6dbf4f7ea0ac412fd8b65ed297e64bb7a06e1": {
+        "name": "DisputeGameFactoryProxy - Sepolia",
+        "slots": "{{storageLayouts.disputeGameFactory}}"
       }
     },
     "8453": {
@@ -261,6 +277,15 @@
       "0x515216935740e67dfdda5cf8e248ea32b3277787818ab59153061ac875c9385e": {
         "type": "address",
         "summary": "Update address of L1CrossDomainMessenger to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      }
+    },
+    "anchorStateRegistry": {
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of AnchorStateRegistry to new implementation.",
         "overrideMeaning": "",
         "allowDifference": false,
         "allowOverrideDifference": false
