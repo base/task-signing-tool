@@ -2,7 +2,7 @@ import * as tar from 'tar';
 import path from 'path';
 import fs from 'fs/promises';
 import { parseArgs } from 'node:util';
-import { parse as shellParse, quote as shellQuote } from 'shell-quote';
+import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
 import { bundleFromJSON } from '@sigstore/bundle';
 import { Verifier, toTrustMaterial, toSignedEntity } from '@sigstore/verify';
@@ -14,6 +14,7 @@ function printUsage(): void {
   Commands:
     sign       Generate a signature for a task
     verify     Verify a signature for a task
+    tar        Create a deterministic tarball from a task folder
 
   Usage:
     tsx scripts/genTaskOriginSig.ts <command> --task-folder <PATH> --signature-path <PATH> [--trusted-root <PATH>] [--signature-file <PATH>] [--email <EMAIL>] [--help]
@@ -292,7 +293,7 @@ async function main() {
         return;
     }
 
-    const command = positionals[0] as 'sign' | 'verify' | undefined;
+    const command = positionals[0] as 'sign' | 'verify' | 'tar' | undefined;
     // Validate command is provided
     if (!command) {
         console.error('Error: No command specified.');
@@ -302,7 +303,7 @@ async function main() {
     }
 
     // Validate command is recognized
-    if (command !== 'sign' && command !== 'verify') {
+    if (command !== 'sign' && command !== 'verify' && command !== 'tar') {
         console.error(`Error: Unknown command '${command}'.`);
         printUsage();
         process.exitCode = 1;
@@ -352,6 +353,25 @@ async function main() {
 
             await verifyTaskOrigin(taskFolderPath, signatureFilePath, trustedRootPath, email);
             break;
+        }
+        case 'tar': {
+            if (!taskFolder) {
+                console.error('Error: Missing required flags.');
+                printUsage();
+                process.exitCode = 1;
+                return;
+            }
+
+            const taskFolderPath = path.resolve(process.cwd(), taskFolder);
+            const tarballPath = await createDeterministicTarball(taskFolderPath);
+            console.log(`  Tarball: ${tarballPath}`);
+            break;
+        }
+        default: {
+            console.error(`Error: Unknown command '${command}'.`);
+            printUsage();
+            process.exitCode = 1;
+            return;
         }
     }
 }
