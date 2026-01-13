@@ -2,7 +2,7 @@ import path from 'path';
 import { parseArgs } from 'node:util';
 import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
-import { buildAndValidateSignature, createDeterministicTarball } from '@/lib/task-origin-verify';
+import { buildAndValidateSignature, createDeterministicTarball } from '@/lib/task-origin-validate';
 
 function printUsage(): void {
     const msg = `
