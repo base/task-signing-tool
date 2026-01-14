@@ -8,7 +8,7 @@ import trustedRoot from './config/trusted-root.json';
 export type TaskOriginVerifyOptions = {
     taskFolderPath: string;
     signatureFile: string;
-    email: string;
+    commonName: string;
 };
 
 async function getAllFilesRecursively(dir: string, baseDir: string = dir): Promise<string[]> {
@@ -49,7 +49,7 @@ export async function createDeterministicTarball(taskFolderPath: string): Promis
 }
 
 export async function buildAndValidateSignature(options: TaskOriginVerifyOptions): Promise<void> {
-    const { taskFolderPath, signatureFile, email } = options;
+    const { taskFolderPath, signatureFile, commonName } = options;
     console.log(`  Task folder: ${taskFolderPath}`);
 
     // Extract the bundle containing both the signature and certificate chain
@@ -149,7 +149,7 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
 
     // Define the verification policy - verify certificate identity
     const certificateIdentityOptions = {
-        subjectAlternativeName: `user:///${email}`,
+        subjectAlternativeName: `user:///${commonName}`,
         extensions: {}, // Required by runtime even though TypeScript types mark it optional
     };
 
@@ -170,9 +170,9 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
 
 export async function verifyTaskOrigin(options: TaskOriginVerifyOptions): Promise<void> {
     // Make sure that the task folder path and signature file exist
-    const { taskFolderPath, signatureFile, email } = options;
-    if (!taskFolderPath || !signatureFile || !email) {
-        throw new Error('Task folder path, signature file, and email are required');
+    const { taskFolderPath, signatureFile, commonName } = options;
+    if (!taskFolderPath || !signatureFile || !commonName) {
+        throw new Error('Task folder path, signature file, and commonName are required');
     }
 
     // Make sure that the task folder path and signature file exist

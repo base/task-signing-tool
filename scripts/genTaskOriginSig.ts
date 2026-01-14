@@ -14,12 +14,12 @@ function printUsage(): void {
     tar        Create a deterministic tarball from a task folder
 
   Usage:
-    tsx scripts/genTaskOriginSig.ts <command> --task-folder <PATH> --signature-path <PATH> [--email <EMAIL>] [--help]
+    tsx scripts/genTaskOriginSig.ts <command> --task-folder <PATH> --signature-path <PATH> [--common-name <COMMON_NAME>] [--help]
 
   Optional flags:
     --task-folder, -t    Folder containing the task to tar and sign
     --signature-path, -s Path to store the signature output and read the signature from
-    --email, -e          Email to use for verification
+    --common-name, -c    Common name to use for verification
     --help, -h           Show this help message
   `;
     console.log(msg);
@@ -108,11 +108,11 @@ async function signTask(taskFolderPath: string, signatureFileOut: string) {
     console.log(`  Signature: ${signatureFileOut}`);    
 }
 
-async function verifyTaskOrigin(taskFolderPath: string, signatureFile: string, email: string) {
+async function verifyTaskOrigin(taskFolderPath: string, signatureFile: string, commonName: string) {
     console.log('✅ Validating task signature...');
 
     try {
-        await buildAndValidateSignature({ taskFolderPath, signatureFile, email });
+        await buildAndValidateSignature({ taskFolderPath, signatureFile, commonName });
     } catch (error) {
         console.error('  Error:', error);
         process.exitCode = 1;
@@ -126,7 +126,7 @@ async function main() {
         options: {
             'task-folder': { type: 'string', short: 't' },
             'signature-path': { type: 'string', short: 's' },
-            'email': { type: 'string', short: 'e' },
+            'common-name': { type: 'string', short: 'c' },
             help: { type: 'boolean', short: 'h' },
         },
         allowPositionals: true,
@@ -163,7 +163,7 @@ async function main() {
 
     const taskFolder = values['task-folder'];
     const signaturePath = values['signature-path'];
-    const email = values['email'];
+    const commonName = values['common-name'];
 
     // Route to appropriate function based on command
     switch (command) {
@@ -182,7 +182,7 @@ async function main() {
             break;
         }
         case 'verify': {
-            if (!taskFolder || !signaturePath || !email) {
+            if (!taskFolder || !signaturePath || !commonName) {
                 console.error('Error: Missing required flags.');
                 printUsage();
                 process.exitCode = 1;
@@ -192,7 +192,7 @@ async function main() {
             const taskFolderPath = path.resolve(process.cwd(), taskFolder);
             const signatureFilePath = path.resolve(process.cwd(), signaturePath);
 
-            await verifyTaskOrigin(taskFolderPath, signatureFilePath, email);
+            await verifyTaskOrigin(taskFolderPath, signatureFilePath, commonName);
             break;
         }
         case 'tar': {
