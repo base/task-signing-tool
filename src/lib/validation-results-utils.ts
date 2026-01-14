@@ -6,13 +6,22 @@ import {
   SigningDataComparison,
   StateChangeComparison,
   StringDiff,
+  TaskOriginComparison,
+  TaskOriginRole,
   ValidationData,
   ValidationItemsByStep,
 } from '@/lib/types';
 
 const NOT_FOUND_TEXT = 'Not found';
 
+export const TASK_ORIGIN_ROLE_LABELS: Record<TaskOriginRole, string> = {
+  taskCreator: 'Task Creator',
+  baseFacilitator: 'Base Facilitator',
+  securityCouncilFacilitator: 'Security Council Facilitator',
+};
+
 export type ValidationNavEntry =
+  | { kind: 'taskOrigin'; index: number }
   | { kind: 'signing'; index: number }
   | { kind: 'override'; index: number }
   | { kind: 'change'; index: number }
@@ -63,6 +72,7 @@ export interface ValidationEntryEvaluation {
 }
 
 export interface StepCounts {
+  taskOrigin: number;
   signing: number;
   overrides: number;
   changes: number;
@@ -70,10 +80,11 @@ export interface StepCounts {
 }
 
 const STEP_DEFINITIONS = [
-  { kind: 'signing', label: 'Domain/Message Hash', itemsKey: 'signing', order: 1 },
-  { kind: 'override', label: 'State Overrides', itemsKey: 'overrides', order: 2 },
-  { kind: 'change', label: 'State Changes', itemsKey: 'changes', order: 3 },
-  { kind: 'balance', label: 'Balance Changes', itemsKey: 'balance', order: 4 },
+  { kind: 'taskOrigin', label: 'Task Origin', itemsKey: 'taskOrigin', order: 1 },
+  { kind: 'signing', label: 'Domain/Message Hash', itemsKey: 'signing', order: 2 },
+  { kind: 'override', label: 'State Overrides', itemsKey: 'overrides', order: 3 },
+  { kind: 'change', label: 'State Changes', itemsKey: 'changes', order: 4 },
+  { kind: 'balance', label: 'Balance Changes', itemsKey: 'balance', order: 5 },
 ] as const satisfies ReadonlyArray<{
   kind: ValidationNavEntry['kind'];
   label: string;
@@ -186,6 +197,18 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
   return diffs;
 };
 
+const buildTaskOriginComparisons = (
+  validationResult: ValidationData | null
+): TaskOriginComparison[] => {
+  if (!validationResult?.taskOriginValidation?.enabled) return [];
+
+  const results = validationResult.taskOriginValidation.results;
+  const allPassed = results.every(r => r.success);
+
+  // Return single item containing all results
+  return [{ results, allPassed }];
+};
+
 const buildSigningComparisons = (
   validationResult: ValidationData | null
 ): SigningDataComparison[] => {
@@ -280,6 +303,7 @@ const buildBalanceComparisons = (
 export const buildValidationItems = (
   validationResult: ValidationData | null
 ): ValidationItemsByStep => ({
+  taskOrigin: buildTaskOriginComparisons(validationResult),
   signing: buildSigningComparisons(validationResult),
   overrides: buildOverrideComparisons(validationResult),
   changes: buildChangeComparisons(validationResult),
@@ -299,7 +323,7 @@ export const getStepCounts = (items: ValidationItemsByStep): StepCounts =>
       acc[definition.itemsKey] = items[definition.itemsKey].length;
       return acc;
     },
-    { signing: 0, overrides: 0, changes: 0, balance: 0 } satisfies StepCounts
+    { taskOrigin: 0, signing: 0, overrides: 0, changes: 0, balance: 0 } satisfies StepCounts
   );
 
 const matchesOverride = (comparison: OverrideComparison) =>
@@ -320,6 +344,10 @@ const matchesBalance = (comparison: BalanceChangeComparison) =>
   comparison.expected.after === comparison.actual.after;
 
 export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
+  // (If enabled) task origin validation failures are blocking
+  const taskOriginFailed = items.taskOrigin.some(item => !item.allPassed);
+  if (taskOriginFailed) return true;
+
   const signingMismatch = items.signing.some(
     signing => !signing.actual || signing.expected.dataToSign !== signing.actual.dataToSign
   );
@@ -370,6 +398,53 @@ export const evaluateValidationEntry = (
   items: ValidationItemsByStep
 ): ValidationEntryEvaluation => {
   switch (entry.kind) {
+    case 'taskOrigin': {
+      const item = items.taskOrigin[entry.index]!;
+      const allPassed = item.allPassed;
+      const failedCount = item.results.filter(r => !r.success).length;
+      const totalCount = item.results.length;
+
+      const matchStatus: ValidationMatchStatus = allPassed
+        ? createMatchStatus('match', `All ${totalCount} signature(s) verified`)
+        : createMatchStatus('mismatch', `${failedCount} of ${totalCount} signature(s) failed`);
+
+      // Build a summary text showing each signer's status
+      const summaryLines = item.results.map(r => {
+        const status = r.success ? '✓' : '✗';
+        const errorInfo = r.error ? ` - ${r.error}` : '';
+        return `${status} ${TASK_ORIGIN_ROLE_LABELS[r.role]}${errorInfo}`;
+      });
+
+      const description: ValidationDescription = {
+        variant: allPassed ? 'info' : 'expected-difference',
+        icon: allPassed ? 'check' : 'x',
+        title: 'Signature Verification',
+        text: summaryLines.join('\n'),
+      };
+
+      return {
+        matchStatus,
+        description,
+        stepLabel: STEP_DEFINITION_MAP.taskOrigin.label,
+        contractName: 'Task Origin Signatures',
+        cards: {
+          expected: {
+            contractName: 'Task Origin',
+            contractAddress: 'Signature Verification',
+            storageKey: 'Required Signers',
+            afterValue: item.results.map(r => TASK_ORIGIN_ROLE_LABELS[r.role]).join(', '),
+          },
+          actual: {
+            contractName: 'Task Origin',
+            contractAddress: 'Verification Results',
+            storageKey: 'Status',
+            afterValue: allPassed
+              ? `All ${totalCount} signatures valid`
+              : `${totalCount - failedCount}/${totalCount} valid`,
+          },
+        },
+      };
+    }
     case 'signing': {
       const item = items.signing[entry.index]!;
       const expectedData = item.expected.dataToSign;
@@ -654,8 +729,12 @@ export const getContractNameForEntry = (
 ): string => {
   if (!entry) return 'Unknown Contract';
 
+  if (entry.kind === 'taskOrigin') {
+    return 'Task Origin Signatures';
+  }
+
   const definition = STEP_DEFINITION_MAP[entry.kind];
   const stepItems = items[definition.itemsKey];
-  const item = stepItems[entry.index];
+  const item = stepItems[entry.index] as { contractName?: string };
   return item?.contractName ?? 'Unknown Contract';
 };

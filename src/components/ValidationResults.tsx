@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Coins,
   Lightbulb,
+  Shield,
   XCircle,
 } from 'lucide-react';
 
@@ -17,14 +18,64 @@ import {
   getContractNameForEntry,
   getStepInfo,
   STEP_LABELS,
+  TASK_ORIGIN_ROLE_LABELS,
   ValidationNavEntry,
 } from '@/lib/validation-results-utils';
-import { ValidationData } from '@/lib/types';
+import { TaskOriginSignerResult, ValidationData } from '@/lib/types';
 import { ComparisonCard } from './ComparisonCard';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { Modal } from './ui/Modal';
+
+interface TaskOriginCardProps {
+  results: TaskOriginSignerResult[];
+}
+
+const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
+  return (
+    <div className="col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Shield className="text-[var(--cds-primary)]" size={24} />
+        <h3 className="text-lg font-semibold text-[var(--cds-text-primary)]">
+          Task Origin Signatures
+        </h3>
+      </div>
+      <div className="space-y-3">
+        {results.map((result, idx) => (
+          <div
+            key={idx}
+            className={`flex items-center justify-between py-3 px-4 rounded-lg border ${
+              result.success
+                ? 'bg-green-50 border-green-200'
+                : 'bg-red-50 border-red-200'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {result.success ? (
+                <CheckCircle className="text-green-600" size={20} />
+              ) : (
+                <XCircle className="text-red-600" size={20} />
+              )}
+              <span className="font-medium text-[var(--cds-text-primary)]">
+                {TASK_ORIGIN_ROLE_LABELS[result.role]}
+              </span>
+            </div>
+            <div className="text-sm">
+              {result.success ? (
+                <span className="text-green-700 font-medium">Verified</span>
+              ) : (
+                <span className="text-red-700 font-medium" title={result.error}>
+                  {result.error ? result.error.substring(0, 50) + (result.error.length > 50 ? '...' : '') : 'Failed'}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface ValidationResultsProps {
   userType: string;
@@ -239,8 +290,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
         {evaluation && (
           <div className="grid gap-6 xl:grid-cols-2">
-            <ComparisonCard type="expected" {...evaluation.cards.expected} />
-            <ComparisonCard type="actual" {...evaluation.cards.actual} />
+            {currentEntry?.kind === 'taskOrigin' && itemsByStep.taskOrigin[currentEntry.index] ? (
+              <TaskOriginCard results={itemsByStep.taskOrigin[currentEntry.index].results} />
+            ) : (
+              <>
+                <ComparisonCard type="expected" {...evaluation.cards.expected} />
+                <ComparisonCard type="actual" {...evaluation.cards.actual} />
+              </>
+            )}
           </div>
         )}
 
