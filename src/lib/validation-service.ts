@@ -121,7 +121,9 @@ async function validateSigner(
   role: TaskOriginRole,
   signerConfig: TaskOriginSigner
 ): Promise<TaskOriginSignerResult> {
-  const signatureFile = path.join(taskFolderPath, signerConfig.signatureBundlePath);
+  // signatureBundlePath is relative to the network folder (parent of task folder)
+  const networkPath = path.dirname(taskFolderPath);
+  const signatureFile = path.join(networkPath, signerConfig.signatureBundlePath);
 
   await verifyTaskOrigin({
     taskFolderPath,
