@@ -78,10 +78,6 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
         ? { rawBytes: bundleCerts[3].rawBytes }
         : null;
 
-    if (runtimeIntermediate) {
-        console.log('  ✓ Extracted runtime intermediate CA from bundle');
-    }
-
     // Prepare trust material with:
     // 1. Date strings converted to Date objects (required for filtering)
     // 2. Runtime intermediate CA injected into certificate chain
