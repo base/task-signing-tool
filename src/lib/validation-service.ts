@@ -118,13 +118,13 @@ async function runStateDiffSimulation(
 }
 
 async function validateSigner(
-  taskFolderPath: string,
+  opts: ValidationServiceOpts,
   role: TaskOriginRole,
   signerConfig: TaskOriginSigner
 ): Promise<TaskOriginSignerResult> {
-  // signatureBundlePath is relative to the network folder (parent of task folder)
-  const networkPath = path.dirname(taskFolderPath);
-  const signatureFile = path.join(networkPath, signerConfig.signatureBundlePath);
+  const networkPath = path.join(CONTRACT_DEPLOYMENTS_ROOT, opts.network);
+  const taskFolderPath = path.join(networkPath, opts.upgradeId);
+  const signatureFile = path.join(networkPath, 'signatures', opts.upgradeId, signerConfig.signatureFileName);
 
   await verifyTaskOrigin({
     taskFolderPath,
@@ -135,7 +135,7 @@ async function validateSigner(
   return {
     role,
     commonName: signerConfig.commonName,
-    signatureBundlePath: signerConfig.signatureBundlePath,
+    signatureFileName: signerConfig.signatureFileName,
     success: true,
   };
 }
@@ -144,7 +144,7 @@ async function validateSigner(
  * Validates task origin signatures. Throws immediately if any signature fails to verify.
  */
 async function runTaskOriginValidation(
-  taskFolderPath: string,
+  opts: ValidationServiceOpts,
   config: TaskOriginValidationConfig
 ): Promise<TaskOriginValidation> {
   const results: TaskOriginSignerResult[] = [];
@@ -152,7 +152,7 @@ async function runTaskOriginValidation(
   // Validate task creator - throws on failure
   console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature...`);
   try {
-    results.push(await validateSigner(taskFolderPath, 'taskCreator', config.taskCreator));
+    results.push(await validateSigner(opts, 'taskCreator', config.taskCreator));
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -162,7 +162,7 @@ async function runTaskOriginValidation(
   // Validate base facilitator - throws on failure
   console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature...`);
   try {
-    results.push(await validateSigner(taskFolderPath, 'baseFacilitator', config.baseFacilitator));
+    results.push(await validateSigner(opts, 'baseFacilitator', config.baseFacilitator));
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -173,7 +173,7 @@ async function runTaskOriginValidation(
   console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature...`);
   try {
     results.push(
-      await validateSigner(taskFolderPath, 'securityCouncilFacilitator', config.securityCouncilFacilitator)
+      await validateSigner(opts, 'securityCouncilFacilitator', config.securityCouncilFacilitator)
     );
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature verified`);
   } catch (error) {
@@ -199,7 +199,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
   let taskOriginValidation: TaskOriginValidation | undefined;
   if (cfg.validateTaskOrigin && cfg.taskOriginConfig) {
     console.log('🔐 Running task origin validation (must pass before simulation)...');
-    taskOriginValidation = await runTaskOriginValidation(scriptPath, cfg.taskOriginConfig);
+    taskOriginValidation = await runTaskOriginValidation(opts, cfg.taskOriginConfig);
   }
 
   // Run the task simulation

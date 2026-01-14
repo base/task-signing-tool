@@ -50,7 +50,7 @@ export const BalanceChangeSchema = z.object({
 // Task Origin Validation Schemas
 export const TaskOriginSignerSchema = z.object({
   commonName: z.string().min(1),
-  signatureBundlePath: z.string().min(1),
+  signatureFileName: z.string().min(1),
 });
 
 export const TaskOriginValidationConfigSchema = z.object({
