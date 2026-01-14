@@ -10,13 +10,14 @@ import {
   StateChange,
   StateOverride,
   TaskConfig,
+  TaskOriginRole,
   TaskOriginSigner,
   TaskOriginValidationConfig,
   ValidationData,
-  TaskOriginRole,
   TaskOriginSignerResult,
   TaskOriginValidation,
 } from './types/index';
+import { TASK_ORIGIN_ROLE_LABELS } from './validation-results-utils';
 
 export type ValidationServiceOpts = {
   upgradeId: string;
@@ -149,35 +150,35 @@ async function runTaskOriginValidation(
   const results: TaskOriginSignerResult[] = [];
 
   // Validate task creator - throws on failure
-  console.log(`🔐 Validating ${config.taskCreator.commonName} signature...`);
+  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature...`);
   try {
     results.push(await validateSigner(taskFolderPath, 'taskCreator', config.taskCreator));
-    console.log(`  ✓ ${config.taskCreator.commonName} signature verified`);
+    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Task origin validation failed for ${config.taskCreator.commonName}: ${message}`);
+    throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.taskCreator}: ${message}`);
   }
 
   // Validate base facilitator - throws on failure
-  console.log(`🔐 Validating ${config.baseFacilitator.commonName} signature...`);
+  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature...`);
   try {
     results.push(await validateSigner(taskFolderPath, 'baseFacilitator', config.baseFacilitator));
-    console.log(`  ✓ ${config.baseFacilitator.commonName} signature verified`);
+    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Task origin validation failed for ${config.baseFacilitator.commonName}: ${message}`);
+    throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator}: ${message}`);
   }
 
   // Validate security council facilitator - throws on failure
-  console.log(`🔐 Validating ${config.securityCouncilFacilitator.commonName} signature...`);
+  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature...`);
   try {
     results.push(
       await validateSigner(taskFolderPath, 'securityCouncilFacilitator', config.securityCouncilFacilitator)
     );
-    console.log(`  ✓ ${config.securityCouncilFacilitator.commonName} signature verified`);
+    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Task origin validation failed for ${config.securityCouncilFacilitator.commonName}: ${message}`);
+    throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator}: ${message}`);
   }
 
   console.log(`✅ Task origin validation completed: ${results.length}/${results.length} signatures verified`);
