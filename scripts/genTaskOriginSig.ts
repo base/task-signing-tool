@@ -4,10 +4,14 @@ import { parseArgs } from 'node:util';
 import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
 import { buildAndValidateSignature, createDeterministicTarball } from '@/lib/task-origin-validate';
+import { TASK_ORIGIN_SIGNATURE_FILE_NAMES, TASK_ORIGIN_COMMON_NAMES } from '@/lib/constants';
+import type { TaskOriginRole } from '@/lib/types';
 
 const CERT_PATH = path.join(os.homedir(), '.ottr')
 const DEVICE_CERT = "device-certificate.pem"
 const DEVICE_CERT_KEY = "device-certificate-key.pem"
+
+type FacilitatorType = 'base' | 'security-council';
 
 function printUsage(): void {
     const msg = `
@@ -19,12 +23,15 @@ function printUsage(): void {
     tar        Create a deterministic tarball from a task folder
 
   Usage:
-    tsx scripts/genTaskOriginSig.ts <command> --task-folder <PATH> --signature-path <PATH> [--common-name <COMMON_NAME>] [--help]
+    tsx scripts/genTaskOriginSig.ts <command> --task-folder <PATH> [--signature-path <PATH>] [--facilitator <TYPE>] [--common-name <COMMON_NAME>] [--help]
+
+  Required flags:
+    --task-folder, -t    Folder containing the task to tar and sign
 
   Optional flags:
-    --task-folder, -t    Folder containing the task to tar and sign
-    --signature-path, -s Path to store the signature output and read the signature from
-    --common-name, -c    Common name to use for verification
+    --signature-path, -s Directory path to store/read the signature
+    --facilitator, -f    Facilitator type: "base" or "security-council" (omit for task creator)
+    --common-name, -c    Common name to use for verification (only when not using --facilitator)
     --help, -h           Show this help message
   `;
     console.log(msg);
@@ -47,11 +54,38 @@ function spawn(command: string): Promise<number | null> {
     });
 }
 
-async function signTask(taskFolderPath: string, signatureFileOut: string) {
+function facilitatorToRole(facilitator: FacilitatorType | undefined): TaskOriginRole {
+    if (!facilitator) {
+        return 'taskCreator';
+    }
+    return facilitator === 'base' ? 'baseFacilitator' : 'securityCouncilFacilitator';
+}
+
+function facilitatorToGroup(facilitator: FacilitatorType): string {
+    return facilitator === 'base' ? 'base-facilitators' : 'base-sc-facilitators';
+}
+
+async function signTask(
+    taskFolderPath: string,
+    signatureDir: string,
+    facilitator: FacilitatorType | undefined
+) {
     console.log('🔏 Signing task...');
     console.log(`  Task folder: ${taskFolderPath}`);
 
-    let command = shellQuote([
+    const role = facilitatorToRole(facilitator);
+    const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
+    const signatureFileOut = path.join(signatureDir, signatureFileName);
+
+    if (facilitator) {
+        console.log(`  Facilitator: ${facilitator}`);
+        console.log(`  Group: ${facilitatorToGroup(facilitator)}`);
+    } else {
+        console.log(`  Role: Task Creator`);
+    }
+
+    // Build device certificate command
+    const certCommand = [
         'ottr-cli',
         'generate',
         'device-certificate',
@@ -61,8 +95,15 @@ async function signTask(taskFolderPath: string, signatureFileOut: string) {
         '--certificate-path',
         DEVICE_CERT,
         '--private-key-path',
-        DEVICE_CERT_KEY
-    ]);
+        DEVICE_CERT_KEY,
+    ];
+
+    // Add group flag for facilitators
+    if (facilitator) {
+        certCommand.push('--requested-sso-groups', facilitatorToGroup(facilitator));
+    }
+
+    let command = shellQuote(certCommand);
     let code = await spawn(command);
     if (code !== 0) {
         console.error(`  Error: Command failed with exit code ${code}`);
@@ -98,11 +139,38 @@ async function signTask(taskFolderPath: string, signatureFileOut: string) {
     console.log(`  Signature: ${signatureFileOut}`);
 }
 
-async function verifyTaskOrigin(taskFolderPath: string, signatureFile: string, commonName: string) {
+async function verifyTaskOrigin(
+    taskFolderPath: string,
+    signatureDir: string,
+    facilitator: FacilitatorType | undefined,
+    commonName: string | undefined
+) {
     console.log('✅ Validating task signature...');
 
+    const role = facilitatorToRole(facilitator);
+    const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
+    const signatureFile = path.join(signatureDir, signatureFileName);
+
+    // Determine common name
+    let actualCommonName: string;
+    if (facilitator) {
+        actualCommonName = TASK_ORIGIN_COMMON_NAMES[role === 'baseFacilitator' ? 'baseFacilitator' : 'securityCouncilFacilitator'];
+        console.log(`  Facilitator: ${facilitator}`);
+        console.log(`  Common Name: ${actualCommonName}`);
+    } else {
+        if (!commonName) {
+            console.error('  Error: --common-name is required when not using --facilitator');
+            process.exitCode = 1;
+            return;
+        }
+        actualCommonName = commonName;
+        console.log(`  Common Name: ${actualCommonName}`);
+    }
+
+    console.log(`  Signature File: ${signatureFile}`);
+
     try {
-        await buildAndValidateSignature({ taskFolderPath, signatureFile, commonName });
+        await buildAndValidateSignature({ taskFolderPath, signatureFile, commonName: actualCommonName });
     } catch (error) {
         console.error('  Error:', error);
         process.exitCode = 1;
@@ -116,6 +184,7 @@ async function main() {
         options: {
             'task-folder': { type: 'string', short: 't' },
             'signature-path': { type: 'string', short: 's' },
+            'facilitator': { type: 'string', short: 'f' },
             'common-name': { type: 'string', short: 'c' },
             help: { type: 'boolean', short: 'h' },
         },
@@ -153,47 +222,58 @@ async function main() {
 
     const taskFolder = values['task-folder'];
     const signaturePath = values['signature-path'];
+    const facilitatorValue = values['facilitator'];
     const commonName = values['common-name'];
+
+    // Validate required task-folder flag
+    if (!taskFolder) {
+        console.error('Error: Missing required flag --task-folder.');
+        printUsage();
+        process.exitCode = 1;
+        return;
+    }
+
+    // Validate facilitator value if provided
+    let facilitator: FacilitatorType | undefined;
+    if (facilitatorValue) {
+        if (facilitatorValue !== 'base' && facilitatorValue !== 'security-council') {
+            console.error(`Error: Invalid facilitator type '${facilitatorValue}'. Must be 'base' or 'security-council'.`);
+            printUsage();
+            process.exitCode = 1;
+            return;
+        }
+        facilitator = facilitatorValue as FacilitatorType;
+    }
+
+    const taskFolderPath = path.resolve(process.cwd(), taskFolder);
 
     // Route to appropriate function based on command
     switch (command) {
         case 'sign': {
-            if (!taskFolder || !signaturePath) {
-                console.error('Error: Missing required flags.');
-                printUsage();
-                process.exitCode = 1;
-                return;
-            }
+            const signatureDir = signaturePath
+                ? path.resolve(process.cwd(), signaturePath)
+                : taskFolderPath;
 
-            const taskFolderPath = path.resolve(process.cwd(), taskFolder);
-            const signatureFileOut = path.resolve(process.cwd(), signaturePath);
-
-            await signTask(taskFolderPath, signatureFileOut);
+            await signTask(taskFolderPath, signatureDir, facilitator);
             break;
         }
         case 'verify': {
-            if (!taskFolder || !signaturePath || !commonName) {
-                console.error('Error: Missing required flags.');
+            // If not using facilitator, common-name is required
+            if (!facilitator && !commonName) {
+                console.error('Error: Either --facilitator or --common-name must be provided.');
                 printUsage();
                 process.exitCode = 1;
                 return;
             }
 
-            const taskFolderPath = path.resolve(process.cwd(), taskFolder);
-            const signatureFilePath = path.resolve(process.cwd(), signaturePath);
+            const signatureDir = signaturePath
+                ? path.resolve(process.cwd(), signaturePath)
+                : taskFolderPath;
 
-            await verifyTaskOrigin(taskFolderPath, signatureFilePath, commonName);
+            await verifyTaskOrigin(taskFolderPath, signatureDir, facilitator, commonName);
             break;
         }
         case 'tar': {
-            if (!taskFolder) {
-                console.error('Error: Missing required flags.');
-                printUsage();
-                process.exitCode = 1;
-                return;
-            }
-
-            const taskFolderPath = path.resolve(process.cwd(), taskFolder);
             const tarballPath = await createDeterministicTarball(taskFolderPath);
             console.log(`  Tarball: ${tarballPath}`);
             break;
