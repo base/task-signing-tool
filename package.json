@@ -14,6 +14,8 @@
     "validate-folder": "tsx scripts/validate-structure.ts"
   },
   "dependencies": {
+    "@sigstore/bundle": "4.0.0",
+    "@sigstore/verify": "3.1.0",
     "lucide-react": "0.554.0",
     "next": "15.5.9",
     "react": "19.2.0",
@@ -21,6 +23,7 @@
     "react-markdown": "10.1.0",
     "remark-gfm": "4.0.1",
     "shell-quote": "1.8.3",
+    "tar": "7.5.2",
     "viem": "2.38.2",
     "yaml": "2.8.1",
     "zod": "3.22.4"
