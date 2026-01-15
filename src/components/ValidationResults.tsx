@@ -33,12 +33,10 @@ interface TaskOriginCardProps {
 }
 
 const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
-  const hasFailures = results.some(r => !r.success);
-
   return (
     <div className="col-span-2 bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center gap-3 mb-4">
-        <Shield className={hasFailures ? 'text-red-500' : 'text-[var(--cds-primary)]'} size={24} />
+        <Shield className="text-[var(--cds-primary)]" size={24} />
         <h3 className="text-lg font-semibold text-[var(--cds-text-primary)]">
           Task Origin Signatures
         </h3>
@@ -341,26 +339,13 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </div>
         )}
 
-        {taskOriginFailed && currentEntry?.kind === 'taskOrigin' && (
-          <div className="mt-6 rounded-xl border-2 border-red-300 bg-red-50 p-4 flex items-start gap-3">
-            <XCircle className="text-red-600 mt-0.5 flex-shrink-0" size={20} />
-            <div>
-              <h4 className="text-sm font-bold text-red-800 uppercase tracking-wider mb-1">
-                Validation Cannot Proceed
-              </h4>
-              <p className="text-sm text-red-700">
-                Task origin signature verification failed. The task simulation was not run.
-                Please ensure all required signatures are valid before proceeding.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {descriptionContent && !taskOriginDisabled && !(taskOriginFailed && currentEntry?.kind === 'taskOrigin') && (
+        {descriptionContent && !taskOriginDisabled && (
           <div
             className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${
               descriptionContent.variant === 'expected-difference'
                 ? 'border-green-200 bg-green-50'
+                : descriptionContent.variant === 'error'
+                ? 'border-red-200 bg-red-50'
                 : 'border-blue-200 bg-blue-50'
             }`}
           >
@@ -370,6 +355,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 className={`mb-1 text-xs font-bold uppercase tracking-wider ${
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-green-800'
+                    : descriptionContent.variant === 'error'
+                    ? 'text-red-800'
                     : 'text-blue-800'
                 }`}
               >
@@ -379,6 +366,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-green-900'
+                    : descriptionContent.variant === 'error'
+                    ? 'text-red-700'
                     : 'text-blue-900'
                 }`}
               >

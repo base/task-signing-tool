@@ -42,7 +42,7 @@ export type ValidationMatchStatus =
     };
 
 export interface ValidationDescription {
-  variant: 'info' | 'expected-difference';
+  variant: 'info' | 'expected-difference' | 'error';
   icon: string;
   title: string;
   text: string;
@@ -451,11 +451,15 @@ export const evaluateValidationEntry = (
         return `${status} ${TASK_ORIGIN_ROLE_LABELS[r.role]}${errorInfo}`;
       });
 
+      const descriptionText = allPassed
+        ? `This validation verifies that the task bundle has been properly authorized by the required parties (Builder, Reviewer, and Approver) before execution. Each signature proves that the designated role has reviewed and approved the task contents.\n\n${summaryLines.join('\n')}`
+        : `Task origin signature verification failed. The task simulation was not run. Please contact developers or facilitators for help before proceeding.\n\n${summaryLines.join('\n')}`;
+
       const description: ValidationDescription = {
-        variant: allPassed ? 'info' : 'expected-difference',
-        icon: allPassed ? 'check' : 'x',
-        title: 'Signature Verification',
-        text: summaryLines.join('\n'),
+        variant: allPassed ? 'info' : 'error',
+        icon: allPassed ? 'lightbulb' : 'x',
+        title: allPassed ? 'Task Authorization' : 'Validation Cannot Proceed',
+        text: descriptionText,
       };
 
       return {
