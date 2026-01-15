@@ -154,20 +154,15 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
     const sanPrefix = getSubjectAlternativeNamePrefix(role);
     const subjectAlternativeName = `${sanPrefix}${commonName}`;
 
-    // Define the verification policy - verify certificate identity
-    const certificateIdentityOptions = {
+    // Define the verification policy with the created subject alternative name
+    const verificationPolicy = {
         subjectAlternativeName,
-        extensions: {}, // Required by runtime even though TypeScript types mark it optional
     };
 
     // Verify the signature
     try {
         console.log('  Performing verification...');
-        // Note: TypeScript types are incomplete - the runtime API actually expects
-        // certificateIdentityVerifiers array, not just a single CertificateIdentity
-        verifier.verify(signedEntity, {
-            certificateIdentityVerifiers: [certificateIdentityOptions],
-        } as any);
+        verifier.verify(signedEntity, verificationPolicy);
         console.log('✅ Verification successful!');
     } catch (error: any) {
         console.error('  Error details:', error);
