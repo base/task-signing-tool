@@ -47,16 +47,12 @@ export const BalanceChangeSchema = z.object({
   allowDifference: z.boolean(),
 });
 
-// Task Origin Validation Schemas
-export const TaskOriginSignerSchema = z.object({
-  commonName: z.string().min(1),
-  signatureFileName: z.string().min(1),
-});
-
+// Only taskCreator needs a config for the commonName parameter
+// All other fields are hardcoded including the signature file names
 export const TaskOriginValidationConfigSchema = z.object({
-  taskCreator: TaskOriginSignerSchema,
-  baseFacilitator: TaskOriginSignerSchema,
-  securityCouncilFacilitator: TaskOriginSignerSchema,
+  taskCreator: z.object({
+    commonName: z.string().min(1),
+  }),
 });
 
 export const TaskConfigSchema = z.object({

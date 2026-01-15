@@ -10,8 +10,6 @@ export type TaskOriginRole = 'taskCreator' | 'baseFacilitator' | 'securityCounci
 
 export interface TaskOriginSignerResult {
   role: TaskOriginRole;
-  commonName: string;
-  signatureFileName: string;
   success: boolean;
   error?: string;
 }

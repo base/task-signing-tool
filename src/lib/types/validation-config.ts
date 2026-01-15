@@ -7,7 +7,6 @@ import {
   StateChangeSchema,
   StateOverrideSchema,
   TaskConfigSchema,
-  TaskOriginSignerSchema,
   TaskOriginValidationConfigSchema,
 } from '@/lib/config-schemas';
 
@@ -20,5 +19,4 @@ export type BalanceChange = z.infer<typeof BalanceChangeSchema>;
 export type TaskConfig = z.infer<typeof TaskConfigSchema>;
 
 // Task Origin Validation Types
-export type TaskOriginSigner = z.infer<typeof TaskOriginSignerSchema>;
 export type TaskOriginValidationConfig = z.infer<typeof TaskOriginValidationConfigSchema>;

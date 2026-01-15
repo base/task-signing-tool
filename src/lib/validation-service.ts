@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { TASK_ORIGIN_COMMON_NAMES, TASK_ORIGIN_SIGNATURE_FILE_NAMES } from './constants';
 import { findContractDeploymentsRoot } from './deployments';
 import { getValidationSummary, parseFromString } from './parser';
 import { StateDiffClient } from './state-diff';
@@ -11,7 +12,6 @@ import {
   StateOverride,
   TaskConfig,
   TaskOriginRole,
-  TaskOriginSigner,
   TaskOriginValidationConfig,
   ValidationData,
   TaskOriginSignerResult,
@@ -120,22 +120,28 @@ async function runStateDiffSimulation(
 async function validateSigner(
   opts: ValidationServiceOpts,
   role: TaskOriginRole,
-  signerConfig: TaskOriginSigner
+  commonNameOverride?: string // Only used for taskCreator
 ): Promise<TaskOriginSignerResult> {
   const networkPath = path.join(CONTRACT_DEPLOYMENTS_ROOT, opts.network);
   const taskFolderPath = path.join(networkPath, opts.upgradeId);
-  const signatureFile = path.join(networkPath, 'signatures', opts.upgradeId, signerConfig.signatureFileName);
+
+  // Get signatureFileName from constants (hardcoded for all roles)
+  const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
+  const signatureFile = path.join(networkPath, 'signatures', opts.upgradeId, signatureFileName);
+
+  // Get commonName: from config for taskCreator, from constants for facilitators
+  const commonName =
+    commonNameOverride ??
+    TASK_ORIGIN_COMMON_NAMES[role as keyof typeof TASK_ORIGIN_COMMON_NAMES];
 
   await verifyTaskOrigin({
     taskFolderPath,
     signatureFile,
-    commonName: signerConfig.commonName,
+    commonName,
   });
 
   return {
     role,
-    commonName: signerConfig.commonName,
-    signatureFileName: signerConfig.signatureFileName,
     success: true,
   };
 }
@@ -149,32 +155,30 @@ async function runTaskOriginValidation(
 ): Promise<TaskOriginValidation> {
   const results: TaskOriginSignerResult[] = [];
 
-  // Validate task creator - throws on failure
+  // Validate task creator - uses commonName from config
   console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature...`);
   try {
-    results.push(await validateSigner(opts, 'taskCreator', config.taskCreator));
+    results.push(await validateSigner(opts, 'taskCreator', config.taskCreator.commonName));
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.taskCreator}: ${message}`);
   }
 
-  // Validate base facilitator - throws on failure
+  // Validate base facilitator
   console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature...`);
   try {
-    results.push(await validateSigner(opts, 'baseFacilitator', config.baseFacilitator));
+    results.push(await validateSigner(opts, 'baseFacilitator'));
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator}: ${message}`);
   }
 
-  // Validate security council facilitator - throws on failure
+  // Validate security council facilitator
   console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature...`);
   try {
-    results.push(
-      await validateSigner(opts, 'securityCouncilFacilitator', config.securityCouncilFacilitator)
-    );
+    results.push(await validateSigner(opts, 'securityCouncilFacilitator'));
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
