@@ -143,20 +143,16 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
     // Convert bundle to signed entity for verification
     const signedEntity = toSignedEntity(bundleSig, tarball); // tarball is already a Buffer
 
-    // Define the verification policy - verify certificate identity
-    const certificateIdentityOptions = {
+    // Define the verification policy - the policy object is passed directly
+    // to verify() which checks the signer's certificate SAN against this value
+    const verificationPolicy = {
         subjectAlternativeName: `user:///${commonName}`,
-        extensions: {}, // Required by runtime even though TypeScript types mark it optional
     };
 
     // Verify the signature
     try {
         console.log('  Performing verification...');
-        // Note: TypeScript types are incomplete - the runtime API actually expects
-        // certificateIdentityVerifiers array, not just a single CertificateIdentity
-        verifier.verify(signedEntity, {
-            certificateIdentityVerifiers: [certificateIdentityOptions],
-        } as any);
+        verifier.verify(signedEntity, verificationPolicy);
         console.log('✅ Verification successful!');
     } catch (error: any) {
         console.error('  Error details:', error);
