@@ -138,6 +138,7 @@ async function validateSigner(
     taskFolderPath,
     signatureFile,
     commonName,
+    role,
   });
 
   return {

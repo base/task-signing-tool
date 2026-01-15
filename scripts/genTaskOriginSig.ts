@@ -8,8 +8,8 @@ import { TASK_ORIGIN_SIGNATURE_FILE_NAMES, TASK_ORIGIN_COMMON_NAMES } from '@/li
 import type { TaskOriginRole } from '@/lib/types';
 
 const CERT_PATH = path.join(os.homedir(), '.ottr')
-const DEVICE_CERT = "device-certificate.pem"
-const DEVICE_CERT_KEY = "device-certificate-key.pem"
+const DEVICE_CERT = 'device-certificate.pem';
+const DEVICE_CERT_KEY = 'device-certificate-key.pem';
 
 type FacilitatorType = 'base' | 'security-council';
 
@@ -170,7 +170,7 @@ async function verifyTaskOrigin(
     console.log(`  Signature File: ${signatureFile}`);
 
     try {
-        await buildAndValidateSignature({ taskFolderPath, signatureFile, commonName: actualCommonName });
+        await buildAndValidateSignature({ taskFolderPath, signatureFile, commonName: actualCommonName, role });
     } catch (error) {
         console.error('  Error:', error);
         process.exitCode = 1;

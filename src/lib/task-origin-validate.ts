@@ -4,12 +4,19 @@ import fs from 'fs/promises';
 import { Verifier, toTrustMaterial, toSignedEntity } from '@sigstore/verify';
 import { bundleFromJSON } from '@sigstore/bundle';
 import trustedRoot from './config/trusted-root.json';
+import type { TaskOriginRole } from './types';
 
 export type TaskOriginVerifyOptions = {
     taskFolderPath: string;
     signatureFile: string;
     commonName: string;
+    role: TaskOriginRole;
 };
+
+function getSubjectAlternativeNamePrefix(role: TaskOriginRole): string {
+    // Task creators use user:/// prefix, facilitators use ldap:/// prefix
+    return role === 'taskCreator' ? 'user:///' : 'ldap:///';
+}
 
 async function getAllFilesRecursively(dir: string, baseDir: string = dir): Promise<string[]> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -49,7 +56,7 @@ export async function createDeterministicTarball(taskFolderPath: string): Promis
 }
 
 export async function buildAndValidateSignature(options: TaskOriginVerifyOptions): Promise<void> {
-    const { taskFolderPath, signatureFile, commonName } = options;
+    const { taskFolderPath, signatureFile, commonName, role } = options;
     console.log(`  Task folder: ${taskFolderPath}`);
 
     // Extract the bundle containing both the signature and certificate chain
@@ -143,9 +150,13 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
     // Convert bundle to signed entity for verification
     const signedEntity = toSignedEntity(bundleSig, tarball); // tarball is already a Buffer
 
+    // Build SAN with appropriate prefix based on role
+    const sanPrefix = getSubjectAlternativeNamePrefix(role);
+    const subjectAlternativeName = `${sanPrefix}${commonName}`;
+
     // Define the verification policy - verify certificate identity
     const certificateIdentityOptions = {
-        subjectAlternativeName: `user:///${commonName}`,
+        subjectAlternativeName,
         extensions: {}, // Required by runtime even though TypeScript types mark it optional
     };
 
@@ -166,9 +177,9 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
 
 export async function verifyTaskOrigin(options: TaskOriginVerifyOptions): Promise<void> {
     // Make sure that the task folder path and signature file exist
-    const { taskFolderPath, signatureFile, commonName } = options;
-    if (!taskFolderPath || !signatureFile || !commonName) {
-        throw new Error('Task folder path, signature file, and commonName are required');
+    const { taskFolderPath, signatureFile, commonName, role } = options;
+    if (!taskFolderPath || !signatureFile || !commonName || !role) {
+        throw new Error('Task folder path, signature file, commonName, and role are required');
     }
 
     // Make sure that the task folder path and signature file exist
