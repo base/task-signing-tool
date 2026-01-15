@@ -1,8 +1,13 @@
+import os from 'os';
 import path from 'path';
 import { parseArgs } from 'node:util';
 import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
 import { buildAndValidateSignature, createDeterministicTarball } from '@/lib/task-origin-validate';
+
+const CERT_PATH = path.join(os.homedir(), '.ottr')
+const DEVICE_CERT = "device-certificate.pem"
+const DEVICE_CERT_KEY = "device-certificate-key.pem"
 
 function printUsage(): void {
     const msg = `
@@ -25,33 +30,19 @@ function printUsage(): void {
     console.log(msg);
 }
 
-function spawn(command: string): Promise<{ stdout: string; stderr: string; code: number | null }> {
+function spawn(command: string): Promise<number | null> {
     return new Promise((resolve, reject) => {
         // Execute through shell to support aliases and shell commands
         // The command must be properly escaped using shellQuote before calling this function
         const child = spawnProcess(command, {
-            stdio: ['inherit', 'pipe', 'pipe'],  // inherit stdin to allow user input
+            stdio: 'inherit',
             shell: true
-        });
-        let stdout = '';
-        let stderr = '';
-
-        // Capture stdout silently for parsing, display stderr for user interaction
-        child.stdout.on('data', (d) => {
-            const chunk = d.toString();
-            stdout += chunk;
-            // Don't display stdout - we only need it for parsing certificate paths
-        });
-        child.stderr.on('data', (d) => {
-            const chunk = d.toString();
-            stderr += chunk;
-            process.stderr.write(chunk);  // Show prompts and logs to user in real-time
         });
         child.on('error', (error) => {
             reject(new Error(`Failed to execute command: ${error.message}`));
         });
         child.on('close', (code) => {
-            resolve({ stdout, stderr, code });
+            resolve(code);
         });
     });
 }
@@ -66,22 +57,21 @@ async function signTask(taskFolderPath: string, signatureFileOut: string) {
         'device-certificate',
         '--environment',
         'corporate',
-        '--extended-key-usage=CodeSigningCertificate'
+        '--extended-key-usage=CodeSigningCertificate',
+        '--certificate-path',
+        DEVICE_CERT,
+        '--private-key-path',
+        DEVICE_CERT_KEY
     ]);
-    let { stderr, code } = await spawn(command);
+    let code = await spawn(command);
     if (code !== 0) {
         console.error(`  Error: Command failed with exit code ${code}`);
         process.exitCode = 1;
         return;
     }
 
-    // Parse certificate and key paths from stderr (where the cli tool logs them)
-    const lines = stderr.trim().split('\n').filter(line => line.includes('saved to'));
-    const certificatePath = lines.find(l => l.includes('device certificate saved'))?.split(' ').pop() || '';
-    const keyPath = lines.find(l => l.includes('private key saved'))?.split(' ').pop() || '';
-    console.log(`  Certificate: ${certificatePath}`);
-    console.log(`  Key: ${keyPath}`);
-
+    const certificatePath = path.join(CERT_PATH, DEVICE_CERT);
+    const keyPath = path.join(CERT_PATH, DEVICE_CERT_KEY);
     const tarballPath = await createDeterministicTarball(taskFolderPath);
     console.log(`  Tarball: ${tarballPath}`);
 
@@ -98,14 +88,14 @@ async function signTask(taskFolderPath: string, signatureFileOut: string) {
         '--bundle-output',
         signatureFileOut
     ]);
-    ({ code } = await spawn(command));
+    code = await spawn(command);
     if (code !== 0) {
         console.error(`  Error: Command failed with exit code ${code}`);
         process.exitCode = 1;
         return;
     }
 
-    console.log(`  Signature: ${signatureFileOut}`);    
+    console.log(`  Signature: ${signatureFileOut}`);
 }
 
 async function verifyTaskOrigin(taskFolderPath: string, signatureFile: string, commonName: string) {
