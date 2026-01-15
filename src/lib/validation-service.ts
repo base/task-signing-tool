@@ -148,7 +148,7 @@ async function validateSigner(
 }
 
 /**
- * Validates task origin signatures. Throws immediately if any signature fails to verify.
+ * Validates task origin signatures. Aggregates all results and returns instead of throwing.
  */
 async function runTaskOriginValidation(
   opts: ValidationServiceOpts,
@@ -163,7 +163,12 @@ async function runTaskOriginValidation(
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.taskCreator}: ${message}`);
+    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature failed: ${message}`);
+    results.push({
+      role: 'taskCreator',
+      success: false,
+      error: message,
+    });
   }
 
   // Validate base facilitator
@@ -173,7 +178,12 @@ async function runTaskOriginValidation(
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator}: ${message}`);
+    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature failed: ${message}`);
+    results.push({
+      role: 'baseFacilitator',
+      success: false,
+      error: message,
+    });
   }
 
   // Validate security council facilitator
@@ -183,10 +193,22 @@ async function runTaskOriginValidation(
     console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature verified`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Task origin validation failed for ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator}: ${message}`);
+    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature failed: ${message}`);
+    results.push({
+      role: 'securityCouncilFacilitator',
+      success: false,
+      error: message,
+    });
   }
 
-  console.log(`✅ Task origin validation completed: ${results.length}/${results.length} signatures verified`);
+  const passedCount = results.filter(r => r.success).length;
+  const totalCount = results.length;
+  
+  if (passedCount === totalCount) {
+    console.log(`✅ Task origin validation completed: ${passedCount}/${totalCount} signatures verified`);
+  } else {
+    console.log(`⚠️ Task origin validation completed with failures: ${passedCount}/${totalCount} signatures verified`);
+  }
 
   return { enabled: true, results };
 }
@@ -199,12 +221,32 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
 
   const { cfg, scriptPath } = await getConfigData(opts);
 
-  // Task origin validation runs first
-  // If enabled and verification fails, throws before running any scripts
-  let taskOriginValidation: TaskOriginValidation | undefined;
+  // Determine task origin validation state
+  let taskOriginValidation: TaskOriginValidation;
   if (cfg.validateTaskOrigin && cfg.taskOriginConfig) {
     console.log('🔐 Running task origin validation (must pass before simulation)...');
     taskOriginValidation = await runTaskOriginValidation(opts, cfg.taskOriginConfig);
+  } else {
+    console.log('⚠️ Task origin validation is disabled in config');
+    taskOriginValidation = { enabled: false, results: [] };
+  }
+
+  // Check if task origin validation failed - if so, skip simulation
+  const hasTaskOriginFailure = taskOriginValidation.enabled && 
+    taskOriginValidation.results.some(r => !r.success);
+
+  if (hasTaskOriginFailure) {
+    console.log('❌ Task origin validation failed - skipping simulation');
+    const expected = getExpectedData(cfg);
+    return {
+      expected,
+      actual: {
+        stateOverrides: [],
+        stateChanges: [],
+        balanceChanges: [],
+      },
+      taskOriginValidation,
+    };
   }
 
   // Run the task simulation

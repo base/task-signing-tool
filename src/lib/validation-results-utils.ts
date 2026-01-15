@@ -200,13 +200,19 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
 const buildTaskOriginComparisons = (
   validationResult: ValidationData | null
 ): TaskOriginComparison[] => {
-  if (!validationResult?.taskOriginValidation?.enabled) return [];
+  if (!validationResult?.taskOriginValidation) return [];
 
-  const results = validationResult.taskOriginValidation.results;
+  const { enabled, results } = validationResult.taskOriginValidation;
+
+  // If validation is disabled, return a single item representing the disabled state
+  if (!enabled) {
+    return [{ results: [], allPassed: true, isDisabled: true }];
+  }
+
   const allPassed = results.every(r => r.success);
 
   // Return single item containing all results
-  return [{ results, allPassed }];
+  return [{ results, allPassed, isDisabled: false }];
 };
 
 const buildSigningComparisons = (
@@ -344,8 +350,8 @@ const matchesBalance = (comparison: BalanceChangeComparison) =>
   comparison.expected.after === comparison.actual.after;
 
 export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
-  // (If enabled) task origin validation failures are blocking
-  const taskOriginFailed = items.taskOrigin.some(item => !item.allPassed);
+  // Task origin validation failures are blocking (but disabled validation is not a blocking error)
+  const taskOriginFailed = items.taskOrigin.some(item => !item.isDisabled && !item.allPassed);
   if (taskOriginFailed) return true;
 
   const signingMismatch = items.signing.some(
@@ -400,6 +406,36 @@ export const evaluateValidationEntry = (
   switch (entry.kind) {
     case 'taskOrigin': {
       const item = items.taskOrigin[entry.index]!;
+
+      // Handle disabled state
+      if (item.isDisabled) {
+        return {
+          matchStatus: createMatchStatus('match', 'Task Origin Validation Disabled'),
+          description: {
+            variant: 'info',
+            icon: 'lightbulb',
+            title: 'Validation Not Active',
+            text: 'Task origin validation is not enabled in the config. This is acceptable for testnet environments but must be enabled for mainnet tasks.',
+          },
+          stepLabel: STEP_DEFINITION_MAP.taskOrigin.label,
+          contractName: 'Task Origin Validation',
+          cards: {
+            expected: {
+              contractName: 'Task Origin',
+              contractAddress: 'Configuration',
+              storageKey: 'validateTaskOrigin',
+              afterValue: 'false (disabled)',
+            },
+            actual: {
+              contractName: 'Task Origin',
+              contractAddress: 'Status',
+              storageKey: 'Validation',
+              afterValue: 'Skipped - not configured',
+            },
+          },
+        };
+      }
+
       const allPassed = item.allPassed;
       const failedCount = item.results.filter(r => !r.success).length;
       const totalCount = item.results.length;

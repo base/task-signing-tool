@@ -4,6 +4,7 @@ import type { TaskOriginSignerResult } from './validation-data';
 export interface TaskOriginComparison {
   results: TaskOriginSignerResult[];
   allPassed: boolean;
+  isDisabled?: boolean;
 }
 
 export interface SigningDataComparison {

@@ -33,10 +33,12 @@ interface TaskOriginCardProps {
 }
 
 const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
+  const hasFailures = results.some(r => !r.success);
+
   return (
     <div className="col-span-2 bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center gap-3 mb-4">
-        <Shield className="text-[var(--cds-primary)]" size={24} />
+        <Shield className={hasFailures ? 'text-red-500' : 'text-[var(--cds-primary)]'} size={24} />
         <h3 className="text-lg font-semibold text-[var(--cds-text-primary)]">
           Task Origin Signatures
         </h3>
@@ -45,33 +47,62 @@ const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
         {results.map((result, idx) => (
           <div
             key={idx}
-            className={`flex items-center justify-between py-3 px-4 rounded-lg border ${
+            className={`flex flex-col py-3 px-4 rounded-lg border ${
               result.success
                 ? 'bg-green-50 border-green-200'
                 : 'bg-red-50 border-red-200'
             }`}
           >
-            <div className="flex items-center gap-3">
-              {result.success ? (
-                <CheckCircle className="text-green-600" size={20} />
-              ) : (
-                <XCircle className="text-red-600" size={20} />
-              )}
-              <span className="font-medium text-[var(--cds-text-primary)]">
-                {TASK_ORIGIN_ROLE_LABELS[result.role]}
-              </span>
-            </div>
-            <div className="text-sm">
-              {result.success ? (
-                <span className="text-green-700 font-medium">Verified</span>
-              ) : (
-                <span className="text-red-700 font-medium" title={result.error}>
-                  {result.error ? result.error.substring(0, 50) + (result.error.length > 50 ? '...' : '') : 'Failed'}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {result.success ? (
+                  <CheckCircle className="text-green-600" size={20} />
+                ) : (
+                  <XCircle className="text-red-600" size={20} />
+                )}
+                <span className="font-medium text-[var(--cds-text-primary)]">
+                  {TASK_ORIGIN_ROLE_LABELS[result.role]}
                 </span>
-              )}
+              </div>
+              <div className="text-sm">
+                {result.success ? (
+                  <span className="text-green-700 font-medium">Verified</span>
+                ) : (
+                  <span className="text-red-700 font-medium">Failed</span>
+                )}
+              </div>
             </div>
+            {!result.success && result.error && (
+              <div className="mt-2 pl-8 text-sm text-red-700 break-words">
+                {result.error}
+              </div>
+            )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+};
+
+const TaskOriginDisabledCard: React.FC = () => {
+  return (
+    <div className="col-span-2 bg-yellow-50 rounded-xl border border-yellow-200 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <AlertTriangle className="text-yellow-600" size={24} />
+        <h3 className="text-lg font-semibold text-yellow-800">
+          Task Origin Validation Disabled
+        </h3>
+      </div>
+      <p className="text-yellow-700 leading-relaxed">
+        Task origin validation is not enabled in the configuration for this task.
+        This is acceptable for <strong>testnet environments</strong>, but{' '}
+        <strong>must be enabled for mainnet tasks</strong> to ensure proper signature verification.
+      </p>
+      <div className="mt-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
+        <p className="text-sm text-yellow-800">
+          <strong>To enable:</strong> Set <code className="bg-yellow-200 px-1 rounded">validateTaskOrigin: true</code> and 
+          provide <code className="bg-yellow-200 px-1 rounded">taskOriginConfig</code> in the validation config file.
+        </p>
       </div>
     </div>
   );
@@ -128,7 +159,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     runValidation();
   }, [runValidation]);
 
-  const { itemsByStep, navList, blockingErrorsExist, stepCounts } =
+  const { itemsByStep, navList, blockingErrorsExist, stepCounts, taskOriginFailed, taskOriginDisabled } =
     useValidationSummary(validationResult);
 
   useEffect(() => {
@@ -265,8 +296,13 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             </Badge>
           </div>
 
-          <Button onClick={handleNext} variant="primary" size="sm">
-            {currentIndex === totalItems - 1 ? 'Next' : 'Next'}{' '}
+          <Button 
+            onClick={handleNext} 
+            variant="primary" 
+            size="sm"
+            disabled={taskOriginFailed && currentEntry?.kind === 'taskOrigin'}
+          >
+            {currentIndex === totalItems - 1 ? 'Finish' : 'Next'}{' '}
             <ArrowRight size={16} className="inline ml-1" />
           </Button>
         </div>
@@ -291,7 +327,11 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
         {evaluation && (
           <div className="grid gap-6 xl:grid-cols-2">
             {currentEntry?.kind === 'taskOrigin' && itemsByStep.taskOrigin[currentEntry.index] ? (
-              <TaskOriginCard results={itemsByStep.taskOrigin[currentEntry.index].results} />
+              taskOriginDisabled ? (
+                <TaskOriginDisabledCard />
+              ) : (
+                <TaskOriginCard results={itemsByStep.taskOrigin[currentEntry.index].results} />
+              )
             ) : (
               <>
                 <ComparisonCard type="expected" {...evaluation.cards.expected} />
@@ -301,7 +341,22 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </div>
         )}
 
-        {descriptionContent && (
+        {taskOriginFailed && currentEntry?.kind === 'taskOrigin' && (
+          <div className="mt-6 rounded-xl border-2 border-red-300 bg-red-50 p-4 flex items-start gap-3">
+            <XCircle className="text-red-600 mt-0.5 flex-shrink-0" size={20} />
+            <div>
+              <h4 className="text-sm font-bold text-red-800 uppercase tracking-wider mb-1">
+                Validation Cannot Proceed
+              </h4>
+              <p className="text-sm text-red-700">
+                Task origin signature verification failed. The task simulation was not run.
+                Please ensure all required signatures are valid before proceeding.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {descriptionContent && !(taskOriginFailed && currentEntry?.kind === 'taskOrigin') && (
           <div
             className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${
               descriptionContent.variant === 'expected-difference'
