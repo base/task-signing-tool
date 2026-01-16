@@ -21,10 +21,16 @@ function getSubjectAlternativeNamePrefix(role: TaskOriginRole): string {
 async function getAllFilesRecursively(dir: string, baseDir: string = dir): Promise<string[]> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const files: string[] = [];
+    // Exclude cache and out folders from the tarball
+    const excludedFolders = ['cache', 'out'];
 
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
+            // Skip excluded folders
+            if (excludedFolders.includes(entry.name)) {
+                continue;
+            }
             files.push(...await getAllFilesRecursively(fullPath, baseDir));
         } else if (entry.isFile()) {
             // Get relative path from base directory
