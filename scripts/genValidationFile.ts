@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { parseArgs } from 'node:util';
 import { parse as shellParse } from 'shell-quote';
-import { signTask, extractCommonNameFromSignature } from './genTaskOriginSig';
+import { generateDeviceCertificate, signTaskWithCert } from './genTaskOriginSig';
 
 function printUsage(): void {
   const msg = `
@@ -87,13 +87,10 @@ async function main() {
     return t;
   });
 
-  // Sign the task folder as task creator and get the common name
-  const signatureFile = await signTask(workdir, workdir, undefined);
-  if (!signatureFile) {
-    throw new Error('Failed to sign task as task creator');
-  }
-  const commonName = await extractCommonNameFromSignature(signatureFile);
+  // Generate device certificate and get the common name (task creator identity)
+  const { certPath, keyPath, commonName } = await generateDeviceCertificate(undefined);
 
+  // Run simulation to get the validation result
   const sdc = new StateDiffClient(ledgerId);
   const { result } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
@@ -107,6 +104,7 @@ async function main() {
     },
   };
 
+  // Write the validation file to the task folder
   const output = JSON.stringify(resultWithTaskOrigin, null, 2);
 
   if (outFlag) {
@@ -117,6 +115,12 @@ async function main() {
     console.log(`Wrote validation JSON to: ${outPath}`);
   } else {
     console.log(output);
+  }
+
+  // Sign the task folder (which now includes the complete validation file)
+  const signatureFile = await signTaskWithCert(workdir, workdir, certPath, keyPath, 'taskCreator');
+  if (!signatureFile) {
+    throw new Error('Failed to sign task folder');
   }
 }
 

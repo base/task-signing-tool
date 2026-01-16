@@ -66,8 +66,27 @@ export function spawn(command: string): Promise<number | null> {
 }
 
 /**
+ * Extracts the common name (email) from an X.509 certificate's SAN.
+ * The SAN is expected to be in the format: URI:user:///email@example.com
+ */
+function extractCommonNameFromCert(cert: X509Certificate): string {
+    const san = cert.subjectAltName;
+    if (!san) {
+        throw new Error('No Subject Alternative Name found in certificate');
+    }
+
+    // Parse the SAN to extract the common name
+    // SAN format: "URI:user:///email@example.com" or similar
+    const uriMatch = san.match(/URI:user:\/\/\/([^,\s]+)/);
+    if (!uriMatch) {
+        throw new Error(`Could not extract common name from SAN: ${san}`);
+    }
+
+    return uriMatch[1];
+}
+
+/**
  * Extracts the common name (email) from a task origin signature bundle.
- * The SAN in the certificate is expected to be in the format: user:///email@example.com
  */
 export async function extractCommonNameFromSignature(signatureFile: string): Promise<string> {
     const bundleJSON = JSON.parse(await fs.readFile(signatureFile, 'utf8'));
@@ -88,58 +107,27 @@ export async function extractCommonNameFromSignature(signatureFile: string): Pro
     const certDer = Buffer.from(leafCertBase64, 'base64');
     const cert = new X509Certificate(new Uint8Array(certDer));
 
-    // Extract the Subject Alternative Name (SAN)
-    // The SAN is expected to be in format: URI:user:///email@example.com
-    const san = cert.subjectAltName;
-    if (!san) {
-        throw new Error('No Subject Alternative Name found in certificate');
-    }
-
-    // Parse the SAN to extract the common name
-    // SAN format: "URI:user:///email@example.com" or similar
-    const uriMatch = san.match(/URI:user:\/\/\/([^,\s]+)/);
-    if (!uriMatch) {
-        throw new Error(`Could not extract common name from SAN: ${san}`);
-    }
-
-    return uriMatch[1];
-}
-
-export function facilitatorToRole(facilitator: FacilitatorType | undefined): TaskOriginRole {
-    if (!facilitator) {
-        return 'taskCreator';
-    }
-    return facilitator === 'base' ? 'baseFacilitator' : 'securityCouncilFacilitator';
-}
-
-export function facilitatorToGroup(facilitator: FacilitatorType): string {
-    return facilitator === 'base' ? 'base-facilitators' : 'base-sc-facilitators';
+    return extractCommonNameFromCert(cert);
 }
 
 /**
- * Signs a task folder and returns the signature file path.
- * Returns undefined if the signing fails.
+ * Extracts the common name (email) from a PEM certificate file.
  */
-export async function signTask(
-    taskFolderPath: string,
-    signatureDir: string,
+export async function extractCommonNameFromCertFile(certPath: string): Promise<string> {
+    const certPem = await fs.readFile(certPath, 'utf8');
+    const cert = new X509Certificate(certPem);
+    return extractCommonNameFromCert(cert);
+}
+
+/**
+ * Generates a device certificate and returns the certificate and key paths.
+ * Returns the common name extracted from the generated certificate.
+ */
+export async function generateDeviceCertificate(
     facilitator: FacilitatorType | undefined
-): Promise<string | undefined> {
-    console.log('🔏 Signing task...');
-    console.log(`  Task folder: ${taskFolderPath}`);
+): Promise<{ certPath: string; keyPath: string; commonName: string }> {
+    console.log('🔐 Generating device certificate...');
 
-    const role = facilitatorToRole(facilitator);
-    const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
-    const signatureFileOut = path.join(signatureDir, signatureFileName);
-
-    if (facilitator) {
-        console.log(`  Facilitator: ${facilitator}`);
-        console.log(`  Group: ${facilitatorToGroup(facilitator)}`);
-    } else {
-        console.log(`  Role: Task Creator`);
-    }
-
-    // Build device certificate command
     const certCommand = [
         'ottr-cli',
         'generate',
@@ -158,19 +146,43 @@ export async function signTask(
         certCommand.push('--requested-sso-groups', facilitatorToGroup(facilitator));
     }
 
-    let command = shellQuote(certCommand);
-    let code = await spawn(command);
+    const command = shellQuote(certCommand);
+    const code = await spawn(command);
     if (code !== 0) {
-        console.error(`  Error: Command failed with exit code ${code}`);
-        return undefined;
+        throw new Error(`Device certificate generation failed with exit code ${code}`);
     }
 
-    const certificatePath = path.join(CERT_PATH, DEVICE_CERT);
+    const certPath = path.join(CERT_PATH, DEVICE_CERT);
     const keyPath = path.join(CERT_PATH, DEVICE_CERT_KEY);
+
+    // Extract common name from the generated certificate
+    const commonName = await extractCommonNameFromCertFile(certPath);
+    console.log(`  Common Name: ${commonName}`);
+
+    return { certPath, keyPath, commonName };
+}
+
+/**
+ * Signs a task folder using an existing certificate.
+ * Returns the signature file path, or undefined if signing fails.
+ */
+export async function signTaskWithCert(
+    taskFolderPath: string,
+    signatureDir: string,
+    certPath: string,
+    keyPath: string,
+    role: TaskOriginRole
+): Promise<string | undefined> {
+    console.log('🔏 Signing task...');
+    console.log(`  Task folder: ${taskFolderPath}`);
+
+    const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
+    const signatureFileOut = path.join(signatureDir, signatureFileName);
+
     const tarballPath = await createDeterministicTarball(taskFolderPath);
     console.log(`  Tarball: ${tarballPath}`);
 
-    command = shellQuote([
+    const command = shellQuote([
         'ottr-cli',
         'generate',
         'signature',
@@ -179,11 +191,11 @@ export async function signTask(
         '--private-key',
         keyPath,
         '--certificate',
-        certificatePath,
+        certPath,
         '--bundle-output',
         signatureFileOut
     ]);
-    code = await spawn(command);
+    const code = await spawn(command);
     if (code !== 0) {
         console.error(`  Error: Command failed with exit code ${code}`);
         return undefined;
@@ -191,6 +203,45 @@ export async function signTask(
 
     console.log(`  Signature: ${signatureFileOut}`);
     return signatureFileOut;
+}
+
+export function facilitatorToRole(facilitator: FacilitatorType | undefined): TaskOriginRole {
+    if (!facilitator) {
+        return 'taskCreator';
+    }
+    return facilitator === 'base' ? 'baseFacilitator' : 'securityCouncilFacilitator';
+}
+
+export function facilitatorToGroup(facilitator: FacilitatorType): string {
+    return facilitator === 'base' ? 'base-facilitators' : 'base-sc-facilitators';
+}
+
+/**
+ * Signs a task folder and returns the signature file path.
+ * This generates a new device certificate and then signs.
+ * Returns undefined if the signing fails.
+ */
+export async function signTask(
+    taskFolderPath: string,
+    signatureDir: string,
+    facilitator: FacilitatorType | undefined
+): Promise<string | undefined> {
+    const role = facilitatorToRole(facilitator);
+
+    if (facilitator) {
+        console.log(`  Facilitator: ${facilitator}`);
+        console.log(`  Group: ${facilitatorToGroup(facilitator)}`);
+    } else {
+        console.log(`  Role: Task Creator`);
+    }
+
+    try {
+        const { certPath, keyPath } = await generateDeviceCertificate(facilitator);
+        return await signTaskWithCert(taskFolderPath, signatureDir, certPath, keyPath, role);
+    } catch (error) {
+        console.error(`  Error: ${error instanceof Error ? error.message : error}`);
+        return undefined;
+    }
 }
 
 async function verifyTaskOrigin(
