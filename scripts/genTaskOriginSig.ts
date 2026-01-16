@@ -1,5 +1,6 @@
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { parseArgs } from 'node:util';
 import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
@@ -453,7 +454,10 @@ async function main() {
     }
 }
 
-main().catch(err => {
-    console.error(err);
-    process.exitCode = 1;
-});
+// Only run main() when this script is executed directly, not when imported
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    main().catch(err => {
+        console.error(err);
+        process.exitCode = 1;
+    });
+}
