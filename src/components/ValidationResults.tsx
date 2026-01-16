@@ -82,24 +82,24 @@ const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
   );
 };
 
-const TaskOriginDisabledCard: React.FC = () => {
+const TaskOriginSkippedCard: React.FC = () => {
   return (
     <div className="col-span-2 bg-yellow-50 rounded-xl border border-yellow-200 p-6">
       <div className="flex items-center gap-3 mb-4">
         <AlertTriangle className="text-yellow-600" size={24} />
         <h3 className="text-lg font-semibold text-yellow-800">
-          Task Origin Validation Disabled
+          Task Origin Validation Skipped
         </h3>
       </div>
       <p className="text-yellow-700 leading-relaxed">
-        Task origin validation is not enabled in the configuration for this task.
+        Task origin validation was skipped in the configuration for this task.
         This is acceptable for <strong>testnet environments</strong>, but{' '}
         <strong>must be enabled for mainnet tasks</strong> to ensure proper signature verification.
       </p>
       <div className="mt-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
         <p className="text-sm text-yellow-800">
-          <strong>To enable:</strong> Set <code className="bg-yellow-200 px-1 rounded">validateTaskOrigin: true</code> and 
-          provide <code className="bg-yellow-200 px-1 rounded">taskOriginConfig</code> in the validation config file.
+          <strong>To enable:</strong> Remove <code className="bg-yellow-200 px-1 rounded">skipTaskOriginValidation: true</code> from 
+          the validation config file and ensure <code className="bg-yellow-200 px-1 rounded">taskOriginConfig</code> is provided.
         </p>
       </div>
     </div>
@@ -326,7 +326,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           <div className="grid gap-6 xl:grid-cols-2">
             {currentEntry?.kind === 'taskOrigin' && itemsByStep.taskOrigin[currentEntry.index] ? (
               taskOriginDisabled ? (
-                <TaskOriginDisabledCard />
+                <TaskOriginSkippedCard />
               ) : (
                 <TaskOriginCard results={itemsByStep.taskOrigin[currentEntry.index].results} />
               )

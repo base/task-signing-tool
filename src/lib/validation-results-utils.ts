@@ -414,8 +414,8 @@ export const evaluateValidationEntry = (
           description: {
             variant: 'info',
             icon: 'lightbulb',
-            title: 'Validation Not Active',
-            text: 'Task origin validation is not enabled in the config. This is acceptable for testnet environments but must be enabled for mainnet tasks.',
+            title: 'Validation Skipped',
+            text: 'Task origin validation was explicitly skipped using skipTaskOriginValidation: true in the config. This is acceptable for testnet tasks but must be enabled for mainnet tasks.',
           },
           stepLabel: STEP_DEFINITION_MAP.taskOrigin.label,
           contractName: 'Task Origin Validation',
@@ -423,14 +423,14 @@ export const evaluateValidationEntry = (
             expected: {
               contractName: 'Task Origin',
               contractAddress: 'Configuration',
-              storageKey: 'validateTaskOrigin',
-              afterValue: 'false (disabled)',
+              storageKey: 'skipTaskOriginValidation',
+              afterValue: 'true (skipped)',
             },
             actual: {
               contractName: 'Task Origin',
               contractAddress: 'Status',
               storageKey: 'Validation',
-              afterValue: 'Skipped - not configured',
+              afterValue: 'Skipped',
             },
           },
         };

@@ -63,7 +63,7 @@ export const TaskConfigSchema = z.object({
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
   balanceChanges: z.array(BalanceChangeSchema).optional(),
-  // Task origin validation (opt-in, per-task configuration)
-  validateTaskOrigin: z.boolean().optional(),
+  // Task origin validation (opt-out, enabled by default)
+  skipTaskOriginValidation: z.boolean().optional(),
   taskOriginConfig: TaskOriginValidationConfigSchema.optional(),
 });

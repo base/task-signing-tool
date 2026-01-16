@@ -223,12 +223,17 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
 
   // Determine task origin validation state
   let taskOriginValidation: TaskOriginValidation;
-  if (cfg.validateTaskOrigin && cfg.taskOriginConfig) {
+  if (cfg.skipTaskOriginValidation === true) {
+    console.log('⚠️ Task origin validation is explicitly skipped in config (acceptable for testnet)');
+    taskOriginValidation = { enabled: false, results: [] };
+  } else if (!cfg.taskOriginConfig) {
+    throw new Error(
+      'ValidationService::validateUpgrade: taskOriginConfig is required when task origin validation is enabled. ' +
+      'Set skipTaskOriginValidation: true to disable validation (acceptable for testnet environments).'
+    );
+  } else {
     console.log('🔐 Running task origin validation (must pass before simulation)...');
     taskOriginValidation = await runTaskOriginValidation(opts, cfg.taskOriginConfig);
-  } else {
-    console.log('⚠️ Task origin validation is disabled in config');
-    taskOriginValidation = { enabled: false, results: [] };
   }
 
   // Check if task origin validation failed - if so, skip simulation
