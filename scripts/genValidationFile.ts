@@ -3,6 +3,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { parseArgs } from 'node:util';
 import { parse as shellParse } from 'shell-quote';
+import { signTask, extractCommonNameFromSignature } from './genTaskOriginSig';
 
 function printUsage(): void {
   const msg = `
@@ -86,10 +87,27 @@ async function main() {
     return t;
   });
 
+  // Sign the task folder as task creator and get the common name
+  const signatureFile = await signTask(workdir, workdir, undefined);
+  if (!signatureFile) {
+    throw new Error('Failed to sign task as task creator');
+  }
+  const commonName = await extractCommonNameFromSignature(signatureFile);
+
   const sdc = new StateDiffClient(ledgerId);
   const { result } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
-  const output = JSON.stringify(result, null, 2);
+  // Add taskOriginConfig with the task creator's common name
+  const resultWithTaskOrigin = {
+    ...result,
+    taskOriginConfig: {
+      taskCreator: {
+        commonName,
+      },
+    },
+  };
+
+  const output = JSON.stringify(resultWithTaskOrigin, null, 2);
 
   if (outFlag) {
     const outPath = path.resolve(process.cwd(), outFlag);

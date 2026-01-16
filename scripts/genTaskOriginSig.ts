@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
 import { promises as fs } from 'fs';
+import { X509Certificate } from 'crypto';
 import { buildAndValidateSignature, createDeterministicTarball } from '@/lib/task-origin-validate';
 import { TASK_ORIGIN_SIGNATURE_FILE_NAMES, TASK_ORIGIN_COMMON_NAMES } from '@/lib/constants';
 import type { TaskOriginRole } from '@/lib/types';
@@ -12,7 +13,7 @@ const CERT_PATH = path.join(os.homedir(), '.ottr');
 const DEVICE_CERT = 'device-certificate.pem';
 const DEVICE_CERT_KEY = 'device-certificate-key.pem';
 
-type FacilitatorType = 'base' | 'security-council';
+export type FacilitatorType = 'base' | 'security-council';
 type VerificationResult = {
     role: TaskOriginRole;
     roleName: string;
@@ -46,7 +47,7 @@ function printUsage(): void {
     console.log(msg);
 }
 
-function spawn(command: string): Promise<number | null> {
+export function spawn(command: string): Promise<number | null> {
     return new Promise((resolve, reject) => {
         // Execute through shell to support aliases and shell commands
         // The command must be properly escaped using shellQuote before calling this function
@@ -63,22 +64,66 @@ function spawn(command: string): Promise<number | null> {
     });
 }
 
-function facilitatorToRole(facilitator: FacilitatorType | undefined): TaskOriginRole {
+/**
+ * Extracts the common name (email) from a task origin signature bundle.
+ * The SAN in the certificate is expected to be in the format: user:///email@example.com
+ */
+export async function extractCommonNameFromSignature(signatureFile: string): Promise<string> {
+    const bundleJSON = JSON.parse(await fs.readFile(signatureFile, 'utf8'));
+
+    // Extract the leaf certificate (index 0) from the bundle
+    const certificates = bundleJSON?.verificationMaterial?.x509CertificateChain?.certificates;
+    if (!certificates || certificates.length === 0) {
+        throw new Error('No certificates found in signature bundle');
+    }
+
+    // The leaf certificate is at index 0
+    const leafCertBase64 = certificates[0]?.rawBytes;
+    if (!leafCertBase64) {
+        throw new Error('Leaf certificate rawBytes not found in bundle');
+    }
+
+    // Parse the X.509 certificate
+    const certDer = Buffer.from(leafCertBase64, 'base64');
+    const cert = new X509Certificate(new Uint8Array(certDer));
+
+    // Extract the Subject Alternative Name (SAN)
+    // The SAN is expected to be in format: URI:user:///email@example.com
+    const san = cert.subjectAltName;
+    if (!san) {
+        throw new Error('No Subject Alternative Name found in certificate');
+    }
+
+    // Parse the SAN to extract the common name
+    // SAN format: "URI:user:///email@example.com" or similar
+    const uriMatch = san.match(/URI:user:\/\/\/([^,\s]+)/);
+    if (!uriMatch) {
+        throw new Error(`Could not extract common name from SAN: ${san}`);
+    }
+
+    return uriMatch[1];
+}
+
+export function facilitatorToRole(facilitator: FacilitatorType | undefined): TaskOriginRole {
     if (!facilitator) {
         return 'taskCreator';
     }
     return facilitator === 'base' ? 'baseFacilitator' : 'securityCouncilFacilitator';
 }
 
-function facilitatorToGroup(facilitator: FacilitatorType): string {
+export function facilitatorToGroup(facilitator: FacilitatorType): string {
     return facilitator === 'base' ? 'base-facilitators' : 'base-sc-facilitators';
 }
 
-async function signTask(
+/**
+ * Signs a task folder and returns the signature file path.
+ * Returns undefined if the signing fails.
+ */
+export async function signTask(
     taskFolderPath: string,
     signatureDir: string,
     facilitator: FacilitatorType | undefined
-) {
+): Promise<string | undefined> {
     console.log('🔏 Signing task...');
     console.log(`  Task folder: ${taskFolderPath}`);
 
@@ -116,8 +161,7 @@ async function signTask(
     let code = await spawn(command);
     if (code !== 0) {
         console.error(`  Error: Command failed with exit code ${code}`);
-        process.exitCode = 1;
-        return;
+        return undefined;
     }
 
     const certificatePath = path.join(CERT_PATH, DEVICE_CERT);
@@ -141,11 +185,11 @@ async function signTask(
     code = await spawn(command);
     if (code !== 0) {
         console.error(`  Error: Command failed with exit code ${code}`);
-        process.exitCode = 1;
-        return;
+        return undefined;
     }
 
     console.log(`  Signature: ${signatureFileOut}`);
+    return signatureFileOut;
 }
 
 async function verifyTaskOrigin(
@@ -357,7 +401,10 @@ async function main() {
                 ? path.resolve(process.cwd(), signaturePath)
                 : taskFolderPath;
 
-            await signTask(taskFolderPath, signatureDir, facilitator);
+            const signatureFile = await signTask(taskFolderPath, signatureDir, facilitator);
+            if (!signatureFile) {
+                process.exitCode = 1;
+            }
             break;
         }
         case 'verify': {
