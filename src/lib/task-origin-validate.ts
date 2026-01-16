@@ -46,6 +46,19 @@ export async function createDeterministicTarball(taskFolderPath: string): Promis
     const folderName = taskFolderPath.split('/').pop();
     const tarballPath = path.resolve(process.cwd(), `${folderName}.tar`);
 
+    // Check if lib/ folder exists for reproducibility
+    const libPath = path.join(taskFolderPath, 'lib');
+    try {
+        const libStats = await fs.stat(libPath);
+        if (!libStats.isDirectory()) {
+            console.warn('⚠️  Warning: lib/ exists but is not a directory. This may affect tarball reproducibility.');
+        }
+    } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+            console.warn('⚠️  Warning: lib/ folder not found. Tarball signatures may not match if dependencies are missing.');
+        }
+    }
+
     // Get all files and sort them alphabetically for deterministic ordering
     const files = await getAllFilesRecursively(taskFolderPath);
     const sortedFiles = files.sort();
