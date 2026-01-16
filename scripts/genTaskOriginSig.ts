@@ -3,24 +3,33 @@ import path from 'path';
 import { parseArgs } from 'node:util';
 import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
+import { promises as fs } from 'fs';
 import { buildAndValidateSignature, createDeterministicTarball } from '@/lib/task-origin-validate';
 import { TASK_ORIGIN_SIGNATURE_FILE_NAMES, TASK_ORIGIN_COMMON_NAMES } from '@/lib/constants';
 import type { TaskOriginRole } from '@/lib/types';
 
-const CERT_PATH = path.join(os.homedir(), '.ottr')
+const CERT_PATH = path.join(os.homedir(), '.ottr');
 const DEVICE_CERT = 'device-certificate.pem';
 const DEVICE_CERT_KEY = 'device-certificate-key.pem';
 
 type FacilitatorType = 'base' | 'security-council';
+type VerificationResult = {
+    role: TaskOriginRole;
+    roleName: string;
+    success: boolean;
+    error?: string;
+    signatureFile: string;
+};
 
 function printUsage(): void {
     const msg = `
   Generate a task origin signature from a bundle.
 
   Commands:
-    sign       Generate a signature for a task
-    verify     Verify a signature for a task
-    tar        Create a deterministic tarball from a task folder
+    sign         Generate a signature for a task
+    verify       Verify a signature for a task
+    verify-group Verify all three signatures (creator + both facilitators)
+    tar          Create a deterministic tarball from a task folder
 
   Usage:
     tsx scripts/genTaskOriginSig.ts <command> --task-folder <PATH> [--signature-path <PATH>] [--facilitator <TYPE>] [--common-name <COMMON_NAME>] [--help]
@@ -29,9 +38,9 @@ function printUsage(): void {
     --task-folder, -t    Folder containing the task to tar and sign
 
   Optional flags:
-    --signature-path, -s Directory path to store/read the signature
-    --facilitator, -f    Facilitator type: "base" or "security-council" (omit for task creator)
-    --common-name, -c    Common name to use for verification (only when not using --facilitator)
+    --signature-path, -p Directory path to store/read the signature
+    --facilitator, -f    Facilitator type: "base" or "security-council" (for 'sign' and 'verify' commands, omit for task creator)
+    --common-name, -c    Common name for task creator (required for 'verify-group', or for 'verify' when not using --facilitator)
     --help, -h           Show this help message
   `;
     console.log(msg);
@@ -178,12 +187,106 @@ async function verifyTaskOrigin(
     }
 }
 
+async function verifyGroupSignatures(
+    taskFolderPath: string,
+    signatureDir: string,
+    taskCreatorCommonName: string
+) {
+    console.log('📋 Validating all task signatures...');
+    console.log(`  Task folder: ${taskFolderPath}`);
+    console.log(`  Signature directory: ${signatureDir}`);
+
+    const results: VerificationResult[] = [];
+    const roleDisplayNames: Record<TaskOriginRole, string> = {
+        taskCreator: 'Task Creator',
+        baseFacilitator: 'Base Facilitator',
+        securityCouncilFacilitator: 'Security Council Facilitator',
+    };
+
+    // Verify all three roles: task creator + both facilitators
+    const allRoles: TaskOriginRole[] = ['taskCreator', 'baseFacilitator', 'securityCouncilFacilitator'];
+
+    for (const role of allRoles) {
+        const roleName = roleDisplayNames[role];
+        const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
+        const signatureFile = path.join(signatureDir, signatureFileName);
+
+        // Determine common name for this role
+        const commonName = role === 'taskCreator'
+            ? taskCreatorCommonName
+            : TASK_ORIGIN_COMMON_NAMES[role];
+
+        try {
+            // Check if signature file exists
+            await fs.access(signatureFile);
+
+            // Validate the signature
+            await buildAndValidateSignature({
+                taskFolderPath,
+                signatureFile,
+                commonName,
+                role,
+            });
+
+            results.push({
+                role,
+                roleName,
+                success: true,
+                signatureFile,
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            results.push({
+                role,
+                roleName,
+                success: false,
+                error: errorMessage,
+                signatureFile,
+            });
+        }
+    }
+
+    // Print results summary
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📋 VERIFICATION SUMMARY');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+    const successes = results.filter(r => r.success);
+    const failures = results.filter(r => !r.success);
+
+    if (successes.length > 0) {
+        console.log('✅ PASSED:');
+        for (const result of successes) {
+            console.log(`  ✓ ${result.roleName}`);
+            console.log(`    File: ${result.signatureFile}`);
+        }
+    }
+
+    if (failures.length > 0) {
+        console.log('❌ FAILED:');
+        for (const result of failures) {
+            console.log(`  ✗ ${result.roleName}`);
+            console.log(`    File: ${result.signatureFile}`);
+            console.log(`    Error: ${result.error}`);
+        }
+    }
+
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`TOTAL: ${successes.length}/${results.length} signatures valid`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+    // Set exit code if any failures
+    if (failures.length > 0) {
+        process.exitCode = 1;
+    }
+}
+
 async function main() {
     const { values, positionals } = parseArgs({
         args: process.argv.slice(2),
         options: {
             'task-folder': { type: 'string', short: 't' },
-            'signature-path': { type: 'string', short: 's' },
+            'signature-path': { type: 'string', short: 'p' },
             'facilitator': { type: 'string', short: 'f' },
             'common-name': { type: 'string', short: 'c' },
             help: { type: 'boolean', short: 'h' },
@@ -196,7 +299,7 @@ async function main() {
         return;
     }
 
-    const command = positionals[0] as 'sign' | 'verify' | 'tar' | undefined;
+    const command = positionals[0] as 'sign' | 'verify' | 'verify-group' | 'tar' | undefined;
     // Validate command is provided
     if (!command) {
         console.error('Error: No command specified.');
@@ -206,7 +309,7 @@ async function main() {
     }
 
     // Validate command is recognized
-    if (command !== 'sign' && command !== 'verify' && command !== 'tar') {
+    if (command !== 'sign' && command !== 'verify' && command !== 'verify-group' && command !== 'tar') {
         console.error(`Error: Unknown command '${command}'.`);
         printUsage();
         process.exitCode = 1;
@@ -271,6 +374,22 @@ async function main() {
                 : taskFolderPath;
 
             await verifyTaskOrigin(taskFolderPath, signatureDir, facilitator, commonName);
+            break;
+        }
+        case 'verify-group': {
+            // Require common-name for task creator verification
+            if (!commonName) {
+                console.error('Error: --common-name is required for verify-group command (used for task creator validation).');
+                printUsage();
+                process.exitCode = 1;
+                return;
+            }
+
+            const signatureDir = signaturePath
+                ? path.resolve(process.cwd(), signaturePath)
+                : taskFolderPath;
+
+            await verifyGroupSignatures(taskFolderPath, signatureDir, commonName);
             break;
         }
         case 'tar': {
