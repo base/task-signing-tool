@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "validate-structure": "tsx scripts/validate-structure.ts",
-    "validate-folder": "tsx scripts/validate-structure.ts"
+    "validate-folder": "tsx scripts/validate-structure.ts",
+    "check-overrides": "tsx scripts/check-overrides.ts"
   },
   "dependencies": {
     "lucide-react": "0.554.0",
