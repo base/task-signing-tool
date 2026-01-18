@@ -8,6 +8,12 @@
  */
 
 import { execSync } from 'child_process';
+import semver from 'semver';
+
+// Exit codes
+const EXIT_SUCCESS = 0; // All overrides can be removed
+const EXIT_OVERRIDES_NEEDED = 1; // Some overrides are still needed
+const EXIT_ERROR = 2; // Script encountered an error
 
 interface OverrideCheck {
   package: string;
@@ -36,13 +42,27 @@ function getPackageDependency(pkg: string, dep: string): string | null {
   }
 }
 
+/**
+ * Check if a version range satisfies a minimum major version.
+ * Handles ranges like "^7.0.0", ">=7.0.0", "~7.0.1", "7.x", etc.
+ */
+function satisfiesMinMajor(range: string | null, minMajor: number): boolean {
+  if (!range) return false;
+
+  // Get the minimum version that satisfies this range
+  const minVersion = semver.minVersion(range);
+  if (!minVersion) return false;
+
+  return semver.major(minVersion) >= minMajor;
+}
+
 function checkBabelPluginIstanbul(): OverrideCheck {
   const pkg = 'babel-plugin-istanbul';
   const currentOverride = '7.0.1';
   const latestVersion = runCommand(`npm view ${pkg} version 2>/dev/null`);
   const testExcludeDep = getPackageDependency(`${pkg}@${latestVersion}`, 'test-exclude');
 
-  const usesModernTestExclude = testExcludeDep?.startsWith('^7') || testExcludeDep?.startsWith('7');
+  const usesModernTestExclude = satisfiesMinMajor(testExcludeDep, 7);
 
   return {
     package: pkg,
@@ -61,7 +81,7 @@ function checkTestExclude(): OverrideCheck {
 
   // Check what babel-plugin-istanbul depends on
   const babelPluginDep = getPackageDependency('babel-plugin-istanbul@7.0.1', 'test-exclude');
-  const usesV7 = babelPluginDep?.startsWith('^7') || babelPluginDep?.startsWith('7');
+  const usesV7 = satisfiesMinMajor(babelPluginDep, 7);
 
   return {
     package: pkg,
@@ -74,17 +94,15 @@ function checkTestExclude(): OverrideCheck {
   };
 }
 
-function checkGlob(): OverrideCheck {
+function checkGlob(testExcludeCheck: OverrideCheck): OverrideCheck {
   const pkg = 'glob';
   const currentOverride = '10.5.0';
 
-  // Check if test-exclude@6 (default) still uses deprecated glob
+  // Check what glob versions each test-exclude version uses
   const testExclude6Glob = getPackageDependency('test-exclude@6.0.0', 'glob');
   const testExclude7Glob = getPackageDependency('test-exclude@7.0.1', 'glob');
 
   // If test-exclude override is still needed, glob override is also needed
-  const testExcludeCheck = checkTestExclude();
-
   return {
     package: pkg,
     currentOverride,
@@ -100,44 +118,52 @@ function main(): void {
   console.log('Checking if dependency overrides are still needed...\n');
   console.log('='.repeat(70));
 
-  const checks: OverrideCheck[] = [
-    checkBabelPluginIstanbul(),
-    checkTestExclude(),
-    checkGlob(),
-  ];
+  try {
+    // Run checks, passing results where needed to avoid duplicate calls
+    const babelPluginCheck = checkBabelPluginIstanbul();
+    const testExcludeCheck = checkTestExclude();
+    const globCheck = checkGlob(testExcludeCheck);
 
-  let allRemovable = true;
+    const checks: OverrideCheck[] = [babelPluginCheck, testExcludeCheck, globCheck];
 
-  for (const check of checks) {
-    const status = check.stillNeeded ? '❌ STILL NEEDED' : '✅ CAN REMOVE';
-    console.log(`\n${check.package}@${check.currentOverride}`);
-    console.log(`  Status: ${status}`);
-    console.log(`  Reason: ${check.reason}`);
-    console.log(`  Details: ${check.details}`);
+    let allRemovable = true;
 
-    if (check.stillNeeded) {
-      allRemovable = false;
+    for (const check of checks) {
+      const status = check.stillNeeded ? '❌ STILL NEEDED' : '✅ CAN REMOVE';
+      console.log(`\n${check.package}@${check.currentOverride}`);
+      console.log(`  Status: ${status}`);
+      console.log(`  Reason: ${check.reason}`);
+      console.log(`  Details: ${check.details}`);
+
+      if (check.stillNeeded) {
+        allRemovable = false;
+      }
     }
+
+    console.log('\n' + '='.repeat(70));
+
+    if (allRemovable) {
+      console.log('\n✅ All overrides can potentially be removed!');
+      console.log('   Test by removing overrides from package.json and running:');
+      console.log('   rm -rf node_modules package-lock.json && npm install && npm test');
+    } else {
+      console.log('\n❌ Some overrides are still needed.');
+      console.log('   Review the details above for each package.');
+    }
+
+    console.log('\nTo check for deprecation warnings without overrides:');
+    console.log('  1. Backup package.json and package-lock.json');
+    console.log('  2. Remove the "overrides" section from package.json');
+    console.log('  3. Run: rm -rf node_modules && npm install 2>&1 | grep -i deprec');
+    console.log('  4. Restore backups if warnings appear\n');
+
+    console.log('Exit codes: 0 = all removable, 1 = some still needed, 2 = error\n');
+
+    process.exit(allRemovable ? EXIT_SUCCESS : EXIT_OVERRIDES_NEEDED);
+  } catch (error) {
+    console.error('\n❌ Error running override checks:', error);
+    process.exit(EXIT_ERROR);
   }
-
-  console.log('\n' + '='.repeat(70));
-
-  if (allRemovable) {
-    console.log('\n✅ All overrides can potentially be removed!');
-    console.log('   Test by removing overrides from package.json and running:');
-    console.log('   rm -rf node_modules package-lock.json && npm install && npm test');
-  } else {
-    console.log('\n❌ Some overrides are still needed.');
-    console.log('   Review the details above for each package.');
-  }
-
-  console.log('\nTo check for deprecation warnings without overrides:');
-  console.log('  1. Backup package.json and package-lock.json');
-  console.log('  2. Remove the "overrides" section from package.json');
-  console.log('  3. Run: rm -rf node_modules && npm install 2>&1 | grep -i deprec');
-  console.log('  4. Restore backups if warnings appear\n');
-
-  process.exit(allRemovable ? 0 : 1);
 }
 
 main();

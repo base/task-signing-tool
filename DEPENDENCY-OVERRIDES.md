@@ -82,4 +82,4 @@ These overrides should be reviewed when:
 - `babel-plugin-istanbul` releases a new version
 - Running `npm audit` or `npm outdated`
 
-Last reviewed: 2025-01-18
+Run `npm run check-overrides` to verify if overrides are still needed.
