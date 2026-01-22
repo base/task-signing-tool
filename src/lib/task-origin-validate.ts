@@ -84,7 +84,6 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
     const bundleSig = bundleFromJSON(bundleSigJSON);
 
     // Regenerate the tarball from the provided task folder
-    // TODO: At some point we will need to check that the signatures are not being signed against non-determinsitic tarballs, which a checksum would be good for
     const tarballPath = await createDeterministicTarball(taskFolderPath);
     const tarball = await fs.readFile(tarballPath); // Read as binary Buffer
 

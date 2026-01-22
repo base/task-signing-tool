@@ -66,8 +66,7 @@ export function spawn(command: string): Promise<number | null> {
 }
 
 /**
- * Extracts the common name (email) from an X.509 certificate's SAN.
- * The SAN is expected to be in the format: URI:user:///email@example.com
+ * Extracts the identity from an X.509 certificate's SAN.
  */
 function extractCommonNameFromCert(cert: X509Certificate): string {
     const san = cert.subjectAltName;
@@ -75,11 +74,11 @@ function extractCommonNameFromCert(cert: X509Certificate): string {
         throw new Error('No Subject Alternative Name found in certificate');
     }
 
-    // Parse the SAN to extract the common name
-    // SAN format: "URI:user:///email@example.com" or similar
-    const uriMatch = san.match(/URI:user:\/\/\/([^,\s]+)/);
+    // Parse the SAN to extract the identity
+    // SAN format: "URI:user:///email@example.com" or "URI:ldap:///group-name"
+    const uriMatch = san.match(/URI:(?:user|ldap):\/\/\/([^,\s]+)/);
     if (!uriMatch) {
-        throw new Error(`Could not extract common name from SAN: ${san}`);
+        throw new Error(`Could not extract identity from SAN: ${san}`);
     }
 
     return uriMatch[1];
