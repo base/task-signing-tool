@@ -445,7 +445,7 @@ export const evaluateValidationEntry = (
         : createMatchStatus('mismatch', `${failedCount} of ${totalCount} signature(s) failed`);
 
       const descriptionText = allPassed
-        ? `This validation verifies that the task bundle has been properly authorized by the required parties (Builder, Reviewer, and Approver) before execution. Each signature proves that the designated role has reviewed and approved the task contents.`
+        ? `This validation verifies that the task bundle has been properly authorized by the required parties (creator and facilitators) before execution. Each signature proves that the designated role has reviewed the task contents.`
         : `Task origin signature verification failed. The task simulation was not run. Please contact developers or facilitators for help before proceeding.`;
 
       const description: ValidationDescription = {

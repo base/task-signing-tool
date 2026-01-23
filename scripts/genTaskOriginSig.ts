@@ -243,7 +243,7 @@ export async function signTask(
     }
 }
 
-async function verifyTaskOrigin(
+export async function verifyTaskOrigin(
     taskFolderPath: string,
     signatureDir: string,
     facilitator: FacilitatorType | undefined,
@@ -282,7 +282,7 @@ async function verifyTaskOrigin(
     }
 }
 
-async function verifyGroupSignatures(
+export async function verifyGroupSignatures(
     taskFolderPath: string,
     signatureDir: string,
     taskCreatorCommonName: string

@@ -2,7 +2,7 @@ export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
-  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.js'],
+  testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.test.js'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
@@ -13,6 +13,7 @@ export default {
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   modulePathIgnorePatterns: ['/dist/'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
