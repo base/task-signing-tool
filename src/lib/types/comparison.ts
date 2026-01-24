@@ -1,4 +1,11 @@
 import type { BalanceChange, Change, Override } from './validation-config';
+import type { TaskOriginSignerResult } from './validation-data';
+
+export interface TaskOriginComparison {
+  results: TaskOriginSignerResult[];
+  allPassed: boolean;
+  isDisabled?: boolean;
+}
 
 export interface SigningDataComparison {
   contractName: string;
@@ -41,6 +48,7 @@ export interface BalanceChangeComparison {
 }
 
 export interface ValidationItemsByStep {
+  taskOrigin: TaskOriginComparison[];
   signing: SigningDataComparison[];
   overrides: OverrideComparison[];
   changes: StateChangeComparison[];
