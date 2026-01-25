@@ -9,7 +9,7 @@ import { isAddress, getAddress, Address } from 'viem';
 export const AddressSchema = z
   .string()
   .refine((val): val is Address => isAddress(val), {
-    message: 'Invalid Ethereum address (must be valid format with correct checksum if mixed-case)',
+    message: 'Invalid Ethereum address format or checksum',
   })
   .transform((val) => getAddress(val));
 
