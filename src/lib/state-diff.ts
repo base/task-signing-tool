@@ -205,8 +205,8 @@ export class StateDiffClient {
     try {
       const raw = await fs.readFile(filePath, 'utf-8');
       return JSON.parse(raw) as ParsedInput;
-    } catch (err: any) {
-      if (err?.code === 'ENOENT') {
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
         throw new Error(`stateDiff.json not found at ${filePath}`);
       }
       throw err;
@@ -216,8 +216,8 @@ export class StateDiffClient {
   private async deleteFile(filePath: string): Promise<void> {
     try {
       await fs.unlink(filePath);
-    } catch (err: any) {
-      if (err?.code === 'ENOENT') {
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
         return;
       }
       throw new Error(`Failed to delete stateDiff.json at ${filePath}: ${String(err)}`);

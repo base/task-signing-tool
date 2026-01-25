@@ -32,8 +32,8 @@ async function getConfigData(
   let configContent: string;
   try {
     configContent = await fs.readFile(configPath, 'utf-8');
-  } catch (error: any) {
-    if (error?.code === 'ENOENT') {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       throw new Error(`ValidationService::getConfigData: Config file not found: ${configPath}`);
     }
     console.error(`❌ Error reading config file: ${error}`);
