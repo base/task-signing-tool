@@ -198,7 +198,19 @@ export class StateDiffClient {
   }
 
   private stateDiffFilePath(workdir: string): string {
-    return path.join(workdir, 'stateDiff.json');
+    // Resolve and normalize the workdir to get the canonical path
+    const normalizedWorkdir = path.resolve(workdir);
+    const filePath = path.resolve(normalizedWorkdir, 'stateDiff.json');
+
+    // Ensure the resolved file path is contained within the workdir
+    // This prevents path traversal attacks via malicious workdir values
+    if (!filePath.startsWith(normalizedWorkdir + path.sep) && filePath !== normalizedWorkdir) {
+      throw new Error(
+        `StateDiffClient::stateDiffFilePath: Path traversal detected. File path must be within workdir.`
+      );
+    }
+
+    return filePath;
   }
 
   private async readEncodedStateDiff(filePath: string): Promise<ParsedInput> {
