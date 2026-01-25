@@ -31,13 +31,34 @@ export async function POST(req: NextRequest) {
     const actualNetwork = network.toLowerCase();
     const shouldForceInstall = Boolean(forceInstall);
 
+    // Validate inputs to prevent path traversal attacks
+    // Only allow alphanumeric characters, hyphens, and underscores
+    const safePathPattern = /^[a-zA-Z0-9_-]+$/;
+    if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
+      return NextResponse.json(
+        { error: 'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed' },
+        { status: 400 }
+      );
+    }
+
     // Construct the path to the upgrade folder and lib subdirectory
     const contractDeploymentsPath = findContractDeploymentsRoot();
     const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
-    const libPath = path.join(upgradePath, 'lib');
+
+    // Verify the resolved path is within the allowed root directory
+    const resolvedUpgradePath = path.resolve(upgradePath);
+    const resolvedRoot = path.resolve(contractDeploymentsPath);
+    if (!resolvedUpgradePath.startsWith(resolvedRoot + path.sep)) {
+      return NextResponse.json(
+        { error: 'Invalid path: access denied' },
+        { status: 403 }
+      );
+    }
+
+    const libPath = path.join(resolvedUpgradePath, 'lib');
 
     // Check if the upgrade folder exists
-    const upgradePathExists = await pathExists(upgradePath);
+    const upgradePathExists = await pathExists(resolvedUpgradePath);
     if (!upgradePathExists) {
       return NextResponse.json(
         { error: `Upgrade folder not found: ${network}/${upgradeId}` },
@@ -63,11 +84,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${upgradePath})`);
+    console.log(`Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`);
 
     // Run make deps in the upgrade folder
     const { stdout, stderr } = await execAsync('make deps', {
-      cwd: upgradePath,
+      cwd: resolvedUpgradePath,
       timeout: 300000, // 5 minutes timeout
       env: process.env,
     });
