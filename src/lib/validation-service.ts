@@ -20,7 +20,7 @@ export type ValidationServiceOpts = {
 };
 
 const CONTRACT_DEPLOYMENTS_ROOT = findContractDeploymentsRoot();
-const stateDiffClient = new StateDiffClient();
+const stateDiffClient = new StateDiffClient(0, CONTRACT_DEPLOYMENTS_ROOT);
 
 async function getConfigData(
   opts: ValidationServiceOpts
