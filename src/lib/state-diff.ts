@@ -66,9 +66,12 @@ type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> }
 
 export class StateDiffClient {
   private readonly ledgerId: number;
+  private readonly allowedRoot: string;
 
-  constructor(ledgerId: number = 0) {
+  constructor(ledgerId: number = 0, allowedRoot?: string) {
     this.ledgerId = ledgerId;
+    // Default to current working directory if no root is specified
+    this.allowedRoot = allowedRoot ? path.resolve(allowedRoot) : process.cwd();
   }
 
   async simulate(
@@ -79,8 +82,11 @@ export class StateDiffClient {
     result: TaskConfig;
     output: string;
   }> {
+    // Validate workdir to prevent path traversal attacks
+    const normalizedWorkdir = this.validateWorkdir(workdir);
+
     const cmd = forgeCmdParts.join(' ');
-    console.log(`🔧 Running forge in ${workdir}: ${cmd}`);
+    console.log(`🔧 Running forge in ${normalizedWorkdir}: ${cmd}`);
 
     const { command, args, env: envAssignments } = this.extractCommandDetails(forgeCmdParts);
     const spawnEnv = { ...process.env, ...envAssignments };
@@ -88,7 +94,7 @@ export class StateDiffClient {
     const { stdout, stderr, code } = await this.runCommand(
       command,
       args,
-      workdir,
+      normalizedWorkdir,
       120000,
       spawnEnv
     );
@@ -106,7 +112,7 @@ export class StateDiffClient {
     const chainIdHex = (await client.request({ method: 'eth_chainId' })) as string;
     const chainIdStr = BigInt(chainIdHex).toString();
 
-    const stateDiffPath = this.stateDiffFilePath(workdir);
+    const stateDiffPath = this.stateDiffFilePath(normalizedWorkdir);
     const parsed = await this.readEncodedStateDiff(stateDiffPath);
 
     try {
@@ -195,6 +201,26 @@ export class StateDiffClient {
     const args = commandParts.slice(index + 1);
 
     return { command, args, env: envAssignments };
+  }
+
+  /**
+   * Validates that the workdir is within the allowed root directory.
+   * This prevents path traversal attacks via malicious workdir values.
+   */
+  private validateWorkdir(workdir: string): string {
+    const normalizedWorkdir = path.resolve(workdir);
+
+    // Ensure the workdir is within the allowed root directory
+    if (
+      !normalizedWorkdir.startsWith(this.allowedRoot + path.sep) &&
+      normalizedWorkdir !== this.allowedRoot
+    ) {
+      throw new Error(
+        `StateDiffClient::validateWorkdir: Path traversal detected. Working directory must be within the allowed root.`
+      );
+    }
+
+    return normalizedWorkdir;
   }
 
   private stateDiffFilePath(workdir: string): string {
