@@ -67,7 +67,10 @@ export async function GET(req: NextRequest) {
     );
 
     console.log(
-      `Found ${configOptions.length} config options for ${network}/${upgradeId}:`,
+      'Found %d config options for %s/%s:',
+      configOptions.length,
+      network,
+      upgradeId,
       configOptions.map(c => c.displayName)
     );
 
