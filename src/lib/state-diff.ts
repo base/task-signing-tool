@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { createPublicClient, http, decodeAbiParameters, Hex, Address } from 'viem';
+import { createPublicClient, http, decodeAbiParameters, Hex, Address, getAddress } from 'viem';
 import { BalanceChange, StateChange, StateOverride, TaskConfig } from './types/index';
 import contractsCfg from './config/contracts.json';
 
@@ -461,7 +461,7 @@ export class StateDiffClient {
           allowDifference: slotCfg.allowOverrideDifference,
         };
       });
-      result.push({ name, address: addrLower, overrides: jsonOverrides });
+      result.push({ name, address: getAddress(addrLower), overrides: jsonOverrides });
     }
     return result;
   }
@@ -493,7 +493,7 @@ export class StateDiffClient {
           allowDifference: slotCfg.allowDifference,
         };
       });
-      if (changes.length > 0) result.push({ name, address: d.address, changes });
+      if (changes.length > 0) result.push({ name, address: getAddress(d.address), changes });
     }
     return result;
   }
@@ -539,7 +539,7 @@ export class StateDiffClient {
       const afterHex = normalize32(bigintToHex(after));
       result.push({
         name,
-        address: addr,
+        address: getAddress(addr),
         field: 'ETH Balance (wei)',
         before: beforeHex,
         after: afterHex,
@@ -619,7 +619,7 @@ export class StateDiffClient {
       ledgerId: this.ledgerId,
       rpcUrl,
       expectedDomainAndMessageHashes: {
-        address: parsed.targetSafe,
+        address: getAddress(parsed.targetSafe),
         domainHash,
         messageHash,
       },

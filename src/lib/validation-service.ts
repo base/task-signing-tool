@@ -5,6 +5,7 @@ import { getValidationSummary, parseFromString } from './parser';
 import { StateDiffClient } from './state-diff';
 import {
   BalanceChange,
+  ExpectedHashes,
   NetworkType,
   StateChange,
   StateOverride,
@@ -58,11 +59,7 @@ function getExpectedData(parsedConfig: TaskConfig): {
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
   balanceChanges: BalanceChange[];
-  domainAndMessageHashes?: {
-    address: string;
-    domainHash: string;
-    messageHash: string;
-  };
+  domainAndMessageHashes?: ExpectedHashes;
 } {
   return {
     stateOverrides: parsedConfig.stateOverrides,
@@ -79,11 +76,7 @@ async function runStateDiffSimulation(
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
   balanceChanges: BalanceChange[];
-  domainAndMessageHashes: {
-    address: string;
-    domainHash: string;
-    messageHash: string;
-  };
+  domainAndMessageHashes: ExpectedHashes;
 }> {
   try {
     console.log('Running state-diff simulation...');

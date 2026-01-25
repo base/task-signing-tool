@@ -1,6 +1,17 @@
 import { z } from 'zod';
+import { isAddress, getAddress, Address } from 'viem';
 
-export const AddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address');
+/**
+ * Validates an Ethereum address using viem's isAddress() which checks both
+ * format and checksum validity. Automatically normalizes addresses to
+ * checksummed format.
+ */
+export const AddressSchema = z
+  .string()
+  .refine((val): val is Address => isAddress(val), {
+    message: 'Invalid Ethereum address (must be valid format with correct checksum if mixed-case)',
+  })
+  .transform((val) => getAddress(val));
 
 export const HashSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid hash format');
 
