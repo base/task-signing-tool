@@ -92,11 +92,18 @@ function extractDescription(content: string): string {
   }
 }
 
-function normalizeUrl(rawUrl: string): string | undefined {
+export function normalizeUrl(rawUrl: string): string | undefined {
   if (!rawUrl) return undefined;
-  const trimmed = rawUrl.trim();
-  if (!trimmed.startsWith('http')) return undefined;
-  return trimmed.replace(/[)\].,]+$/, '');
+  const trimmed = rawUrl.trim().replace(/[)\].,]+$/, '');
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return undefined;
+  }
+  try {
+    new URL(trimmed);
+    return trimmed;
+  } catch {
+    return undefined;
+  }
 }
 
 function parseExecutionStatus(content: string): {
