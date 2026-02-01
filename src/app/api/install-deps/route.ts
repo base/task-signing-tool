@@ -132,11 +132,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-
-// Increase timeout for dependency installation
-export const config = {
-  api: {
-    externalResolver: true,
-    responseLimit: false,
-  },
-};
