@@ -95,14 +95,11 @@ function extractDescription(content: string): string {
 export function normalizeUrl(rawUrl: string): string | undefined {
   if (!rawUrl) return undefined;
   const trimmed = rawUrl.trim().replace(/[)\].,]+$/, '');
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return undefined;
+  }
   try {
-    const parsed = new URL(trimmed);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return undefined;
-    }
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-      return undefined;
-    }
+    new URL(trimmed);
     return trimmed;
   } catch {
     return undefined;
