@@ -169,8 +169,12 @@ async function main() {
       console.log(`   Buffer: ${l2GasBuffer}%`);
       console.log(`   Recommended L2_GAS_LIMIT: ${recommendedGasLimit}`);
 
+      // Add L2_GAS_LIMIT to the cmd
+      const updatedCmd = `L2_GAS_LIMIT=${recommendedGasLimit} ${result.cmd}`;
+
       resultWithL2Gas = {
         ...result,
+        cmd: updatedCmd,
         l2GasEstimation: {
           estimatedGas: gasUsed.toString(),
           buffer: l2GasBuffer,
