@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { parseArgs } from 'node:util';
 import { parse as shellParse } from 'shell-quote';
-import { generateDeviceCertificate, signTaskWithCert } from './genTaskOriginSig';
+import { generateDeviceCertificate } from './genTaskOriginSig';
 
 function printUsage(): void {
   const msg = `
@@ -88,7 +88,7 @@ async function main() {
   });
 
   // Generate device certificate and get the common name (task creator identity)
-  const { certPath, keyPath, commonName } = await generateDeviceCertificate(undefined);
+  const { commonName } = await generateDeviceCertificate(undefined);
 
   // Run simulation to get the validation result
   const sdc = new StateDiffClient(ledgerId);
@@ -117,11 +117,7 @@ async function main() {
     console.log(output);
   }
 
-  // Sign the task folder (which now includes the complete validation file)
-  const signatureFile = await signTaskWithCert(workdir, workdir, certPath, keyPath, 'taskCreator');
-  if (!signatureFile) {
-    throw new Error('Failed to sign task folder');
-  }
+  // Note: Signing by the task creator should be done separately after all validation files are created
 }
 
 main().catch(err => {
