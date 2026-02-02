@@ -1,5 +1,5 @@
 import { StateDiffClient } from '@/lib/state-diff';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs';
 import path from 'path';
 import { parseArgs } from 'node:util';
 import { parse as shellParse } from 'shell-quote';
@@ -9,7 +9,7 @@ function printUsage(): void {
 Generate a validation JSON file from a forge run output.
 
 Usage:
-  tsx scripts/genValidationFile.ts --rpc-url <URL> --workdir <DIR> --forge-cmd "<CMD>" [--ledger-id <ID>] [--out <FILE>]
+  tsx scripts/genValidationFile.ts --rpc-url <URL> --workdir <DIR> --forge-cmd "<CMD>" [--ledger-id <ID>] [--out <FILE>] [--env-file <FILE>]
 
 Required flags:
   --rpc-url, -r     HTTPS RPC URL used to resolve chainId for decoding
@@ -19,6 +19,7 @@ Required flags:
 Optional flags:
   --ledger-id, -l    Ledger account index to use in the validation JSON (defaults to 0)
   --out, -o          Output file path for the resulting JSON (defaults to stdout)
+  --env-file, -e     Path to .env file to include in validation (defaults to .env in workdir)
   --help, -h         Show this help message
 
 Examples:
@@ -31,6 +32,41 @@ Examples:
   console.log(msg);
 }
 
+function parseEnvFile(filePath: string): Record<string, string> {
+  if (!existsSync(filePath)) {
+    return {};
+  }
+
+  const content = readFileSync(filePath, 'utf-8');
+  const envVars: Record<string, string> = {};
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+
+    // Skip empty lines and comments
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    // Parse KEY=VALUE format
+    const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (match) {
+      const key = match[1];
+      let value = match[2];
+
+      // Remove surrounding quotes if present
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+
+      envVars[key] = value;
+    }
+  }
+
+  return envVars;
+}
+
 async function main() {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
@@ -40,6 +76,7 @@ async function main() {
       'forge-cmd': { type: 'string', short: 'f' },
       'ledger-id': { type: 'string', short: 'l' },
       out: { type: 'string', short: 'o' },
+      'env-file': { type: 'string', short: 'e' },
       help: { type: 'boolean', short: 'h' },
     },
   });
@@ -58,6 +95,7 @@ async function main() {
   const forgeCmdFlag = values['forge-cmd'] ?? '';
   const ledgerIdFlag = values['ledger-id'];
   const outFlag = values.out;
+  const envFileFlag = values['env-file'];
 
   if (!rpcUrl || !workdirFlag || !forgeCmdFlag) {
     console.error('Missing required flags.');
@@ -76,6 +114,18 @@ async function main() {
     return;
   }
 
+  // Parse .env file if provided or check default location
+  const envFilePath = envFileFlag
+    ? path.resolve(process.cwd(), envFileFlag)
+    : path.resolve(workdir, '.env');
+
+  const envVars = parseEnvFile(envFilePath);
+
+  if (Object.keys(envVars).length > 0) {
+    console.log(`📋 Loaded ${Object.keys(envVars).length} environment variables from ${envFilePath}`);
+    console.log(`   Variables: ${Object.keys(envVars).join(', ')}`);
+  }
+
   const tokens = shellParse(forgeCmdFlag);
   const forgeCmdParts: string[] = tokens.map(t => {
     if (typeof t !== 'string') {
@@ -89,7 +139,13 @@ async function main() {
   const sdc = new StateDiffClient(ledgerId);
   const { result } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
-  const output = JSON.stringify(result, null, 2);
+  // Add envVars to the result if any were found
+  // Forge will automatically pick up the .env file in workdir
+  const resultWithEnv = Object.keys(envVars).length > 0
+    ? { ...result, envVars }
+    : result;
+
+  const output = JSON.stringify(resultWithEnv, null, 2);
 
   if (outFlag) {
     const outPath = path.resolve(process.cwd(), outFlag);

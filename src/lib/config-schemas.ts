@@ -66,4 +66,5 @@ export const TaskConfigSchema = z.object({
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
   balanceChanges: z.array(BalanceChangeSchema).optional(),
+  envVars: z.record(z.string()).optional(),
 });

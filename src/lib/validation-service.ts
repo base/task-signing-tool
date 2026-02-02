@@ -13,6 +13,98 @@ import {
   ValidationData,
 } from './types/index';
 
+function parseEnvFile(filePath: string): Record<string, string> {
+  try {
+    const content = require('fs').readFileSync(filePath, 'utf-8');
+    const envVars: Record<string, string> = {};
+
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+
+      // Skip empty lines and comments
+      if (!trimmed || trimmed.startsWith('#')) {
+        continue;
+      }
+
+      // Parse KEY=VALUE format
+      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2];
+
+        // Remove surrounding quotes if present
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
+          value = value.slice(1, -1);
+        }
+
+        envVars[key] = value;
+      }
+    }
+
+    return envVars;
+  } catch (error) {
+    return {};
+  }
+}
+
+function verifyEnvVars(
+  expected: Record<string, string> | undefined,
+  scriptPath: string
+): { valid: boolean; errors: string[]; actualEnvVars: Record<string, string> } {
+  const envFilePath = path.join(scriptPath, '.env');
+  const actualEnvVars = parseEnvFile(envFilePath);
+  const errors: string[] = [];
+
+  // If no env vars expected, .env file must be empty or missing
+  if (!expected || Object.keys(expected).length === 0) {
+    if (Object.keys(actualEnvVars).length > 0) {
+      errors.push(
+        `❌ Validation file specifies no environment variables, but .env contains:\n` +
+          `   ${Object.keys(actualEnvVars).join(', ')}\n` +
+          `   Please remove the .env file or ensure it only contains the required variables.`
+      );
+    }
+    return {
+      valid: errors.length === 0,
+      errors,
+      actualEnvVars,
+    };
+  }
+
+  // Check that all expected env vars are present and match
+  for (const [key, expectedValue] of Object.entries(expected)) {
+    if (!(key in actualEnvVars)) {
+      errors.push(`❌ Missing required environment variable: ${key}`);
+    } else if (actualEnvVars[key] !== expectedValue) {
+      errors.push(
+        `❌ Environment variable mismatch for ${key}:\n` +
+          `   Expected: ${expectedValue}\n` +
+          `   Actual:   ${actualEnvVars[key]}`
+      );
+    }
+  }
+
+  // Fail if there are extra env vars not in the validation file
+  for (const key of Object.keys(actualEnvVars)) {
+    if (!(key in expected)) {
+      errors.push(
+        `❌ Unexpected environment variable found: ${key}\n` +
+          `   This variable is not in the validation file.\n` +
+          `   The .env file must ONLY contain variables listed in the validation file.`
+      );
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    actualEnvVars,
+  };
+}
+
 export type ValidationServiceOpts = {
   upgradeId: string;
   network: NetworkType;
@@ -79,8 +171,27 @@ async function runStateDiffSimulation(
   domainAndMessageHashes: ExpectedHashes;
 }> {
   try {
+    // Verify environment variables if present in validation config
+    if (cfg.envVars && Object.keys(cfg.envVars).length > 0) {
+      console.log(
+        `🔍 Verifying ${Object.keys(cfg.envVars).length} required environment variables...`
+      );
+      const envVerification = verifyEnvVars(cfg.envVars, scriptPath);
+
+      if (!envVerification.valid) {
+        const errorMsg =
+          '❌ Environment variable verification failed:\n' + envVerification.errors.join('\n');
+        console.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      console.log('✅ All required environment variables verified');
+    }
+
     console.log('Running state-diff simulation...');
     const forgeCmd = cfg.cmd.trim().split(/\s+/);
+    // Forge will automatically pick up .env file in scriptPath
+    // We've already verified it matches the expected values above
     const stateDiffResult = await stateDiffClient.simulate(cfg.rpcUrl, forgeCmd, scriptPath);
 
     console.log(
