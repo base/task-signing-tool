@@ -13,6 +13,7 @@ const TRANSACTION_DEPOSITED_EVENT = {
 } as const;
 
 type DepositTransaction = {
+  from: Address;
   to: Address;
   value: bigint;
   gasLimit: bigint;
@@ -38,6 +39,14 @@ export class L2GasEstimator {
       }
 
       const eventLine = eventMatch[0];
+
+      // Extract 'from' address (L2 sender, already aliased if needed)
+      const fromMatch = eventLine.match(/from:\s*(0x[0-9a-fA-F]{40})/);
+      if (!fromMatch) {
+        console.warn('Could not extract "from" address from TransactionDeposited event');
+        return null;
+      }
+      const from = fromMatch[1] as Address;
 
       // Extract 'to' address (L2 target)
       const toMatch = eventLine.match(/to:\s*(0x[0-9a-fA-F]{40})/);
@@ -78,6 +87,7 @@ export class L2GasEstimator {
       const data = slice(opaqueData, 73) as Hex;
 
       return {
+        from,
         to,
         value,
         gasLimit,
@@ -96,6 +106,7 @@ export class L2GasEstimator {
   async estimateL2Gas(l2RpcUrl: string, deposit: DepositTransaction): Promise<bigint> {
     console.log('🔧 Estimating L2 gas with viem...');
     console.log(`   L2 RPC: ${l2RpcUrl}`);
+    console.log(`   From: ${deposit.from}`);
     console.log(`   Target: ${deposit.to}`);
     console.log(`   Value: ${deposit.value}`);
     console.log(`   Calldata length: ${deposit.data.length} chars`);
@@ -106,6 +117,7 @@ export class L2GasEstimator {
 
     try {
       const gasEstimate = await l2Client.estimateGas({
+        account: deposit.from,
         to: deposit.to,
         value: deposit.value,
         data: deposit.data,
