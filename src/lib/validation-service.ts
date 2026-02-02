@@ -7,6 +7,7 @@ import { StateDiffClient } from './state-diff';
 import { verifyTaskOrigin } from './task-origin-validate';
 import {
   BalanceChange,
+  ExpectedHashes,
   NetworkType,
   StateChange,
   StateOverride,
@@ -26,7 +27,7 @@ export type ValidationServiceOpts = {
 };
 
 const CONTRACT_DEPLOYMENTS_ROOT = findContractDeploymentsRoot();
-const stateDiffClient = new StateDiffClient();
+const stateDiffClient = new StateDiffClient(0, CONTRACT_DEPLOYMENTS_ROOT);
 
 async function getConfigData(
   opts: ValidationServiceOpts
@@ -38,8 +39,8 @@ async function getConfigData(
   let configContent: string;
   try {
     configContent = await fs.readFile(configPath, 'utf-8');
-  } catch (error: any) {
-    if (error?.code === 'ENOENT') {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       throw new Error(`ValidationService::getConfigData: Config file not found: ${configPath}`);
     }
     console.error(`❌ Error reading config file: ${error}`);
@@ -65,11 +66,7 @@ function getExpectedData(parsedConfig: TaskConfig): {
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
   balanceChanges: BalanceChange[];
-  domainAndMessageHashes?: {
-    address: string;
-    domainHash: string;
-    messageHash: string;
-  };
+  domainAndMessageHashes?: ExpectedHashes;
 } {
   return {
     stateOverrides: parsedConfig.stateOverrides,
@@ -86,11 +83,7 @@ async function runStateDiffSimulation(
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
   balanceChanges: BalanceChange[];
-  domainAndMessageHashes: {
-    address: string;
-    domainHash: string;
-    messageHash: string;
-  };
+  domainAndMessageHashes: ExpectedHashes;
 }> {
   try {
     console.log('Running state-diff simulation...');

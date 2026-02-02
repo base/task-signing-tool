@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { createPublicClient, http, decodeAbiParameters, Hex, Address } from 'viem';
+import { createPublicClient, http, decodeAbiParameters, Hex, Address, getAddress } from 'viem';
 import { BalanceChange, StateChange, StateOverride, TaskConfig } from './types/index';
 import contractsCfg from './config/contracts.json';
 
@@ -66,9 +66,12 @@ type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> }
 
 export class StateDiffClient {
   private readonly ledgerId: number;
+  private readonly allowedRoot: string;
 
-  constructor(ledgerId: number = 0) {
+  constructor(ledgerId: number = 0, allowedRoot?: string) {
     this.ledgerId = ledgerId;
+    // Default to current working directory if no root is specified
+    this.allowedRoot = allowedRoot ? path.resolve(allowedRoot) : process.cwd();
   }
 
   async simulate(
@@ -79,8 +82,11 @@ export class StateDiffClient {
     result: TaskConfig;
     output: string;
   }> {
+    // Validate workdir to prevent path traversal attacks
+    const normalizedWorkdir = this.validateWorkdir(workdir);
+
     const cmd = forgeCmdParts.join(' ');
-    console.log(`🔧 Running forge in ${workdir}: ${cmd}`);
+    console.log(`🔧 Running forge in ${normalizedWorkdir}: ${cmd}`);
 
     const { command, args, env: envAssignments } = this.extractCommandDetails(forgeCmdParts);
     const spawnEnv = { ...process.env, ...envAssignments };
@@ -88,7 +94,7 @@ export class StateDiffClient {
     const { stdout, stderr, code } = await this.runCommand(
       command,
       args,
-      workdir,
+      normalizedWorkdir,
       120000,
       spawnEnv
     );
@@ -106,7 +112,7 @@ export class StateDiffClient {
     const chainIdHex = (await client.request({ method: 'eth_chainId' })) as string;
     const chainIdStr = BigInt(chainIdHex).toString();
 
-    const stateDiffPath = this.stateDiffFilePath(workdir);
+    const stateDiffPath = this.stateDiffFilePath(normalizedWorkdir);
     const parsed = await this.readEncodedStateDiff(stateDiffPath);
 
     try {
@@ -197,16 +203,48 @@ export class StateDiffClient {
     return { command, args, env: envAssignments };
   }
 
+  /**
+   * Validates that the workdir is within the allowed root directory.
+   * This prevents path traversal attacks via malicious workdir values.
+   */
+  private validateWorkdir(workdir: string): string {
+    const normalizedWorkdir = path.resolve(workdir);
+
+    // Ensure the workdir is within the allowed root directory
+    if (
+      !normalizedWorkdir.startsWith(this.allowedRoot + path.sep) &&
+      normalizedWorkdir !== this.allowedRoot
+    ) {
+      throw new Error(
+        `StateDiffClient::validateWorkdir: Path traversal detected. Working directory must be within the allowed root.`
+      );
+    }
+
+    return normalizedWorkdir;
+  }
+
   private stateDiffFilePath(workdir: string): string {
-    return path.join(workdir, 'stateDiff.json');
+    // Resolve and normalize the workdir to get the canonical path
+    const normalizedWorkdir = path.resolve(workdir);
+    const filePath = path.resolve(normalizedWorkdir, 'stateDiff.json');
+
+    // Ensure the resolved file path is contained within the workdir
+    // This prevents path traversal attacks via malicious workdir values
+    if (!filePath.startsWith(normalizedWorkdir + path.sep) && filePath !== normalizedWorkdir) {
+      throw new Error(
+        `StateDiffClient::stateDiffFilePath: Path traversal detected. File path must be within workdir.`
+      );
+    }
+
+    return filePath;
   }
 
   private async readEncodedStateDiff(filePath: string): Promise<ParsedInput> {
     try {
       const raw = await fs.readFile(filePath, 'utf-8');
       return JSON.parse(raw) as ParsedInput;
-    } catch (err: any) {
-      if (err?.code === 'ENOENT') {
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
         throw new Error(`stateDiff.json not found at ${filePath}`);
       }
       throw err;
@@ -216,8 +254,8 @@ export class StateDiffClient {
   private async deleteFile(filePath: string): Promise<void> {
     try {
       await fs.unlink(filePath);
-    } catch (err: any) {
-      if (err?.code === 'ENOENT') {
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
         return;
       }
       throw new Error(`Failed to delete stateDiff.json at ${filePath}: ${String(err)}`);
@@ -461,7 +499,7 @@ export class StateDiffClient {
           allowDifference: slotCfg.allowOverrideDifference,
         };
       });
-      result.push({ name, address: addrLower, overrides: jsonOverrides });
+      result.push({ name, address: getAddress(addrLower), overrides: jsonOverrides });
     }
     return result;
   }
@@ -493,7 +531,7 @@ export class StateDiffClient {
           allowDifference: slotCfg.allowDifference,
         };
       });
-      if (changes.length > 0) result.push({ name, address: d.address, changes });
+      if (changes.length > 0) result.push({ name, address: getAddress(d.address), changes });
     }
     return result;
   }
@@ -539,7 +577,7 @@ export class StateDiffClient {
       const afterHex = normalize32(bigintToHex(after));
       result.push({
         name,
-        address: addr,
+        address: getAddress(addr),
         field: 'ETH Balance (wei)',
         before: beforeHex,
         after: afterHex,
@@ -619,7 +657,7 @@ export class StateDiffClient {
       ledgerId: this.ledgerId,
       rpcUrl,
       expectedDomainAndMessageHashes: {
-        address: parsed.targetSafe,
+        address: getAddress(parsed.targetSafe),
         domainHash,
         messageHash,
       },
