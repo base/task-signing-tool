@@ -290,12 +290,15 @@ For tasks that involve deposit transactions to L2, you can optionally estimate t
 #### How It Works
 
 When you enable `--estimate-l2-gas`:
-1. The tool decodes the `depositTransaction` calldata to extract L2 target, value, gas limit, and data
-2. Uses viem's `estimateGas` to estimate L2 gas via RPC call
-3. Adds a configurable buffer (default 20%)
-4. The estimated gas is included in the validation JSON
+1. The tool parses the forge simulation output for the `TransactionDeposited` event
+2. Extracts L2 transaction details from the event's `opaqueData` field (target, value, gasLimit, data)
+3. Uses viem's `estimateGas` to estimate L2 gas via RPC call
+4. Adds a configurable buffer (default 20%)
+5. The estimated gas is included in the validation JSON
 
-**Note:** Only use this flag when your transaction calls `depositTransaction`. The tool assumes the transaction data contains a valid deposit transaction calldata.
+**Important:**
+- Only use this flag when your transaction emits a `TransactionDeposited` event (typically from calling `depositTransaction` on OptimismPortal)
+- The tool automatically adds `-vvvv` to the forge command to capture event output
 
 #### Usage Example
 

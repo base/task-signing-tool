@@ -20,7 +20,7 @@ Required flags:
 Optional flags:
   --ledger-id, -l      Ledger account index to use in the validation JSON (defaults to 0)
   --out, -o            Output file path for the resulting JSON (defaults to stdout)
-  --estimate-l2-gas    Enable L2 gas estimation (only use for depositTransaction calls)
+  --estimate-l2-gas    Enable L2 gas estimation (automatically adds -vvvv to forge command)
   --l2-rpc-url <url>   L2 RPC URL for gas estimation (required with --estimate-l2-gas)
   --l2-gas-buffer      Buffer percentage to add to estimated L2 gas (defaults to 20)
   --help, -h           Show this help message
@@ -33,7 +33,7 @@ Examples:
     --forge-cmd "forge script script/Simulate.s.sol:Simulate --sig 'run()' --sender 0xabc --json" \
     --out mainnet/2025-06-04-upgrade-foo/validations/base-sc.json
 
-  # With L2 gas estimation for deposit transactions
+  # With L2 gas estimation for deposit transactions (-vvvv is added automatically)
   tsx scripts/genValidationFile.ts \
     --rpc-url https://mainnet.example \
     --workdir mainnet/2025-06-04-my-l2-deposit \
@@ -104,7 +104,7 @@ async function main() {
   }
 
   const tokens = shellParse(forgeCmdFlag);
-  const forgeCmdParts: string[] = tokens.map(t => {
+  let forgeCmdParts: string[] = tokens.map(t => {
     if (typeof t !== 'string') {
       throw new Error(
         'Unsupported shell token in --forge-cmd. Please provide a simple quoted command string.'
@@ -113,8 +113,23 @@ async function main() {
     return t;
   });
 
+  // If L2 gas estimation is enabled, ensure -vvvv flag is present for event output
+  if (estimateL2Gas) {
+    const hasVerboseFlag = forgeCmdParts.some(part =>
+      part === '-vvvv' || part === '-vvvvv'
+    );
+    if (!hasVerboseFlag) {
+      console.log('📝 Adding -vvvv flag to forge command for event output');
+      forgeCmdParts.push('-vvvv');
+    }
+  }
+
   const sdc = new StateDiffClient(ledgerId, workdir);
-  const { result, transactionTo, transactionData } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
+  const { result, transactionTo, transactionData, forgeOutput } = await sdc.simulate(
+    rpcUrl,
+    forgeCmdParts,
+    workdir
+  );
 
   // Optionally estimate L2 gas for deposit transactions
   let resultWithL2Gas = result;
@@ -132,8 +147,14 @@ async function main() {
     try {
       const estimator = new L2GasEstimator();
 
-      // Decode the deposit transaction
-      const deposit = estimator.decodeDepositTransaction(transactionData);
+      // Extract deposit transaction from TransactionDeposited event in forge output
+      const deposit = estimator.extractDepositFromForgeOutput(forgeOutput);
+
+      if (!deposit) {
+        console.error('❌ Could not extract TransactionDeposited event from forge output');
+        console.log('⚠️  Continuing without L2 gas estimation');
+      } else {
+
       console.log(`   L2 Target: ${deposit.to}`);
       console.log(`   L2 Value: ${deposit.value}`);
       console.log(`   L2 Data length: ${deposit.data.length} chars`);
@@ -156,6 +177,7 @@ async function main() {
           recommendedGasLimit: recommendedGasLimit.toString(),
         },
       };
+      }
     } catch (error) {
       console.error('❌ L2 gas estimation failed:', error);
       console.log('⚠️  Continuing without L2 gas estimation');

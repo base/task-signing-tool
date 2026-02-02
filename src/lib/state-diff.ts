@@ -83,6 +83,7 @@ export class StateDiffClient {
     output: string;
     transactionTo: Address;
     transactionData: Hex;
+    forgeOutput: string;
   }> {
     // Validate workdir to prevent path traversal attacks
     const normalizedWorkdir = this.validateWorkdir(workdir);
@@ -148,6 +149,7 @@ export class StateDiffClient {
         output,
         transactionTo: payload.to,
         transactionData: payload.data,
+        forgeOutput: stdout,
       };
     } finally {
       await this.deleteFile(stateDiffPath);

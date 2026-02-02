@@ -1,18 +1,16 @@
-import { createPublicClient, http, decodeFunctionData, Hex, Address } from 'viem';
+import { createPublicClient, http, Hex, Address, slice, hexToBigInt, hexToBool } from 'viem';
 
-const DEPOSIT_TRANSACTION_ABI = [
-  {
-    name: 'depositTransaction',
-    type: 'function',
-    inputs: [
-      { name: '_to', type: 'address' },
-      { name: '_value', type: 'uint256' },
-      { name: '_gasLimit', type: 'uint64' },
-      { name: '_isCreation', type: 'bool' },
-      { name: '_data', type: 'bytes' },
-    ],
-  },
-] as const;
+const TRANSACTION_DEPOSITED_EVENT = {
+  anonymous: false,
+  inputs: [
+    { indexed: true, name: 'from', type: 'address' },
+    { indexed: true, name: 'to', type: 'address' },
+    { indexed: true, name: 'version', type: 'uint256' },
+    { indexed: false, name: 'opaqueData', type: 'bytes' },
+  ],
+  name: 'TransactionDeposited',
+  type: 'event',
+} as const;
 
 type DepositTransaction = {
   to: Address;
@@ -24,23 +22,72 @@ type DepositTransaction = {
 
 export class L2GasEstimator {
   /**
-   * Decodes depositTransaction calldata to extract L2 transaction details
+   * Extracts L2 transaction details from TransactionDeposited event in forge output
+   * The -vvvv flag is automatically added by genValidationFile when --estimate-l2-gas is enabled
+   * Format: emit TransactionDeposited(from: 0x..., to: 0x..., version: 0, opaqueData: 0x...)
    */
-  decodeDepositTransaction(data: Hex): DepositTransaction {
-    const decoded = decodeFunctionData({
-      abi: DEPOSIT_TRANSACTION_ABI,
-      data,
-    });
+  extractDepositFromForgeOutput(forgeOutput: string): DepositTransaction | null {
+    try {
+      // Look for TransactionDeposited event in forge output with -vvvv verbosity
+      // Format: emit TransactionDeposited(from: 0x..., to: 0x..., version: 0, opaqueData: 0x...)
+      const eventMatch = forgeOutput.match(/emit TransactionDeposited\([^)]+\)/);
+      if (!eventMatch) {
+        console.warn('Could not find TransactionDeposited event in forge output');
+        console.warn('This may indicate the transaction does not emit TransactionDeposited');
+        return null;
+      }
 
-    const [to, value, gasLimit, isCreation, l2Data] = decoded.args;
+      const eventLine = eventMatch[0];
 
-    return {
-      to,
-      value,
-      gasLimit,
-      isCreation,
-      data: l2Data as Hex,
-    };
+      // Extract 'to' address (L2 target)
+      const toMatch = eventLine.match(/to:\s*(0x[0-9a-fA-F]{40})/);
+      if (!toMatch) {
+        console.warn('Could not extract "to" address from TransactionDeposited event');
+        return null;
+      }
+      const to = toMatch[1] as Address;
+
+      // Extract opaqueData hex string
+      const opaqueDataMatch = eventLine.match(/opaqueData:\s*(0x[0-9a-fA-F]+)/);
+      if (!opaqueDataMatch) {
+        console.warn('Could not extract opaqueData from TransactionDeposited event');
+        return null;
+      }
+
+      const opaqueData = opaqueDataMatch[1] as Hex;
+
+      // Decode opaqueData: abi.encodePacked(msg.value, _value, _gasLimit, _isCreation, _data)
+      // Note: We cannot use viem's decodeAbiParameters here because encodePacked removes padding
+      // and type information, so we must manually decode by byte offsets:
+      // msg.value: uint256 (32 bytes)
+      // _value: uint256 (32 bytes)
+      // _gasLimit: uint64 (8 bytes)
+      // _isCreation: bool (1 byte)
+      // _data: bytes (remaining)
+
+      // Skip msg.value (first 32 bytes), extract _value (next 32 bytes)
+      const value = hexToBigInt(slice(opaqueData, 32, 64));
+
+      // Extract _gasLimit (8 bytes)
+      const gasLimit = hexToBigInt(slice(opaqueData, 64, 72));
+
+      // Extract _isCreation (1 byte)
+      const isCreation = hexToBool(slice(opaqueData, 72, 73));
+
+      // Extract _data (remaining bytes)
+      const data = slice(opaqueData, 73) as Hex;
+
+      return {
+        to,
+        value,
+        gasLimit,
+        isCreation,
+        data,
+      };
+    } catch (error) {
+      console.error('Failed to extract deposit from forge output:', error);
+      return null;
+    }
   }
 
   /**
