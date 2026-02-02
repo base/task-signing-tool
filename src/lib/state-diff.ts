@@ -81,6 +81,8 @@ export class StateDiffClient {
   ): Promise<{
     result: TaskConfig;
     output: string;
+    transactionTo: Address;
+    transactionData: Hex;
   }> {
     // Validate workdir to prevent path traversal attacks
     const normalizedWorkdir = this.validateWorkdir(workdir);
@@ -141,7 +143,12 @@ export class StateDiffClient {
 
       const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;
       console.log('✅ State-diff transformation completed');
-      return { result, output };
+      return {
+        result,
+        output,
+        transactionTo: payload.to,
+        transactionData: payload.data,
+      };
     } finally {
       await this.deleteFile(stateDiffPath);
     }

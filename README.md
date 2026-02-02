@@ -235,7 +235,11 @@ Flags:
 - `--rpc-url, -r`: HTTPS RPC URL. Used to resolve `chainId` for decoding
 - `--workdir, -w`: Directory where `stateDiff.json` is produced and where the forge command will run
 - `--forge-cmd, -f`: Full forge command to execute (quoted as a single string)
+- `--ledger-id, -l` (optional): Ledger account index to use in the validation JSON (defaults to 0)
 - `--out, -o` (optional): Output file for the resulting JSON (defaults to stdout)
+- `--estimate-l2-gas` (optional): Enable L2 gas estimation (only use for depositTransaction calls)
+- `--l2-rpc-url <url>` (optional): L2 RPC URL for gas estimation (required when using `--estimate-l2-gas`)
+- `--l2-gas-buffer <percent>` (optional): Buffer percentage to add to estimated L2 gas (defaults to 20, range: 0-100)
 - `--help, -h`: Show help
 
 General usage (tsx):
@@ -278,3 +282,48 @@ Notes:
 - Quote the entire `--forge-cmd` so that inner quotes for `--sig` are preserved by your shell. On macOS/Linux, prefer single quotes around the whole command and double quotes inside for signatures/addresses.
 - `--workdir` typically points to the task directory (e.g., `mainnet/2025-06-04-upgrade-foo`). If you keep this repo inside the task repo root, `..` will refer to the task directory when running from `task-signing-tool/`.
 - If `--out` is omitted, the JSON is printed to stdout.
+
+### L2 Gas Estimation for Deposit Transactions
+
+For tasks that involve deposit transactions to L2, you can optionally estimate the L2 gas required by enabling the `--estimate-l2-gas` flag.
+
+#### How It Works
+
+When you enable `--estimate-l2-gas`:
+1. The tool decodes the `depositTransaction` calldata to extract L2 target, value, gas limit, and data
+2. Uses viem's `estimateGas` to estimate L2 gas via RPC call
+3. Adds a configurable buffer (default 20%)
+4. The estimated gas is included in the validation JSON
+
+**Note:** Only use this flag when your transaction calls `depositTransaction`. The tool assumes the transaction data contains a valid deposit transaction calldata.
+
+#### Usage Example
+
+```bash
+npx tsx scripts/genValidationFile.ts \
+  --rpc-url https://mainnet.example \
+  --workdir mainnet/2025-06-04-my-l2-deposit \
+  --forge-cmd "forge script script/MyDeposit.s.sol:MyDeposit --sig 'run()' --sender 0xabc --json" \
+  --estimate-l2-gas \
+  --l2-rpc-url https://base-mainnet.example \
+  --l2-gas-buffer 25 \
+  --out validations/base-sc.json
+```
+
+#### Validation File Output
+
+When L2 gas estimation is enabled, the validation file will include:
+
+```json
+{
+  "taskName": "...",
+  "...": "...",
+  "l2GasEstimation": {
+    "estimatedGas": "123456",
+    "buffer": 25,
+    "recommendedGasLimit": "154320"
+  }
+}
+```
+
+The `recommendedGasLimit` is calculated as: `estimatedGas * (100 + buffer) / 100`
