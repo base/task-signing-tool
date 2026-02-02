@@ -30,7 +30,7 @@ function printUsage(): void {
   Commands:
     sign         Generate a signature for a task
     verify       Verify a signature for a task
-    verify-group Verify all three signatures (creator + both facilitators)
+    verify-all Verify all three signatures (creator + both facilitators)
     tar          Create a deterministic tarball from a task folder
 
   Usage:
@@ -41,8 +41,8 @@ function printUsage(): void {
 
   Optional flags:
     --signature-path, -p Directory path to store/read the signature
-    --facilitator, -f    Facilitator type: "base" or "security-council" (for 'sign' and 'verify' commands, omit for task creator)
-    --common-name, -c    Common name for task creator (required for 'verify-group', or for 'verify' when not using --facilitator)
+    --facilitator, -f    Facilitator type: "base" or "security-council" (used for 'sign' and 'verify' commands, omit this flag to sign/verify as task creator)
+    --common-name, -c    Common name for task creator (required when not using --facilitator in 'verify' and 'verify-all' commands)
     --help, -h           Show this help message
   `;
     console.log(msg);
@@ -282,7 +282,7 @@ export async function verifyTaskOrigin(
     }
 }
 
-export async function verifyGroupSignatures(
+export async function verifyAllSignatures(
     taskFolderPath: string,
     signatureDir: string,
     taskCreatorCommonName: string
@@ -394,7 +394,7 @@ async function main() {
         return;
     }
 
-    const command = positionals[0] as 'sign' | 'verify' | 'verify-group' | 'tar' | undefined;
+    const command = positionals[0] as 'sign' | 'verify' | 'verify-all' | 'tar' | undefined;
     // Validate command is provided
     if (!command) {
         console.error('Error: No command specified.');
@@ -404,7 +404,7 @@ async function main() {
     }
 
     // Validate command is recognized
-    if (command !== 'sign' && command !== 'verify' && command !== 'verify-group' && command !== 'tar') {
+    if (command !== 'sign' && command !== 'verify' && command !== 'verify-all' && command !== 'tar') {
         console.error(`Error: Unknown command '${command}'.`);
         printUsage();
         process.exitCode = 1;
@@ -474,10 +474,10 @@ async function main() {
             await verifyTaskOrigin(taskFolderPath, signatureDir, facilitator, commonName);
             break;
         }
-        case 'verify-group': {
+        case 'verify-all': {
             // Require common-name for task creator verification
             if (!commonName) {
-                console.error('Error: --common-name is required for verify-group command (used for task creator validation).');
+                console.error('Error: --common-name is required for verify-all command (used for task creator validation).');
                 printUsage();
                 process.exitCode = 1;
                 return;
@@ -487,7 +487,7 @@ async function main() {
                 ? path.resolve(process.cwd(), signaturePath)
                 : taskFolderPath;
 
-            await verifyGroupSignatures(taskFolderPath, signatureDir, commonName);
+            await verifyAllSignatures(taskFolderPath, signatureDir, commonName);
             break;
         }
         case 'tar': {

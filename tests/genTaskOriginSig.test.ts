@@ -1,7 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { verifyTaskOrigin, verifyGroupSignatures, FacilitatorType } from '../scripts/genTaskOriginSig';
+import { verifyTaskOrigin, verifyAllSignatures, FacilitatorType } from '../scripts/genTaskOriginSig';
 
 // Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -117,7 +117,7 @@ describe('verifyTaskOrigin', () => {
   });
 });
 
-describe('verifyGroupSignatures', () => {
+describe('verifyAllSignatures', () => {
   let originalExitCode: number | undefined;
 
   beforeEach(() => {
@@ -133,7 +133,7 @@ describe('verifyGroupSignatures', () => {
   });
 
   it('validates successfully when all 3 signatures are valid', async () => {
-    await verifyGroupSignatures(
+    await verifyAllSignatures(
       VALID_TASK_FOLDER,
       VALID_SIGNATURES_DIR,
       TASK_CREATOR_EMAIL
@@ -143,7 +143,7 @@ describe('verifyGroupSignatures', () => {
   });
 
   it('fails validation when one or more signatures are missing', async () => {
-    await verifyGroupSignatures(
+    await verifyAllSignatures(
       VALID_TASK_FOLDER,
       MISSING_SIGNATURES_DIR,
       TASK_CREATOR_EMAIL
@@ -153,7 +153,7 @@ describe('verifyGroupSignatures', () => {
   });
 
   it('fails validation when all signatures are invalid', async () => {
-    await verifyGroupSignatures(
+    await verifyAllSignatures(
       VALID_TASK_FOLDER,
       INVALID_SIGNATURES_DIR,
       TASK_CREATOR_EMAIL
@@ -163,7 +163,7 @@ describe('verifyGroupSignatures', () => {
   });
 
   it('fails validation with wrong common name for task creator', async () => {
-    await verifyGroupSignatures(
+    await verifyAllSignatures(
       VALID_TASK_FOLDER,
       VALID_SIGNATURES_DIR,
       WRONG_TASK_CREATOR_EMAIL
