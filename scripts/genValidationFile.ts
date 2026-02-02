@@ -136,7 +136,8 @@ async function main() {
     return t;
   });
 
-  const sdc = new StateDiffClient(ledgerId);
+  // Allow the workdir itself as the root to avoid path traversal errors
+  const sdc = new StateDiffClient(ledgerId, workdir);
   const { result } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
   // Add envVars to the result if any were found
