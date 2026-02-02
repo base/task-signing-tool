@@ -1,17 +1,5 @@
 import { createPublicClient, http, Hex, Address, slice, hexToBigInt, hexToBool } from 'viem';
 
-const TRANSACTION_DEPOSITED_EVENT = {
-  anonymous: false,
-  inputs: [
-    { indexed: true, name: 'from', type: 'address' },
-    { indexed: true, name: 'to', type: 'address' },
-    { indexed: true, name: 'version', type: 'uint256' },
-    { indexed: false, name: 'opaqueData', type: 'bytes' },
-  ],
-  name: 'TransactionDeposited',
-  type: 'event',
-} as const;
-
 type DepositTransaction = {
   from: Address;
   to: Address;
