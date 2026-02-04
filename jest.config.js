@@ -2,7 +2,7 @@ export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
-  testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.test.js'],
+  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.js'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
