@@ -1,8 +1,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { TASK_ORIGIN_COMMON_NAMES, TASK_ORIGIN_SIGNATURE_FILE_NAMES } from './constants';
 import { findContractDeploymentsRoot } from './deployments';
 import { getValidationSummary, parseFromString } from './parser';
 import { StateDiffClient } from './state-diff';
+import { verifyTaskOrigin } from './task-origin-validate';
 import {
   BalanceChange,
   ExpectedHashes,
@@ -10,8 +12,13 @@ import {
   StateChange,
   StateOverride,
   TaskConfig,
+  TaskOriginRole,
+  TaskOriginValidationConfig,
   ValidationData,
+  TaskOriginSignerResult,
+  TaskOriginValidation,
 } from './types/index';
+import { TASK_ORIGIN_ROLE_LABELS } from './validation-results-utils';
 
 export type ValidationServiceOpts = {
   upgradeId: string;
@@ -103,15 +110,150 @@ async function runStateDiffSimulation(
   }
 }
 
+async function validateSigner(
+  opts: ValidationServiceOpts,
+  role: TaskOriginRole,
+  commonNameOverride?: string // Only used for taskCreator
+): Promise<TaskOriginSignerResult> {
+  const networkPath = path.join(CONTRACT_DEPLOYMENTS_ROOT, opts.network);
+  const taskFolderPath = path.join(networkPath, opts.upgradeId);
+
+  // Get signatureFileName from constants (hardcoded for all roles)
+  const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
+  const signatureFile = path.join(networkPath, 'signatures', opts.upgradeId, signatureFileName);
+
+  // Get commonName: from config for taskCreator, from constants for facilitators
+  const commonName =
+    commonNameOverride ??
+    TASK_ORIGIN_COMMON_NAMES[role as keyof typeof TASK_ORIGIN_COMMON_NAMES];
+
+  await verifyTaskOrigin({
+    taskFolderPath,
+    signatureFile,
+    commonName,
+    role,
+  });
+
+  return {
+    role,
+    success: true,
+  };
+}
+
 /**
- * Main validation flow that orchestrates script extraction, simulation, and config parsing
+ * Validates task origin signatures. Aggregates all results and returns instead of throwing.
+ */
+async function runTaskOriginValidation(
+  opts: ValidationServiceOpts,
+  config: TaskOriginValidationConfig
+): Promise<TaskOriginValidation> {
+  const results: TaskOriginSignerResult[] = [];
+
+  // Validate task creator - uses commonName from config
+  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature...`);
+  try {
+    results.push(await validateSigner(opts, 'taskCreator', config.taskCreator.commonName));
+    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature verified`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature failed: ${message}`);
+    results.push({
+      role: 'taskCreator',
+      success: false,
+      error: message,
+    });
+  }
+
+  // Validate base facilitator
+  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature...`);
+  try {
+    results.push(await validateSigner(opts, 'baseFacilitator'));
+    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature verified`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature failed: ${message}`);
+    results.push({
+      role: 'baseFacilitator',
+      success: false,
+      error: message,
+    });
+  }
+
+  // Validate security council facilitator
+  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature...`);
+  try {
+    results.push(await validateSigner(opts, 'securityCouncilFacilitator'));
+    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature verified`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature failed: ${message}`);
+    results.push({
+      role: 'securityCouncilFacilitator',
+      success: false,
+      error: message,
+    });
+  }
+
+  const passedCount = results.filter(r => r.success).length;
+  const totalCount = results.length;
+  
+  if (passedCount === totalCount) {
+    console.log(`✅ Task origin validation completed: ${passedCount}/${totalCount} signatures verified`);
+  } else {
+    console.log(`⚠️ Task origin validation completed with failures: ${passedCount}/${totalCount} signatures verified`);
+  }
+
+  return { enabled: true, results };
+}
+
+/**
+ * Main validation flow that orchestrates script extraction, simulation, and config parsing.
  */
 export async function validateUpgrade(opts: ValidationServiceOpts): Promise<ValidationData> {
   console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
 
   const { cfg, scriptPath } = await getConfigData(opts);
+
+  // Determine task origin validation state
+  let taskOriginValidation: TaskOriginValidation;
+  if (cfg.skipTaskOriginValidation === true) {
+    console.log('⚠️ Task origin validation is explicitly skipped in config (acceptable for testnet)');
+    taskOriginValidation = { enabled: false, results: [] };
+  } else if (!cfg.taskOriginConfig) {
+    throw new Error(
+      'ValidationService::validateUpgrade: taskOriginConfig is required when task origin validation is enabled. ' +
+      'Set skipTaskOriginValidation: true to disable validation (acceptable for testnet environments).'
+    );
+  } else {
+    console.log('🔐 Running task origin validation (must pass before simulation)...');
+    taskOriginValidation = await runTaskOriginValidation(opts, cfg.taskOriginConfig);
+  }
+
+  // Check if task origin validation failed - if so, skip simulation
+  const hasTaskOriginFailure = taskOriginValidation.enabled && 
+    taskOriginValidation.results.some(r => !r.success);
+
+  if (hasTaskOriginFailure) {
+    console.log('❌ Task origin validation failed - skipping simulation');
+    const expected = getExpectedData(cfg);
+    return {
+      expected,
+      actual: {
+        stateOverrides: [],
+        stateChanges: [],
+        balanceChanges: [],
+      },
+      taskOriginValidation,
+    };
+  }
+
+  // Run the task simulation
   const expected = getExpectedData(cfg);
   const actual = await runStateDiffSimulation(scriptPath, cfg);
 
-  return { expected, actual };
+  return {
+    expected,
+    actual,
+    taskOriginValidation,
+  };
 }

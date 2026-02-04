@@ -4,6 +4,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { parseArgs } from 'node:util';
 import { parse as shellParse } from 'shell-quote';
+import { generateDeviceCertificate } from './genTaskOriginSig';
 
 function printUsage(): void {
   const msg = `
@@ -188,7 +189,20 @@ async function main() {
     }
   }
 
-  const output = JSON.stringify(resultWithL2Gas, null, 2);
+  // Generate device certificate and get the common name (task creator identity)
+  const { commonName } = await generateDeviceCertificate(undefined);
+
+  // Add taskOriginConfig with the task creator's common name
+  const resultWithTaskOrigin = {
+    ...resultWithL2Gas,
+    taskOriginConfig: {
+      taskCreator: {
+        commonName,
+      },
+    },
+  };
+
+  const output = JSON.stringify(resultWithTaskOrigin, null, 2);
 
   if (outFlag) {
     const outPath = path.resolve(process.cwd(), outFlag);
@@ -199,6 +213,8 @@ async function main() {
   } else {
     console.log(output);
   }
+
+  // Note: Signing by the task creator should be done separately after all validation files are created
 }
 
 main().catch(err => {

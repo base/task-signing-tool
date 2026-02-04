@@ -48,12 +48,21 @@ contract-deployments/             # your task repo root (example)
 │  │  │  └─ op.json               # config for "OP" user type
 │  │  └─ foundry-project/         # directory where you run Foundry scripts
 │  │     └─ ...
-│  └─ 2025-07-12-upgrade-bar/
-│     └─ ...
+│  ├─ 2025-07-12-upgrade-bar/
+│  │  └─ ...
+│  └─ signatures/                 # signatures directory (separate from tasks)
+│     ├─ 2025-06-04-upgrade-foo/  # matches task directory name
+│     │  ├─ creator-signature.json
+│     │  ├─ base-facilitator-signature.json
+│     │  └─ base-sc-facilitator-signature.json
+│     └─ 2025-07-12-upgrade-bar/
+│        └─ ...
 └─ sepolia/
    ├─ 2025-05-10-upgrade-baz/
    │  └─ ...
-   └─ ...
+   └─ signatures/
+      └─ 2025-05-10-upgrade-baz/
+         └─ ...
 ```
 
 Key requirements and notes:
@@ -64,7 +73,8 @@ Key requirements and notes:
   - "Base SC" → `base-sc.json`
   - "Coinbase" → `coinbase.json`
   - "OP" → `op.json`
-- **Script execution**: The tool executes Foundry from the task directory root (`<network>/<task>/`). Ensure your Foundry project or script context is available under that path; the tool will run `forge script` with fields from your validation config (`scriptName`, optional `signature` and `args`, and `sender`). Temporary outputs like `temp-script-output.txt` will be written there.
+- **Task origin signatures**: By default, tasks require three signature files stored in `<network>/signatures/<task-name>/`: `creator-signature.json`, `base-facilitator-signature.json`, and `base-sc-facilitator-signature.json`. Signatures are stored separately from task directories to avoid changing the tarball content. Use the `genTaskOriginSig.ts` script to generate these. Set `skipTaskOriginValidation: true` in the validation config to opt out.
+- **Script execution**: The tool executes Foundry from the task directory root (`<network>/<task>/`). Ensure your Foundry project or script context is available under that path; the tool will run the `cmd` specified in your validation config. Temporary outputs like `temp-script-output.txt` will be written there.
 - **Optional README parsing**: If `<network>/<task>/README.md` exists, the tool may parse it to display status and execution links.
 
 ### Task README structure
@@ -149,11 +159,7 @@ Validation configs live under each task directory at `<network>/<YYYY-MM-DD-slug
 
 These files must be valid JSON and conform to the schema enforced by the app. Required fields and constraints:
 
-- **taskName** (string): Human‑readable task identifier.
-- **scriptName** (string): Foundry script to run (e.g., `simulate`).
-- **signature** (string): Function signature for the script entrypoint (e.g., `run()` or `run(address,uint256)`).
-- **sender** (string): 0x‑prefixed Ethereum address used as the sender for extraction/simulation.
-- **args** (string): Optional, arguments for the script signature. No spaces; use commas and/or brackets as needed (e.g., `0xabc...,1` or `[0xabc...,1]`). Use an empty string `""` if none.
+- **cmd** (string): The full forge command to execute (e.g., `forge script script/Test.s.sol --sig 'run()' --sender 0xabc...`).
 - **ledgerId** (number): Non‑negative integer Ledger account index.
 - **rpcUrl** (string): HTTPS RPC endpoint to use for simulation.
 - **expectedDomainAndMessageHashes** (object):
@@ -168,21 +174,30 @@ These files must be valid JSON and conform to the schema enforced by the app. Re
   - **name** (string)
   - **address** (0x40 hex string)
   - **changes** (array of objects): each with **key** (0x64), **before** (0x64), **after** (0x64), **description** (string)
+- **balanceChanges** (array, optional): Each entry:
+  - **name** (string)
+  - **address** (0x40 hex string)
+  - **field** (string)
+  - **before** (0x64 hex string)
+  - **after** (0x64 hex string)
+  - **description** (string)
+  - **allowDifference** (boolean)
+- **skipTaskOriginValidation** (boolean, optional): Set to `true` to opt out of task origin signature validation. If omitted or `false`, task origin validation is enabled and signatures are required.
+- **taskOriginConfig** (object, optional but required if task origin validation is enabled):
+  - **taskCreator** (object):
+    - **commonName** (string): The email address of the task signer/creator (extracted from their certificate's Subject Alternative Name).
 
 Notes:
 
 - Sorting is not required; the tool sorts by address and storage slot for comparison.
-- The tool reads `rpcUrl`, `sender`, and `ledgerId` directly from this file.
+- The tool reads `rpcUrl` and `ledgerId` directly from this file.
+- When task origin validation is enabled, three signature files must exist in `<network>/signatures/<task-name>/` (see **Task Origin Signing** below).
 
 Minimal example (`validations/base-sc.json`):
 
 ```json
 {
-  "taskName": "mainnet-upgrade-system-config",
-  "scriptName": "simulate",
-  "signature": "run()",
-  "sender": "0x1234567890123456789012345678901234567890",
-  "args": "",
+  "cmd": "forge script script/Upgrade.s.sol --sig 'run()' --sender 0x1234567890123456789012345678901234567890",
   "ledgerId": 0,
   "rpcUrl": "https://mainnet.example.com",
   "expectedDomainAndMessageHashes": {
@@ -216,7 +231,12 @@ Minimal example (`validations/base-sc.json`):
         }
       ]
     }
-  ]
+  ],
+  "taskOriginConfig": {
+    "taskCreator": {
+      "commonName": "alice@example.com"
+    }
+  }
 }
 ```
 
@@ -282,6 +302,97 @@ Notes:
 - Quote the entire `--forge-cmd` so that inner quotes for `--sig` are preserved by your shell. On macOS/Linux, prefer single quotes around the whole command and double quotes inside for signatures/addresses.
 - `--workdir` typically points to the task directory (e.g., `mainnet/2025-06-04-upgrade-foo`). If you keep this repo inside the task repo root, `..` will refer to the task directory when running from `task-signing-tool/`.
 - If `--out` is omitted, the JSON is printed to stdout.
+
+### Task Origin Signing
+
+Use `scripts/genTaskOriginSig.ts` to sign task folders for origin validation. Task origin validation ensures that tasks are signed by authorized parties before execution.
+
+#### Signature files
+
+When task origin validation is enabled, three signature files must exist in `<network>/signatures/<task-name>/`:
+
+- **Task Creator**: `creator-signature.json` — common name is the email of the task author (e.g., `alice@example.com`)
+- **Base Facilitator**: `base-facilitator-signature.json` — common name is `base-facilitators` (group)
+- **Security Council Facilitator**: `base-sc-facilitator-signature.json` — common name is `base-sc-facilitators` (group)
+
+The **common name** is extracted from the signer's X.509 certificate Subject Alternative Name (SAN). For task creators, this is their email address. For facilitators, it is the group name they belong to.
+
+Signatures are stored separately from task directories to ensure the tarball content remains unchanged after signing.
+
+#### Requirements
+
+- `ottr-cli` installed and available on PATH for signing
+
+#### Commands
+
+The script supports four commands:
+
+- `sign`: Generate a signature for a task
+- `verify`: Verify a single signature
+- `verify-all`: Verify all three signatures (creator + both facilitators)
+- `tar`: Create a deterministic tarball from a task folder (for debugging and testing)
+
+#### Flags
+
+- `--task-folder, -t`: **Required.** Path to the task folder to sign/verify
+- `--signature-path, -p`: Directory to store/read signatures (defaults to task folder)
+- `--facilitator, -f`: Facilitator type: `base` or `security-council`. Omit to sign/verify as task creator
+- `--common-name, -c`: Common name for verification (required for task creator verification)
+- `--help, -h`: Show help message
+
+Run `--help` for the full usage guide:
+
+```bash
+npm ci
+npx tsx scripts/genTaskOriginSig.ts --help
+```
+
+#### Usage examples
+
+**Sign as task creator:**
+
+```bash
+npm ci
+npx tsx scripts/genTaskOriginSig.ts sign \
+  --task-folder <path>/<network>/<task> \
+  --signature-path <path>/<network>/signatures/<task>
+```
+
+**Sign as Base facilitator:**
+
+```bash
+npm ci
+npx tsx scripts/genTaskOriginSig.ts sign \
+  --task-folder <path>/<network>/<task> \
+  --signature-path <path>/<network>/signatures/<task> \
+  --facilitator base
+```
+
+**Verify task creator signature:**
+
+```bash
+npm ci
+npx tsx scripts/genTaskOriginSig.ts verify \
+  --task-folder <path>/<network>/<task> \
+  --signature-path <path>/<network>/signatures/<task> \
+  --common-name alice@example.com
+```
+
+#### Opting out of task origin validation
+
+To disable task origin validation for a specific task, set `skipTaskOriginValidation: true` in the validation config file:
+
+```json
+{
+  "cmd": "forge script script/Upgrade.s.sol --sig 'run()' --sender 0xabc...",
+  "ledgerId": 0,
+  "rpcUrl": "https://mainnet.example.com",
+  "skipTaskOriginValidation": true,
+  "expectedDomainAndMessageHashes": { ... },
+  "stateOverrides": [ ... ],
+  "stateChanges": [ ... ]
+}
+```
 
 ### L2 Gas Estimation for Deposit Transactions
 

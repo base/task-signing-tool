@@ -5,6 +5,20 @@ import type {
   StateOverride,
 } from './validation-config';
 
+// Task Origin Validation Types
+export type TaskOriginRole = 'taskCreator' | 'baseFacilitator' | 'securityCouncilFacilitator';
+
+export interface TaskOriginSignerResult {
+  role: TaskOriginRole;
+  success: boolean;
+  error?: string;
+}
+
+export interface TaskOriginValidation {
+  enabled: boolean;
+  results: TaskOriginSignerResult[];
+}
+
 export interface ValidationData {
   expected: {
     stateOverrides: StateOverride[];
@@ -18,4 +32,5 @@ export interface ValidationData {
     balanceChanges?: BalanceChange[];
     domainAndMessageHashes?: ExpectedHashes;
   };
+  taskOriginValidation?: TaskOriginValidation;
 }
