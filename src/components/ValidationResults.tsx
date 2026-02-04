@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Coins,
   Lightbulb,
+  Shield,
   XCircle,
 } from 'lucide-react';
 
@@ -17,14 +18,93 @@ import {
   getContractNameForEntry,
   getStepInfo,
   STEP_LABELS,
+  TASK_ORIGIN_ROLE_LABELS,
   ValidationNavEntry,
 } from '@/lib/validation-results-utils';
-import { ValidationData } from '@/lib/types';
+import { TaskOriginSignerResult, ValidationData } from '@/lib/types';
 import { ComparisonCard } from './ComparisonCard';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { Modal } from './ui/Modal';
+
+interface TaskOriginCardProps {
+  results: TaskOriginSignerResult[];
+}
+
+const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
+  return (
+    <div className="col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Shield className="text-[var(--cds-primary)]" size={24} />
+        <h3 className="text-lg font-semibold text-[var(--cds-text-primary)]">
+          Task Origin Signatures
+        </h3>
+      </div>
+      <div className="space-y-3">
+        {results.map((result, idx) => (
+          <div
+            key={idx}
+            className={`flex flex-col py-3 px-4 rounded-lg border ${
+              result.success
+                ? 'bg-green-50 border-green-200'
+                : 'bg-red-50 border-red-200'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {result.success ? (
+                  <CheckCircle className="text-green-600" size={20} />
+                ) : (
+                  <XCircle className="text-red-600" size={20} />
+                )}
+                <span className="font-medium text-[var(--cds-text-primary)]">
+                  {TASK_ORIGIN_ROLE_LABELS[result.role]}
+                </span>
+              </div>
+              <div className="text-sm">
+                {result.success ? (
+                  <span className="text-green-700 font-medium">Verified</span>
+                ) : (
+                  <span className="text-red-700 font-medium">Failed</span>
+                )}
+              </div>
+            </div>
+            {!result.success && result.error && (
+              <div className="mt-2 pl-8 text-sm text-red-700 break-words">
+                {result.error}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TaskOriginSkippedCard: React.FC = () => {
+  return (
+    <div className="col-span-2 bg-yellow-50 rounded-xl border border-yellow-200 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <AlertTriangle className="text-yellow-600" size={24} />
+        <h3 className="text-lg font-semibold text-yellow-800">
+          Task Origin Validation Skipped
+        </h3>
+      </div>
+      <p className="text-yellow-700 leading-relaxed">
+        Task origin validation was skipped in the configuration for this task.
+        This is acceptable for <strong>testnet environments</strong>, but{' '}
+        <strong>must be enabled for mainnet tasks</strong> to ensure proper signature verification.
+      </p>
+      <div className="mt-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
+        <p className="text-sm text-yellow-800">
+          <strong>To enable:</strong> Remove <code className="bg-yellow-200 px-1 rounded">skipTaskOriginValidation: true</code> from 
+          the validation config file and ensure <code className="bg-yellow-200 px-1 rounded">taskOriginConfig</code> is provided.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 interface ValidationResultsProps {
   userType: string;
@@ -77,7 +157,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     runValidation();
   }, [runValidation]);
 
-  const { itemsByStep, navList, blockingErrorsExist, stepCounts } =
+  const { itemsByStep, navList, blockingErrorsExist, stepCounts, taskOriginFailed, taskOriginDisabled } =
     useValidationSummary(validationResult);
 
   useEffect(() => {
@@ -214,13 +294,18 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             </Badge>
           </div>
 
-          <Button onClick={handleNext} variant="primary" size="sm">
-            {currentIndex === totalItems - 1 ? 'Next' : 'Next'}{' '}
+          <Button 
+            onClick={handleNext} 
+            variant="primary" 
+            size="sm"
+            disabled={taskOriginFailed && currentEntry?.kind === 'taskOrigin'}
+          >
+            {currentIndex === totalItems - 1 ? 'Finish' : 'Next'}{' '}
             <ArrowRight size={16} className="inline ml-1" />
           </Button>
         </div>
 
-        {matchStatus && (
+        {matchStatus && !taskOriginDisabled && (
           <div
             className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
               matchStatus.status === 'match'
@@ -239,16 +324,28 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
         {evaluation && (
           <div className="grid gap-6 xl:grid-cols-2">
-            <ComparisonCard type="expected" {...evaluation.cards.expected} />
-            <ComparisonCard type="actual" {...evaluation.cards.actual} />
+            {currentEntry?.kind === 'taskOrigin' && itemsByStep.taskOrigin[currentEntry.index] ? (
+              taskOriginDisabled ? (
+                <TaskOriginSkippedCard />
+              ) : (
+                <TaskOriginCard results={itemsByStep.taskOrigin[currentEntry.index].results} />
+              )
+            ) : (
+              <>
+                <ComparisonCard type="expected" {...evaluation.cards.expected} />
+                <ComparisonCard type="actual" {...evaluation.cards.actual} />
+              </>
+            )}
           </div>
         )}
 
-        {descriptionContent && (
+        {descriptionContent && !taskOriginDisabled && (
           <div
             className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${
               descriptionContent.variant === 'expected-difference'
                 ? 'border-green-200 bg-green-50'
+                : descriptionContent.variant === 'error'
+                ? 'border-red-200 bg-red-50'
                 : 'border-blue-200 bg-blue-50'
             }`}
           >
@@ -258,6 +355,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 className={`mb-1 text-xs font-bold uppercase tracking-wider ${
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-green-800'
+                    : descriptionContent.variant === 'error'
+                    ? 'text-red-800'
                     : 'text-blue-800'
                 }`}
               >
@@ -267,6 +366,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                 className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-green-900'
+                    : descriptionContent.variant === 'error'
+                    ? 'text-red-700'
                     : 'text-blue-900'
                 }`}
               >

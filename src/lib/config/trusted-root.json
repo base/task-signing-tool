@@ -1,0 +1,47 @@
+{
+    "mediaType": "application/vnd.dev.sigstore.trustedroot+json;version=0.1",
+    "tlogs": [],
+    "ctlogs": [],
+    "certificateAuthorities": [
+      {
+        "subject": {
+          "organization": "Coinbase LLC",
+          "commonName": "cb.corporate-use1.cbhq.net"
+        },
+        "certChain": {
+          "certificates": [
+            {
+              "rawBytes": "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"
+            }
+
+          ]
+        },
+        "validFor": {
+          "start": "2022-11-03T03:18:30Z",
+          "end": "2032-10-31T03:18:30Z"
+        }
+      }
+    ],
+    "timestampAuthorities": [
+      {
+        "subject": {
+          "organization": "sigstore.dev",
+          "commonName": "sigstore-tsa-selfsigned"
+        },
+        "uri": "https://timestamp.sigstore.dev/api/v1/timestamp",
+        "certChain": {
+          "certificates": [
+            {
+              "rawBytes": "MIICEDCCAZagAwIBAgIUOhNULwyQYe68wUMvy4qOiyojiwwwCgYIKoZIzj0EAwMwOTEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MSAwHgYDVQQDExdzaWdzdG9yZS10c2Etc2VsZnNpZ25lZDAeFw0yNTA0MDgwNjU5NDNaFw0zNTA0MDYwNjU5NDNaMC4xFTATBgNVBAoTDHNpZ3N0b3JlLmRldjEVMBMGA1UEAxMMc2lnc3RvcmUtdHNhMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE4ra2Z8hKNig2T9kFjCAToGG30jky+WQv3BzL+mKvh1SKNR/UwuwsfNCg4sryoYAd8E6isovVA3M4aoNdm9QDi50Z8nTEyvqgfDPtTIwXItfiW/AFf1V7uwkbkAoj0xxco2owaDAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0OBBYEFIn9eUOHz9BlRsMCRscsc1t9tOsDMB8GA1UdIwQYMBaAFJjsAe9/u1H/1JUeb4qImFMHic6/MBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMAoGCCqGSM49BAMDA2gAMGUCMDtpsV/6KaO0qyF/UMsX2aSUXKQFdoGTptQGc0ftq1csulHPGG6dsmyMNd3JB+G3EQIxAOajvBcjpJmKb4Nv+2Taoj8Uc5+b6ih6FXCCKraSqupe07zqswMcXJTe1cExvHvvlw=="
+            },
+            {
+              "rawBytes": "MIIB9zCCAXygAwIBAgIUV7f0GLDOoEzIh8LXSW80OJiUp14wCgYIKoZIzj0EAwMwOTEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MSAwHgYDVQQDExdzaWdzdG9yZS10c2Etc2VsZnNpZ25lZDAeFw0yNTA0MDgwNjU5NDNaFw0zNTA0MDYwNjU5NDNaMDkxFTATBgNVBAoTDHNpZ3N0b3JlLmRldjEgMB4GA1UEAxMXc2lnc3RvcmUtdHNhLXNlbGZzaWduZWQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAQUQNtfRT/ou3YATa6wB/kKTe70cfJwyRIBovMnt8RcJph/COE82uyS6FmppLLL1VBPGcPfpQPYJNXzWwi8icwhKQ6W/Qe2h3oebBb2FHpwNJDqo+TMaC/tdfkv/ElJB72jRTBDMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBSY7AHvf7tR/9SVHm+KiJhTB4nOvzAKBggqhkjOPQQDAwNpADBmAjEAwGEGrfGZR1cen1R8/DTVMI943LssZmJRtDp/i7SfGHmGRP6gRbuj9vOK3b67Z0QQAjEAuT2H673LQEaHTcyQSZrkp4mX7WwkmF+sVbkYY5mXN+RMH13KUEHHOqASaemYWK/E"
+            }
+          ]
+        },
+        "validFor": {
+          "start": "2025-07-04T00:00:00Z"
+        }
+      }
+    ]
+  }

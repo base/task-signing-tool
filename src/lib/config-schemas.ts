@@ -58,6 +58,14 @@ export const BalanceChangeSchema = z.object({
   allowDifference: z.boolean(),
 });
 
+// Only taskCreator needs a config for the commonName parameter
+// All other fields are hardcoded including the signature file names
+export const TaskOriginValidationConfigSchema = z.object({
+  taskCreator: z.object({
+    commonName: z.string().min(1),
+  }),
+});
+
 export const TaskConfigSchema = z.object({
   cmd: z.string(),
   ledgerId: z.number().int().nonnegative(),
@@ -66,4 +74,7 @@ export const TaskConfigSchema = z.object({
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
   balanceChanges: z.array(BalanceChangeSchema).optional(),
+  // Task origin validation (opt-out, enabled by default)
+  skipTaskOriginValidation: z.boolean().optional(),
+  taskOriginConfig: TaskOriginValidationConfigSchema.optional(),
 });

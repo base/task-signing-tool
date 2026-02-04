@@ -15,6 +15,8 @@ interface ValidationSummary {
   navList: ValidationNavEntry[];
   blockingErrorsExist: boolean;
   stepCounts: StepCounts;
+  taskOriginFailed: boolean;
+  taskOriginDisabled: boolean;
 }
 
 export const useValidationSummary = (validationResult: ValidationData | null): ValidationSummary =>
@@ -24,10 +26,17 @@ export const useValidationSummary = (validationResult: ValidationData | null): V
     const blockingErrorsExist = hasBlockingErrors(itemsByStep);
     const stepCounts = getStepCounts(itemsByStep);
 
+    // Determine task origin validation state
+    const taskOriginItem = itemsByStep.taskOrigin[0];
+    const taskOriginDisabled = taskOriginItem?.isDisabled ?? false;
+    const taskOriginFailed = !taskOriginDisabled && taskOriginItem ? !taskOriginItem.allPassed : false;
+
     return {
       itemsByStep,
       navList,
       blockingErrorsExist,
       stepCounts,
+      taskOriginFailed,
+      taskOriginDisabled,
     };
   }, [validationResult]);
