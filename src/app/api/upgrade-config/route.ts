@@ -3,6 +3,7 @@ import path from 'path';
 import { parseFromString } from '@/lib/parser';
 import { NextRequest, NextResponse } from 'next/server';
 import { findContractDeploymentsRoot } from '@/lib/deployments';
+import { assertWithinDir } from '@/lib/path-validation';
 
 const toDisplayName = (name: string) =>
   name
@@ -32,16 +33,13 @@ export async function GET(req: NextRequest) {
   }
 
   const contractDeploymentsRoot = findContractDeploymentsRoot();
-  const validationsPath = path.resolve(
-    contractDeploymentsRoot,
-    network,
-    upgradeId,
-    'validations'
-  );
+  const validationsJoinedPath = path.join(contractDeploymentsRoot, network, upgradeId, 'validations');
 
-  // Verify the resolved path is within the allowed root directory
-  const resolvedRoot = path.resolve(contractDeploymentsRoot);
-  if (!validationsPath.startsWith(resolvedRoot + path.sep)) {
+  // Verify the resolved path is within the allowed directory
+  let validationsPath: string;
+  try {
+    validationsPath = assertWithinDir(validationsJoinedPath, contractDeploymentsRoot);
+  } catch {
     return NextResponse.json(
       { error: 'Invalid path: access denied' },
       { status: 403 }

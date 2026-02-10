@@ -4,6 +4,7 @@ import path from 'path';
 import { createPublicClient, http, decodeAbiParameters, Hex, Address, getAddress } from 'viem';
 import { BalanceChange, StateChange, StateOverride, TaskConfig } from './types/index';
 import contractsCfg from './config/contracts.json';
+import { assertWithinDir } from './path-validation';
 
 type ParsedInput = {
   targetSafe: string;
@@ -66,12 +67,12 @@ type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> }
 
 export class StateDiffClient {
   private readonly ledgerId: number;
-  private readonly allowedRoot: string;
+  private readonly allowedDir: string;
 
-  constructor(ledgerId: number = 0, allowedRoot?: string) {
+  constructor(ledgerId: number = 0, allowedDir?: string) {
     this.ledgerId = ledgerId;
     // Default to current working directory if no root is specified
-    this.allowedRoot = allowedRoot ? path.resolve(allowedRoot) : process.cwd();
+    this.allowedDir = allowedDir ? path.resolve(allowedDir) : process.cwd();
   }
 
   async simulate(
@@ -86,7 +87,7 @@ export class StateDiffClient {
     forgeOutput: string;
   }> {
     // Validate workdir to prevent path traversal attacks
-    const normalizedWorkdir = this.validateWorkdir(workdir);
+    const normalizedWorkdir = assertWithinDir(workdir, this.allowedDir);
 
     const cmd = forgeCmdParts.join(' ');
     console.log(`🔧 Running forge in ${normalizedWorkdir}: ${cmd}`);
@@ -212,39 +213,10 @@ export class StateDiffClient {
     return { command, args, env: envAssignments };
   }
 
-  /**
-   * Validates that the workdir is within the allowed root directory.
-   * This prevents path traversal attacks via malicious workdir values.
-   */
-  private validateWorkdir(workdir: string): string {
-    const normalizedWorkdir = path.resolve(workdir);
-
-    // Ensure the workdir is within the allowed root directory
-    if (
-      !normalizedWorkdir.startsWith(this.allowedRoot + path.sep) &&
-      normalizedWorkdir !== this.allowedRoot
-    ) {
-      throw new Error(
-        `StateDiffClient::validateWorkdir: Path traversal detected. Working directory must be within the allowed root.`
-      );
-    }
-
-    return normalizedWorkdir;
-  }
-
   private stateDiffFilePath(workdir: string): string {
-    // Resolve and normalize the workdir to get the canonical path
     const normalizedWorkdir = path.resolve(workdir);
     const filePath = path.resolve(normalizedWorkdir, 'stateDiff.json');
-
-    // Ensure the resolved file path is contained within the workdir
-    // This prevents path traversal attacks via malicious workdir values
-    if (!filePath.startsWith(normalizedWorkdir + path.sep) && filePath !== normalizedWorkdir) {
-      throw new Error(
-        `StateDiffClient::stateDiffFilePath: Path traversal detected. File path must be within workdir.`
-      );
-    }
-
+    assertWithinDir(filePath, normalizedWorkdir);
     return filePath;
   }
 
