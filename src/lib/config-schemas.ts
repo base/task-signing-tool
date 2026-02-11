@@ -58,6 +58,12 @@ export const BalanceChangeSchema = z.object({
   allowDifference: z.boolean(),
 });
 
+export const L2GasEstimationSchema = z.object({
+  estimatedGas: z.string().min(1),
+  buffer: z.number().int().nonnegative(),
+  recommendedGasLimit: z.string().min(1),
+});
+
 // Only taskCreator needs a config for the commonName parameter
 // All other fields are hardcoded including the signature file names
 export const TaskOriginValidationConfigSchema = z.object({
@@ -74,6 +80,7 @@ export const TaskConfigSchema = z.object({
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
   balanceChanges: z.array(BalanceChangeSchema).optional(),
+  l2GasEstimation: L2GasEstimationSchema.optional(),
   // Task origin validation (opt-out, enabled by default)
   skipTaskOriginValidation: z.boolean().optional(),
   taskOriginConfig: TaskOriginValidationConfigSchema.optional(),
