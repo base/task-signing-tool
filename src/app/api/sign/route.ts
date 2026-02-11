@@ -3,6 +3,7 @@ import {
   LedgerSigningOptions,
   signDomainAndMessageHash,
 } from '@/lib/ledger-signing';
+import { HashSchema } from '@/lib/config-schemas';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -16,6 +17,29 @@ export async function POST(req: NextRequest) {
     if (!domainHash || !messageHash) {
       return NextResponse.json(
         { error: 'Missing required fields: domainHash, messageHash' },
+        { status: 400 }
+      );
+    }
+
+    const domainResult = HashSchema.safeParse(domainHash);
+    if (!domainResult.success) {
+      return NextResponse.json(
+        { error: `Invalid domainHash: ${domainResult.error.issues[0].message}` },
+        { status: 400 }
+      );
+    }
+
+    const messageResult = HashSchema.safeParse(messageHash);
+    if (!messageResult.success) {
+      return NextResponse.json(
+        { error: `Invalid messageHash: ${messageResult.error.issues[0].message}` },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isInteger(ledgerAccount) || ledgerAccount < 0) {
+      return NextResponse.json(
+        { error: 'Invalid ledgerAccount: must be a non-negative integer' },
         { status: 400 }
       );
     }
