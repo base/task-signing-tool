@@ -116,9 +116,7 @@ async function main() {
 
   // If L2 gas estimation is enabled, ensure -vvvv flag is present for event output
   if (estimateL2Gas) {
-    const hasVerboseFlag = forgeCmdParts.some(part =>
-      part === '-vvvv' || part === '-vvvvv'
-    );
+    const hasVerboseFlag = forgeCmdParts.some(part => part === '-vvvv' || part === '-vvvvv');
     if (!hasVerboseFlag) {
       console.log('📝 Adding -vvvv flag to forge command for event output');
       forgeCmdParts.push('-vvvv');
@@ -126,11 +124,7 @@ async function main() {
   }
 
   const sdc = new StateDiffClient(ledgerId, workdir);
-  const { result, transactionTo, transactionData, forgeOutput } = await sdc.simulate(
-    rpcUrl,
-    forgeCmdParts,
-    workdir
-  );
+  const { result, forgeOutput } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
   // Optionally estimate L2 gas for deposit transactions
   let resultWithL2Gas = result;
@@ -155,33 +149,32 @@ async function main() {
         console.error('❌ Could not extract TransactionDeposited event from forge output');
         console.log('⚠️  Continuing without L2 gas estimation');
       } else {
+        console.log(`   L2 Target: ${deposit.to}`);
+        console.log(`   L2 Value: ${deposit.value}`);
+        console.log(`   L2 Data length: ${deposit.data.length} chars`);
 
-      console.log(`   L2 Target: ${deposit.to}`);
-      console.log(`   L2 Value: ${deposit.value}`);
-      console.log(`   L2 Data length: ${deposit.data.length} chars`);
+        // Estimate L2 gas using viem
+        const gasUsed = await estimator.estimateL2Gas(l2RpcUrl, deposit);
 
-      // Estimate L2 gas using viem
-      const gasUsed = await estimator.estimateL2Gas(l2RpcUrl, deposit);
+        const recommendedGasLimit = (gasUsed * BigInt(100 + l2GasBuffer)) / BigInt(100);
 
-      const recommendedGasLimit = (gasUsed * BigInt(100 + l2GasBuffer)) / BigInt(100);
+        console.log(`\n✅ L2 Gas Estimation Complete:`);
+        console.log(`   Estimated gas: ${gasUsed}`);
+        console.log(`   Buffer: ${l2GasBuffer}%`);
+        console.log(`   Recommended L2_GAS_LIMIT: ${recommendedGasLimit}`);
 
-      console.log(`\n✅ L2 Gas Estimation Complete:`);
-      console.log(`   Estimated gas: ${gasUsed}`);
-      console.log(`   Buffer: ${l2GasBuffer}%`);
-      console.log(`   Recommended L2_GAS_LIMIT: ${recommendedGasLimit}`);
+        // Add L2_GAS_LIMIT to the cmd
+        const updatedCmd = `L2_GAS_LIMIT=${recommendedGasLimit} ${result.cmd}`;
 
-      // Add L2_GAS_LIMIT to the cmd
-      const updatedCmd = `L2_GAS_LIMIT=${recommendedGasLimit} ${result.cmd}`;
-
-      resultWithL2Gas = {
-        ...result,
-        cmd: updatedCmd,
-        l2GasEstimation: {
-          estimatedGas: gasUsed.toString(),
-          buffer: l2GasBuffer,
-          recommendedGasLimit: recommendedGasLimit.toString(),
-        },
-      };
+        resultWithL2Gas = {
+          ...result,
+          cmd: updatedCmd,
+          l2GasEstimation: {
+            estimatedGas: gasUsed.toString(),
+            buffer: l2GasBuffer,
+            recommendedGasLimit: recommendedGasLimit.toString(),
+          },
+        };
       }
     } catch (error) {
       console.error('❌ L2 gas estimation failed:', error);

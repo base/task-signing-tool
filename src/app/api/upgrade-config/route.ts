@@ -22,12 +22,31 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Validate inputs to prevent path traversal attacks
+  const safePathPattern = /^[a-zA-Z0-9_-]+$/;
+  if (!safePathPattern.test(network) || !safePathPattern.test(upgradeId)) {
+    return NextResponse.json(
+      { error: 'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed' },
+      { status: 400 }
+    );
+  }
+
+  const contractDeploymentsRoot = findContractDeploymentsRoot();
   const validationsPath = path.resolve(
-    findContractDeploymentsRoot(),
+    contractDeploymentsRoot,
     network,
     upgradeId,
     'validations'
   );
+
+  // Verify the resolved path is within the allowed root directory
+  const resolvedRoot = path.resolve(contractDeploymentsRoot);
+  if (!validationsPath.startsWith(resolvedRoot + path.sep)) {
+    return NextResponse.json(
+      { error: 'Invalid path: access denied' },
+      { status: 403 }
+    );
+  }
 
   try {
     const entries = await fs.readdir(validationsPath);
