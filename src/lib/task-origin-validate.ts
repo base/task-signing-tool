@@ -5,12 +5,14 @@ import { Verifier, toTrustMaterial, toSignedEntity } from '@sigstore/verify';
 import { bundleFromJSON } from '@sigstore/bundle';
 import trustedRoot from './config/trusted-root.json';
 import type { TaskOriginRole } from './types';
+import { assertWithinDir } from './path-validation';
 
 export type TaskOriginVerifyOptions = {
     taskFolderPath: string;
     signatureFile: string;
     commonName: string;
     role: TaskOriginRole;
+    allowedDir?: string;
 };
 
 function getSubjectAlternativeNamePrefix(role: TaskOriginRole): string {
@@ -18,7 +20,13 @@ function getSubjectAlternativeNamePrefix(role: TaskOriginRole): string {
     return role === 'taskCreator' ? 'user:///' : 'ldap:///';
 }
 
-async function getAllFilesRecursively(dir: string, baseDir: string = dir): Promise<string[]> {
+async function getAllFilesRecursively(dir: string, baseDir: string = dir, allowedDir?: string): Promise<string[]> {
+    // If an allowed directory is specified, resolve symlinks and validate the real path
+    if (allowedDir) {
+        const realDir = await fs.realpath(dir);
+        assertWithinDir(realDir, allowedDir);
+    }
+
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const files: string[] = [];
     // Exclude cache, out, and signer-tool folders from the tarball
@@ -31,7 +39,7 @@ async function getAllFilesRecursively(dir: string, baseDir: string = dir): Promi
             if (excludedFolders.includes(entry.name)) {
                 continue;
             }
-            files.push(...await getAllFilesRecursively(fullPath, baseDir));
+            files.push(...await getAllFilesRecursively(fullPath, baseDir, allowedDir));
         } else if (entry.isFile()) {
             // Get relative path from base directory
             files.push(path.relative(baseDir, fullPath));
@@ -41,7 +49,12 @@ async function getAllFilesRecursively(dir: string, baseDir: string = dir): Promi
     return files;
 }
 
-export async function createDeterministicTarball(taskFolderPath: string): Promise<string> {
+export async function createDeterministicTarball(taskFolderPath: string, allowedDir?: string): Promise<string> {
+    // Validate the task folder path is within the allowed directory
+    if (allowedDir) {
+        assertWithinDir(taskFolderPath, allowedDir);
+    }
+
     // Take the last '/' separate part of the folder path to be the tarfile name
     const folderName = taskFolderPath.split('/').pop();
     const tarballPath = path.resolve(process.cwd(), `${folderName}.tar`);
@@ -60,7 +73,7 @@ export async function createDeterministicTarball(taskFolderPath: string): Promis
     }
 
     // Get all files and sort them alphabetically for deterministic ordering
-    const files = await getAllFilesRecursively(taskFolderPath);
+    const files = await getAllFilesRecursively(taskFolderPath, taskFolderPath, allowedDir);
     const sortedFiles = files.sort();
 
     await tar.create({
@@ -75,8 +88,14 @@ export async function createDeterministicTarball(taskFolderPath: string): Promis
 }
 
 export async function buildAndValidateSignature(options: TaskOriginVerifyOptions): Promise<void> {
-    const { taskFolderPath, signatureFile, commonName, role } = options;
+    const { taskFolderPath, signatureFile, commonName, role, allowedDir } = options;
     console.log(`  Task folder: ${taskFolderPath}`);
+
+    // Validate paths are within the allowed directory if specified
+    if (allowedDir) {
+        assertWithinDir(taskFolderPath, allowedDir);
+        assertWithinDir(signatureFile, allowedDir);
+    }
 
     // Extract the bundle containing both the signature and certificate chain
     console.log(`  Signature: ${signatureFile}`);
@@ -84,7 +103,7 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
     const bundleSig = bundleFromJSON(bundleSigJSON);
 
     // Regenerate the tarball from the provided task folder
-    const tarballPath = await createDeterministicTarball(taskFolderPath);
+    const tarballPath = await createDeterministicTarball(taskFolderPath, allowedDir);
     const tarball = await fs.readFile(tarballPath); // Read as binary Buffer
 
     // Extract the deployment-specific intermediate CA from bundle
@@ -190,9 +209,15 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
 
 export async function verifyTaskOrigin(options: TaskOriginVerifyOptions): Promise<void> {
     // Make sure that the task folder path and signature file exist
-    const { taskFolderPath, signatureFile, commonName, role } = options;
+    const { taskFolderPath, signatureFile, commonName, role, allowedDir } = options;
     if (!taskFolderPath || !signatureFile || !commonName || !role) {
         throw new Error('Task folder path, signature file, commonName, and role are required');
+    }
+
+    // Validate paths are within the allowed directory if specified
+    if (allowedDir) {
+        assertWithinDir(taskFolderPath, allowedDir);
+        assertWithinDir(signatureFile, allowedDir);
     }
 
     // Make sure that the task folder path and signature file exist

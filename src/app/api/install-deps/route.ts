@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { promisify } from 'util';
 import { findContractDeploymentsRoot } from '@/lib/deployments';
+import { assertWithinDir } from '@/lib/path-validation';
 
 const execAsync = promisify(exec);
 
@@ -45,10 +46,11 @@ export async function POST(req: NextRequest) {
     const contractDeploymentsPath = findContractDeploymentsRoot();
     const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
 
-    // Verify the resolved path is within the allowed root directory
-    const resolvedUpgradePath = path.resolve(upgradePath);
-    const resolvedRoot = path.resolve(contractDeploymentsPath);
-    if (!resolvedUpgradePath.startsWith(resolvedRoot + path.sep)) {
+    // Verify the resolved path is within the allowed directory
+    let resolvedUpgradePath: string;
+    try {
+      resolvedUpgradePath = assertWithinDir(upgradePath, contractDeploymentsPath);
+    } catch {
       return NextResponse.json(
         { error: 'Invalid path: access denied' },
         { status: 403 }

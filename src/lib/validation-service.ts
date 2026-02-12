@@ -3,6 +3,7 @@ import path from 'path';
 import { TASK_ORIGIN_COMMON_NAMES, TASK_ORIGIN_SIGNATURE_FILE_NAMES } from './constants';
 import { findContractDeploymentsRoot } from './deployments';
 import { getValidationSummary, parseFromString } from './parser';
+import { assertWithinDir } from './path-validation';
 import { StateDiffClient } from './state-diff';
 import { verifyTaskOrigin } from './task-origin-validate';
 import {
@@ -33,8 +34,11 @@ async function getConfigData(
   opts: ValidationServiceOpts
 ): Promise<{ cfg: TaskConfig; scriptPath: string }> {
   const upgradePath = path.join(CONTRACT_DEPLOYMENTS_ROOT, opts.network, opts.upgradeId);
+  assertWithinDir(upgradePath, CONTRACT_DEPLOYMENTS_ROOT);
+
   const configFileName = `${opts.taskConfigFileName}.json`;
   const configPath = path.join(upgradePath, 'validations', configFileName);
+  assertWithinDir(configPath, CONTRACT_DEPLOYMENTS_ROOT);
 
   let configContent: string;
   try {
@@ -117,10 +121,12 @@ async function validateSigner(
 ): Promise<TaskOriginSignerResult> {
   const networkPath = path.join(CONTRACT_DEPLOYMENTS_ROOT, opts.network);
   const taskFolderPath = path.join(networkPath, opts.upgradeId);
+  assertWithinDir(taskFolderPath, CONTRACT_DEPLOYMENTS_ROOT);
 
   // Get signatureFileName from constants (hardcoded for all roles)
   const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
   const signatureFile = path.join(networkPath, 'signatures', opts.upgradeId, signatureFileName);
+  assertWithinDir(signatureFile, CONTRACT_DEPLOYMENTS_ROOT);
 
   // Get commonName: from config for taskCreator, from constants for facilitators
   const commonName =
@@ -132,6 +138,7 @@ async function validateSigner(
     signatureFile,
     commonName,
     role,
+    allowedDir: CONTRACT_DEPLOYMENTS_ROOT,
   });
 
   return {
