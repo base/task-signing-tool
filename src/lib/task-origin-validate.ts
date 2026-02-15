@@ -89,7 +89,11 @@ export async function createDeterministicTarball(
   }
 
   // Get all files and sort them alphabetically for deterministic ordering
-  const files = await getAllFilesRecursively(resolvedTaskFolderPath, resolvedTaskFolderPath, allowedDir);
+  const files = await getAllFilesRecursively(
+    resolvedTaskFolderPath,
+    resolvedTaskFolderPath,
+    allowedDir
+  );
   const sortedFiles = files.sort();
 
   await tar.create(

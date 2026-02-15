@@ -48,3 +48,6 @@ __tests__/fixtures/
 # Examples (might contain unformatted external code)
 examples/
 */examples/
+
+# Claude Code local config
+.claude/
