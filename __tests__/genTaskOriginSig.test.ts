@@ -1,7 +1,11 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { verifyTaskOrigin, verifyAllSignatures, FacilitatorType } from '../scripts/genTaskOriginSig';
+import {
+  verifyTaskOrigin,
+  verifyAllSignatures,
+  FacilitatorType,
+} from '../scripts/genTaskOriginSig';
 
 // Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -106,7 +110,7 @@ describe('verifyTaskOrigin', () => {
         VALID_TASK_FOLDER,
         VALID_SIGNATURES_DIR,
         undefined, // no facilitator
-        undefined  // no common name
+        undefined // no common name
       );
 
       expect(process.exitCode).toBe(1);
@@ -133,41 +137,25 @@ describe('verifyAllSignatures', () => {
   });
 
   it('validates successfully when all 3 signatures are valid', async () => {
-    await verifyAllSignatures(
-      VALID_TASK_FOLDER,
-      VALID_SIGNATURES_DIR,
-      TASK_CREATOR_EMAIL
-    );
+    await verifyAllSignatures(VALID_TASK_FOLDER, VALID_SIGNATURES_DIR, TASK_CREATOR_EMAIL);
 
     expect(process.exitCode).toBeUndefined();
   });
 
   it('fails validation when one or more signatures are missing', async () => {
-    await verifyAllSignatures(
-      VALID_TASK_FOLDER,
-      MISSING_SIGNATURES_DIR,
-      TASK_CREATOR_EMAIL
-    );
+    await verifyAllSignatures(VALID_TASK_FOLDER, MISSING_SIGNATURES_DIR, TASK_CREATOR_EMAIL);
 
     expect(process.exitCode).toBe(1);
   });
 
   it('fails validation when all signatures are invalid', async () => {
-    await verifyAllSignatures(
-      VALID_TASK_FOLDER,
-      INVALID_SIGNATURES_DIR,
-      TASK_CREATOR_EMAIL
-    );
+    await verifyAllSignatures(VALID_TASK_FOLDER, INVALID_SIGNATURES_DIR, TASK_CREATOR_EMAIL);
 
     expect(process.exitCode).toBe(1);
   });
 
   it('fails validation with wrong common name for task creator', async () => {
-    await verifyAllSignatures(
-      VALID_TASK_FOLDER,
-      VALID_SIGNATURES_DIR,
-      WRONG_TASK_CREATOR_EMAIL
-    );
+    await verifyAllSignatures(VALID_TASK_FOLDER, VALID_SIGNATURES_DIR, WRONG_TASK_CREATOR_EMAIL);
 
     expect(process.exitCode).toBe(1);
   });

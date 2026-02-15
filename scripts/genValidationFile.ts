@@ -105,7 +105,7 @@ async function main() {
   }
 
   const tokens = shellParse(forgeCmdFlag);
-  let forgeCmdParts: string[] = tokens.map(t => {
+  const forgeCmdParts: string[] = tokens.map(t => {
     if (typeof t !== 'string') {
       throw new Error(
         'Unsupported shell token in --forge-cmd. Please provide a simple quoted command string.'

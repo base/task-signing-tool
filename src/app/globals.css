@@ -55,7 +55,11 @@
 body {
   background-color: #fafbfc; /* Light gray background for contrast with white cards */
   color: var(--cds-text-primary);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-family:
+    var(--font-sans),
+    system-ui,
+    -apple-system,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -65,7 +69,10 @@ body {
   border: 1px solid var(--cds-border);
   border-radius: var(--cds-radius-lg);
   box-shadow: var(--cds-shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .cds-card:hover {
@@ -101,7 +108,9 @@ body {
   border-radius: var(--cds-radius-full);
   padding: 12px 24px;
   font-weight: 600;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
   cursor: pointer;
 }
 

@@ -82,7 +82,6 @@ Key requirements and notes:
 When present, each task's `README.md` is parsed to populate the UI. Place it at `<network>/<YYYY-MM-DD-slug>/README.md` and follow these rules:
 
 - **Status line (required for status display)**: Include a line containing `Status:` within the first 20 lines. Recognized values are `PENDING`, `READY TO SIGN`, and `EXECUTED` (case-insensitive). If `EXECUTED` is not present and `READY TO SIGN` is not present, the status is treated as `PENDING`. Supported formats:
-
   - **Single-line with link (any one of these)**:
     - `Status: EXECUTED (https://explorer/tx/0x...)`
     - `Status: [EXECUTED](https://explorer/tx/0x...)`
@@ -401,6 +400,7 @@ For tasks that involve deposit transactions to L2, you can optionally estimate t
 #### How It Works
 
 When you enable `--estimate-l2-gas`:
+
 1. The tool parses the forge simulation output for the `TransactionDeposited` event
 2. Extracts L2 transaction details from the event's `opaqueData` field (target, value, gasLimit, data)
 3. Uses viem's `estimateGas` to estimate L2 gas via RPC call
@@ -408,6 +408,7 @@ When you enable `--estimate-l2-gas`:
 5. The estimated gas is included in the validation JSON
 
 **Important:**
+
 - Only use this flag when your transaction emits a `TransactionDeposited` event (typically from calling `depositTransaction` on OptimismPortal)
 - The tool automatically adds `-vvvv` to the forge command to capture event output
 

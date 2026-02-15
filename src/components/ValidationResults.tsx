@@ -46,9 +46,7 @@ const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
           <div
             key={idx}
             className={`flex flex-col py-3 px-4 rounded-lg border ${
-              result.success
-                ? 'bg-green-50 border-green-200'
-                : 'bg-red-50 border-red-200'
+              result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -71,9 +69,7 @@ const TaskOriginCard: React.FC<TaskOriginCardProps> = ({ results }) => {
               </div>
             </div>
             {!result.success && result.error && (
-              <div className="mt-2 pl-8 text-sm text-red-700 break-words">
-                {result.error}
-              </div>
+              <div className="mt-2 pl-8 text-sm text-red-700 break-words">{result.error}</div>
             )}
           </div>
         ))}
@@ -87,19 +83,19 @@ const TaskOriginSkippedCard: React.FC = () => {
     <div className="col-span-2 bg-yellow-50 rounded-xl border border-yellow-200 p-6">
       <div className="flex items-center gap-3 mb-4">
         <AlertTriangle className="text-yellow-600" size={24} />
-        <h3 className="text-lg font-semibold text-yellow-800">
-          Task Origin Validation Skipped
-        </h3>
+        <h3 className="text-lg font-semibold text-yellow-800">Task Origin Validation Skipped</h3>
       </div>
       <p className="text-yellow-700 leading-relaxed">
-        Task origin validation was skipped in the configuration for this task.
-        This is acceptable for <strong>testnet environments</strong>, but{' '}
+        Task origin validation was skipped in the configuration for this task. This is acceptable
+        for <strong>testnet environments</strong>, but{' '}
         <strong>must be enabled for mainnet tasks</strong> to ensure proper signature verification.
       </p>
       <div className="mt-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
         <p className="text-sm text-yellow-800">
-          <strong>To enable:</strong> Remove <code className="bg-yellow-200 px-1 rounded">skipTaskOriginValidation: true</code> from 
-          the validation config file and ensure <code className="bg-yellow-200 px-1 rounded">taskOriginConfig</code> is provided.
+          <strong>To enable:</strong> Remove{' '}
+          <code className="bg-yellow-200 px-1 rounded">skipTaskOriginValidation: true</code> from
+          the validation config file and ensure{' '}
+          <code className="bg-yellow-200 px-1 rounded">taskOriginConfig</code> is provided.
         </p>
       </div>
     </div>
@@ -157,8 +153,14 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     runValidation();
   }, [runValidation]);
 
-  const { itemsByStep, navList, blockingErrorsExist, stepCounts, taskOriginFailed, taskOriginDisabled } =
-    useValidationSummary(validationResult);
+  const {
+    itemsByStep,
+    navList,
+    blockingErrorsExist,
+    stepCounts,
+    taskOriginFailed,
+    taskOriginDisabled,
+  } = useValidationSummary(validationResult);
 
   useEffect(() => {
     if (navList.length === 0) {
@@ -294,9 +296,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             </Badge>
           </div>
 
-          <Button 
-            onClick={handleNext} 
-            variant="primary" 
+          <Button
+            onClick={handleNext}
+            variant="primary"
             size="sm"
             disabled={taskOriginFailed && currentEntry?.kind === 'taskOrigin'}
           >
@@ -311,10 +313,10 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
               matchStatus.status === 'match'
                 ? 'bg-green-100/50 border-green-200 text-green-900'
                 : matchStatus.status === 'mismatch'
-                ? 'bg-red-100/50 border-red-200 text-red-900'
-                : matchStatus.status === 'missing'
-                ? 'bg-red-100/50 border-red-200 text-red-900'
-                : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
+                  ? 'bg-red-100/50 border-red-200 text-red-900'
+                  : matchStatus.status === 'missing'
+                    ? 'bg-red-100/50 border-red-200 text-red-900'
+                    : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
             }`}
           >
             {getIcon(matchStatus.icon, 24)}
@@ -345,8 +347,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
               descriptionContent.variant === 'expected-difference'
                 ? 'border-green-200 bg-green-50'
                 : descriptionContent.variant === 'error'
-                ? 'border-red-200 bg-red-50'
-                : 'border-blue-200 bg-blue-50'
+                  ? 'border-red-200 bg-red-50'
+                  : 'border-blue-200 bg-blue-50'
             }`}
           >
             <div className="mt-0.5">{getIcon(descriptionContent.icon, 24)}</div>
@@ -356,8 +358,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-green-800'
                     : descriptionContent.variant === 'error'
-                    ? 'text-red-800'
-                    : 'text-blue-800'
+                      ? 'text-red-800'
+                      : 'text-blue-800'
                 }`}
               >
                 {descriptionContent.title}
@@ -367,8 +369,8 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                   descriptionContent.variant === 'expected-difference'
                     ? 'text-green-900'
                     : descriptionContent.variant === 'error'
-                    ? 'text-red-700'
-                    : 'text-blue-900'
+                      ? 'text-red-700'
+                      : 'text-blue-900'
                 }`}
               >
                 {descriptionContent.text}

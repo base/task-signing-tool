@@ -80,4 +80,9 @@ const reactConfig = defineConfig([
   },
 ]);
 
-export default defineConfig([...ignoresConfig, ...eslintConfig, ...typescriptConfig, ...reactConfig]);
+export default defineConfig([
+  ...ignoresConfig,
+  ...eslintConfig,
+  ...typescriptConfig,
+  ...reactConfig,
+]);

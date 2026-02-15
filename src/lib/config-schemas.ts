@@ -11,7 +11,7 @@ export const AddressSchema = z
   .refine((val): val is Address => isAddress(val), {
     message: 'Invalid Ethereum address format or checksum',
   })
-  .transform((val) => getAddress(val));
+  .transform(val => getAddress(val));
 
 export const HashSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid hash format');
 

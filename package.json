@@ -8,12 +8,13 @@
     "start": "next start",
     "lint": "eslint --cache --cache-location .next/cache/eslint/",
     "lint:fix": "eslint --fix",
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
-    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
-    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest --runInBand",
+    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch --runInBand",
+    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --runInBand",
     "validate-structure": "tsx scripts/validate-structure.ts",
     "validate-folder": "tsx scripts/validate-structure.ts",
-    "check-overrides": "tsx scripts/check-overrides.ts"
+    "check-overrides": "tsx scripts/check-overrides.ts",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@sigstore/bundle": "4.0.0",
@@ -45,6 +46,7 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.0.1",
     "jest": "30.2.0",
+    "prettier": "^3.8.1",
     "semver": "7.7.3",
     "ts-jest": "29.4.5",
     "tsx": "4.20.6",

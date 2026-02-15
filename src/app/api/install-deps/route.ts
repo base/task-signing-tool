@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
     const safePathPattern = /^[a-zA-Z0-9_-]+$/;
     if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
       return NextResponse.json(
-        { error: 'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed' },
+        {
+          error:
+            'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed',
+        },
         { status: 400 }
       );
     }
@@ -51,10 +54,7 @@ export async function POST(req: NextRequest) {
     try {
       resolvedUpgradePath = assertWithinDir(upgradePath, contractDeploymentsPath);
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid path: access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Invalid path: access denied' }, { status: 403 });
     }
 
     const libPath = path.join(resolvedUpgradePath, 'lib');
@@ -86,7 +86,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`);
+    console.log(
+      `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
+    );
 
     // Run make deps in the upgrade folder
     const { stdout, stderr } = await execAsync('make deps', {

@@ -27,23 +27,28 @@ export async function GET(req: NextRequest) {
   const safePathPattern = /^[a-zA-Z0-9_-]+$/;
   if (!safePathPattern.test(network) || !safePathPattern.test(upgradeId)) {
     return NextResponse.json(
-      { error: 'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed' },
+      {
+        error:
+          'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed',
+      },
       { status: 400 }
     );
   }
 
   const contractDeploymentsRoot = findContractDeploymentsRoot();
-  const validationsJoinedPath = path.join(contractDeploymentsRoot, network, upgradeId, 'validations');
+  const validationsJoinedPath = path.join(
+    contractDeploymentsRoot,
+    network,
+    upgradeId,
+    'validations'
+  );
 
   // Verify the resolved path is within the allowed directory
   let validationsPath: string;
   try {
     validationsPath = assertWithinDir(validationsJoinedPath, contractDeploymentsRoot);
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid path: access denied' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'Invalid path: access denied' }, { status: 403 });
   }
 
   try {

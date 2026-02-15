@@ -3,9 +3,8 @@ import { NextRequest } from 'next/server';
 import type { LedgerSigningOptions, LedgerSigningResult } from '@/lib/ledger-signing';
 
 const mockCheckLedgerAvailability = jest.fn<() => Promise<boolean>>();
-const mockSignDomainAndMessageHash = jest.fn<
-  (options: LedgerSigningOptions) => Promise<LedgerSigningResult>
->();
+const mockSignDomainAndMessageHash =
+  jest.fn<(options: LedgerSigningOptions) => Promise<LedgerSigningResult>>();
 
 jest.unstable_mockModule('@/lib/ledger-signing', () => ({
   checkLedgerAvailability: mockCheckLedgerAvailability,
@@ -66,40 +65,48 @@ describe('POST /api/sign', () => {
 
   describe('HashSchema - domainHash', () => {
     it('returns 400 when too short (63 hex chars)', async () => {
-      const res = await POST(createRequest({
-        domainHash: '0x' + 'a'.repeat(63),
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: '0x' + 'a'.repeat(63),
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid domainHash/i);
     });
 
     it('returns 400 when missing 0x prefix', async () => {
-      const res = await POST(createRequest({
-        domainHash: 'a'.repeat(64),
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: 'a'.repeat(64),
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid domainHash/i);
     });
 
     it('returns 400 when too long (65 hex chars)', async () => {
-      const res = await POST(createRequest({
-        domainHash: '0x' + 'a'.repeat(65),
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: '0x' + 'a'.repeat(65),
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid domainHash/i);
     });
 
     it('returns 400 when contains non-hex chars', async () => {
-      const res = await POST(createRequest({
-        domainHash: '0x' + 'g'.repeat(64),
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: '0x' + 'g'.repeat(64),
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid domainHash/i);
@@ -108,10 +115,12 @@ describe('POST /api/sign', () => {
 
   describe('HashSchema - messageHash', () => {
     it('returns 400 when invalid format', async () => {
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: '0xinvalid',
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: '0xinvalid',
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid messageHash/i);
@@ -120,33 +129,39 @@ describe('POST /api/sign', () => {
 
   describe('ledgerAccount', () => {
     it('returns 400 when negative (-1)', async () => {
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: VALID_MESSAGE_HASH,
-        ledgerAccount: -1,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: VALID_MESSAGE_HASH,
+          ledgerAccount: -1,
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid ledgerAccount/i);
     });
 
     it('returns 400 when float (1.5)', async () => {
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: VALID_MESSAGE_HASH,
-        ledgerAccount: 1.5,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: VALID_MESSAGE_HASH,
+          ledgerAccount: 1.5,
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid ledgerAccount/i);
     });
 
     it('returns 400 when string ("abc")', async () => {
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: VALID_MESSAGE_HASH,
-        ledgerAccount: 'abc',
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: VALID_MESSAGE_HASH,
+          ledgerAccount: 'abc',
+        })
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid ledgerAccount/i);
@@ -155,10 +170,12 @@ describe('POST /api/sign', () => {
 
   describe('happy path', () => {
     it('returns 200 with valid hashes, default ledgerAccount', async () => {
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.success).toBe(true);
@@ -167,11 +184,13 @@ describe('POST /api/sign', () => {
     });
 
     it('returns 200 with valid hashes, explicit ledgerAccount', async () => {
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: VALID_MESSAGE_HASH,
-        ledgerAccount: 2,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: VALID_MESSAGE_HASH,
+          ledgerAccount: 2,
+        })
+      );
       expect(res.status).toBe(200);
       expect(mockSignDomainAndMessageHash).toHaveBeenCalledWith({
         domainHash: VALID_DOMAIN_HASH,
@@ -181,10 +200,12 @@ describe('POST /api/sign', () => {
     });
 
     it('does not call ledger functions when validation fails', async () => {
-      await POST(createRequest({
-        domainHash: '0xinvalid',
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      await POST(
+        createRequest({
+          domainHash: '0xinvalid',
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(mockCheckLedgerAvailability).not.toHaveBeenCalled();
       expect(mockSignDomainAndMessageHash).not.toHaveBeenCalled();
     });
@@ -193,10 +214,12 @@ describe('POST /api/sign', () => {
   describe('post-validation', () => {
     it('returns 500 when ledger unavailable', async () => {
       mockCheckLedgerAvailability.mockResolvedValue(false);
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(res.status).toBe(500);
       const body = await res.json();
       expect(body.error).toMatch(/eip712sign binary not found/i);
@@ -207,10 +230,12 @@ describe('POST /api/sign', () => {
         success: false,
         error: 'Signing failed',
       });
-      const res = await POST(createRequest({
-        domainHash: VALID_DOMAIN_HASH,
-        messageHash: VALID_MESSAGE_HASH,
-      }));
+      const res = await POST(
+        createRequest({
+          domainHash: VALID_DOMAIN_HASH,
+          messageHash: VALID_MESSAGE_HASH,
+        })
+      );
       expect(res.status).toBe(500);
       const body = await res.json();
       expect(body.error).toBe('Signing failed');
