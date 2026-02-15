@@ -42,6 +42,9 @@ yarn.lock
 # Git
 .git/
 
+# Test fixtures (signatures are tied to exact file content, including trailing newlines)
+__tests__/fixtures/
+
 # Examples (might contain unformatted external code)
 examples/
 */examples/
