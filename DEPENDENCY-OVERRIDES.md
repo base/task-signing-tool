@@ -21,6 +21,7 @@ The overrides section in `package.json` forces specific versions of transitive d
 **Issue:** `glob` versions prior to v9 are deprecated with the message "Glob versions prior to v9 are no longer supported".
 
 **Problem:** Without overrides, Jest's transitive dependencies pull in `glob@7.x` through the following chain:
+
 - `jest@30.2.0` → `@jest/transform@30.2.0` → `babel-plugin-istanbul@7.0.1` → `test-exclude@6.0.0` → `glob@^7.1.4`
 
 **Solution:** Pin to `glob@10.5.0` which is a supported, modern version.
@@ -36,6 +37,7 @@ The overrides section in `package.json` forces specific versions of transitive d
 **Solution:** Override to `test-exclude@7.0.1` which uses `glob@^10.4.1` instead.
 
 **Dependency comparison:**
+
 - `test-exclude@6.0.0`: `glob@^7.1.4`, `minimatch@^3.0.4`
 - `test-exclude@7.0.1`: `glob@^10.4.1`, `minimatch@^9.0.4`
 
@@ -71,6 +73,7 @@ npx tsx scripts/check-overrides.ts
 ```
 
 This script checks:
+
 1. If `babel-plugin-istanbul` now depends on `test-exclude@^7.0.0`
 2. If `test-exclude@7.x` is available and uses modern `glob`
 3. If deprecation warnings still appear without overrides
@@ -78,6 +81,7 @@ This script checks:
 ## Periodic Review
 
 These overrides should be reviewed when:
+
 - Upgrading Jest to a new major/minor version
 - `babel-plugin-istanbul` releases a new version
 - Running `npm audit` or `npm outdated`

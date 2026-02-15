@@ -89,8 +89,8 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
 
   return (
     <div className="w-full animate-fade-in">
-      <SectionHeader 
-        title="Select Profile" 
+      <SectionHeader
+        title="Select Profile"
         description="Identify which profile you are signing as. This determines the Ledger path and configuration used."
       />
 
@@ -100,12 +100,14 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
             <div className="flex items-center justify-center p-12 bg-white rounded-2xl border border-[var(--cds-border)] border-dashed">
               <div className="flex flex-col items-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--cds-primary)] border-t-transparent mb-4" />
-                <p className="text-sm font-medium text-[var(--cds-text-secondary)]">Loading profiles...</p>
+                <p className="text-sm font-medium text-[var(--cds-text-secondary)]">
+                  Loading profiles...
+                </p>
               </div>
             </div>
           ) : availableUsers.length === 0 ? (
             <div className="p-8 bg-white rounded-2xl border border-[var(--cds-border)] text-center">
-               <p className="text-sm text-[var(--cds-text-secondary)]">
+              <p className="text-sm text-[var(--cds-text-secondary)]">
                 No user profiles found for this network and task.
               </p>
             </div>
@@ -122,11 +124,15 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold transition-colors ${isSelected ? 'bg-[var(--cds-primary)] text-white' : 'bg-gray-100 text-[var(--cds-text-tertiary)]'}`}>
+                    <div
+                      className={`h-10 w-10 rounded-full flex items-center justify-center font-bold transition-colors ${isSelected ? 'bg-[var(--cds-primary)] text-white' : 'bg-gray-100 text-[var(--cds-text-tertiary)]'}`}
+                    >
                       {option.displayName.charAt(0)}
                     </div>
                     <div>
-                      <h3 className={`font-semibold transition-colors ${isSelected ? 'text-[var(--cds-primary)]' : 'text-[var(--cds-text-primary)]'}`}>
+                      <h3
+                        className={`font-semibold transition-colors ${isSelected ? 'text-[var(--cds-primary)]' : 'text-[var(--cds-text-primary)]'}`}
+                      >
                         {option.displayName}
                       </h3>
                       <p className="text-xs text-[var(--cds-text-secondary)] font-mono mt-0.5">
@@ -134,10 +140,16 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
                       </p>
                     </div>
                   </div>
-                  
+
                   {isSelected && (
                     <div className="h-6 w-6 rounded-full bg-[var(--cds-primary)] text-white flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -151,20 +163,28 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
 
       {error && (
         <div className="mb-6 rounded-lg bg-red-50 p-4 border border-red-100 flex gap-3">
-           <div className="text-[var(--cds-error)] mt-0.5">
-             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-             </svg>
-           </div>
-           <div className="flex-1">
-              <h4 className="text-sm font-semibold text-[var(--cds-error)] mb-1">Error loading profiles</h4>
-              <p className="text-sm text-red-700 mb-2">{error}</p>
-              {error.includes('not found') && (
-                <div className="text-xs bg-white/50 p-2 rounded border border-red-100 inline-block">
-                  Run <code className="font-mono font-bold">make install-eip712sign</code> in project root
-                </div>
-              )}
-           </div>
+          <div className="text-[var(--cds-error)] mt-0.5">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-[var(--cds-error)] mb-1">
+              Error loading profiles
+            </h4>
+            <p className="text-sm text-red-700 mb-2">{error}</p>
+            {error.includes('not found') && (
+              <div className="text-xs bg-white/50 p-2 rounded border border-red-100 inline-block">
+                Run <code className="font-mono font-bold">make install-eip712sign</code> in project
+                root
+              </div>
+            )}
+          </div>
         </div>
       )}
 

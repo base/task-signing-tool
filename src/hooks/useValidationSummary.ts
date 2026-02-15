@@ -29,7 +29,8 @@ export const useValidationSummary = (validationResult: ValidationData | null): V
     // Determine task origin validation state
     const taskOriginItem = itemsByStep.taskOrigin[0];
     const taskOriginDisabled = taskOriginItem?.isDisabled ?? false;
-    const taskOriginFailed = !taskOriginDisabled && taskOriginItem ? !taskOriginItem.allPassed : false;
+    const taskOriginFailed =
+      !taskOriginDisabled && taskOriginItem ? !taskOriginItem.allPassed : false;
 
     return {
       itemsByStep,

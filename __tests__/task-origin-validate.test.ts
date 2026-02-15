@@ -5,7 +5,10 @@ import fs from 'fs/promises';
 import crypto from 'crypto';
 import * as tar from 'tar';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { createDeterministicTarball, buildAndValidateSignature } from '../src/lib/task-origin-validate';
+import {
+  createDeterministicTarball,
+  buildAndValidateSignature,
+} from '../src/lib/task-origin-validate';
 import type { TaskOriginRole } from '../src/lib/types';
 
 // Fixture paths
@@ -28,7 +31,7 @@ async function listTarEntries(tarballPath: string): Promise<string[]> {
   const entries: string[] = [];
   await tar.list({
     file: tarballPath,
-    onReadEntry: (entry) => {
+    onReadEntry: entry => {
       entries.push(entry.path);
     },
   });
