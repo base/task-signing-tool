@@ -26,18 +26,19 @@ async function getAllFilesRecursively(
   allowedDir?: string
 ): Promise<string[]> {
   // If an allowed directory is specified, resolve symlinks and validate the real path
+  let currentDir = dir;
   if (allowedDir) {
-    const realDir = await fs.realpath(dir);
-    assertWithinDir(realDir, allowedDir);
+    currentDir = await fs.realpath(dir);
+    assertWithinDir(currentDir, allowedDir);
   }
 
-  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const entries = await fs.readdir(currentDir, { withFileTypes: true });
   const files: string[] = [];
   // Exclude cache, out, and signer-tool folders from the tarball
   const excludedFolders = ['cache', 'out', 'signer-tool'];
 
   for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
+    const fullPath = path.join(currentDir, entry.name);
     if (entry.isDirectory()) {
       // Skip excluded folders
       if (excludedFolders.includes(entry.name)) {
@@ -45,7 +46,6 @@ async function getAllFilesRecursively(
       }
       files.push(...(await getAllFilesRecursively(fullPath, baseDir, allowedDir)));
     } else if (entry.isFile()) {
-      // Get relative path from base directory
       files.push(path.relative(baseDir, fullPath));
     }
   }
