@@ -57,17 +57,19 @@ export async function createDeterministicTarball(
   taskFolderPath: string,
   allowedDir?: string
 ): Promise<string> {
-  // Validate the task folder path is within the allowed directory
+  // If an allowed directory is specified, resolve symlinks and validate the real path
+  let resolvedTaskFolderPath = taskFolderPath;
   if (allowedDir) {
-    assertWithinDir(taskFolderPath, allowedDir);
+    resolvedTaskFolderPath = await fs.realpath(taskFolderPath);
+    assertWithinDir(resolvedTaskFolderPath, allowedDir);
   }
 
   // Take the last '/' separate part of the folder path to be the tarfile name
-  const folderName = taskFolderPath.split('/').pop();
+  const folderName = resolvedTaskFolderPath.split('/').pop();
   const tarballPath = path.resolve(process.cwd(), `${folderName}.tar`);
 
   // Check if lib/ folder exists for reproducibility
-  const libPath = path.join(taskFolderPath, 'lib');
+  const libPath = path.join(resolvedTaskFolderPath, 'lib');
   if (allowedDir) {
     assertWithinDir(libPath, allowedDir);
   }
@@ -87,7 +89,7 @@ export async function createDeterministicTarball(
   }
 
   // Get all files and sort them alphabetically for deterministic ordering
-  const files = await getAllFilesRecursively(taskFolderPath, taskFolderPath, allowedDir);
+  const files = await getAllFilesRecursively(resolvedTaskFolderPath, resolvedTaskFolderPath, allowedDir);
   const sortedFiles = files.sort();
 
   await tar.create(
@@ -96,7 +98,7 @@ export async function createDeterministicTarball(
       portable: true,
       mtime: new Date(0),
       strict: true,
-      cwd: taskFolderPath,
+      cwd: resolvedTaskFolderPath,
     },
     sortedFiles
   );
