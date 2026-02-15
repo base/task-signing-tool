@@ -68,6 +68,9 @@ export async function createDeterministicTarball(
 
   // Check if lib/ folder exists for reproducibility
   const libPath = path.join(taskFolderPath, 'lib');
+  if (allowedDir) {
+    assertWithinDir(libPath, allowedDir);
+  }
   try {
     const libStats = await fs.stat(libPath);
     if (!libStats.isDirectory()) {
