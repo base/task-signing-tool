@@ -1,6 +1,7 @@
 export enum NetworkType {
   Sepolia = 'sepolia',
   Mainnet = 'mainnet',
+  SepoliaAlpha = 'sepolia-alpha',
 }
 
 export enum TaskStatus {
