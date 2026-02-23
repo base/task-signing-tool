@@ -1,6 +1,10 @@
 import { NetworkType, TaskOriginRole } from './types';
 
-export const availableNetworks: NetworkType[] = [NetworkType.Mainnet, NetworkType.Sepolia];
+export const availableNetworks: NetworkType[] = [
+  NetworkType.Mainnet,
+  NetworkType.Sepolia,
+  NetworkType.SepoliaAlpha,
+];
 
 // Task origin signature file names (hardcoded per role)
 export const TASK_ORIGIN_SIGNATURE_FILE_NAMES: Record<TaskOriginRole, string> = {
