@@ -307,7 +307,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </Button>
         </div>
 
-        {matchStatus && !taskOriginDisabled && (
+        {matchStatus && !(taskOriginDisabled && currentEntry?.kind === 'taskOrigin') && (
           <div
             className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
               matchStatus.status === 'match'
@@ -341,7 +341,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </div>
         )}
 
-        {descriptionContent && !taskOriginDisabled && (
+        {descriptionContent && !(taskOriginDisabled && currentEntry?.kind === 'taskOrigin') && (
           <div
             className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${
               descriptionContent.variant === 'expected-difference'
