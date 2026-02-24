@@ -232,7 +232,11 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
     console.log(
       '⚠️ Task origin validation is explicitly skipped in config (acceptable for testnet)'
     );
-    taskOriginValidation = { enabled: false, results: [] };
+    taskOriginValidation = {
+      enabled: false,
+      results: [],
+      hidden: cfg.hideTaskOriginSkippedPage === true,
+    };
   } else if (!cfg.taskOriginConfig) {
     throw new Error(
       'ValidationService::validateUpgrade: taskOriginConfig is required when task origin validation is enabled. ' +

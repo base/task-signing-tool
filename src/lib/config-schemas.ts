@@ -83,5 +83,6 @@ export const TaskConfigSchema = z.object({
   l2GasEstimation: L2GasEstimationSchema.optional(),
   // Task origin validation (opt-out, enabled by default)
   skipTaskOriginValidation: z.boolean().optional(),
+  hideTaskOriginSkippedPage: z.boolean().optional(),
   taskOriginConfig: TaskOriginValidationConfigSchema.optional(),
 });
