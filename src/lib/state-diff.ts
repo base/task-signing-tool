@@ -464,18 +464,39 @@ export class StateDiffClient {
     const sortedOverrides = [...overrides].sort((a, b) =>
       a.contractAddress.toLowerCase().localeCompare(b.contractAddress.toLowerCase())
     );
+
+    // Phase 1: aggregate storage slots by address, merging duplicates
+    const aggregated = new Map<
+      string,
+      {
+        contract: ContractCfg | undefined;
+        name: string;
+        storageMap: Map<Hex, { key: Hex; value: Hex }>;
+      }
+    >();
     for (const o of sortedOverrides) {
       const addrLower = o.contractAddress.toLowerCase();
-      const contract = chainContracts[addrLower];
-      const name = contract?.name ?? '<<ContractName>>';
-      const sortedStorage = [...o.overrides].sort((a, b) =>
-        this.n(a.key).localeCompare(this.n(b.key))
+      let entry = aggregated.get(addrLower);
+      if (!entry) {
+        const contract = chainContracts[addrLower];
+        entry = { contract, name: contract?.name ?? '<<ContractName>>', storageMap: new Map() };
+        aggregated.set(addrLower, entry);
+      }
+      for (const s of o.overrides) {
+        entry.storageMap.set(this.n(s.key), { key: this.n(s.key), value: this.n(s.value) });
+      }
+    }
+
+    // Phase 2: emit result, sorted by address (order preserved from sorted input)
+    for (const [addrLower, { contract, name, storageMap }] of aggregated) {
+      const sortedStorage = Array.from(storageMap.values()).sort((a, b) =>
+        a.key.localeCompare(b.key)
       );
       const jsonOverrides = sortedStorage.map(s => {
-        const slotCfg = this.getSlot(contract, this.n(s.key), parentMap);
+        const slotCfg = this.getSlot(contract, s.key, parentMap);
         return {
-          key: this.n(s.key),
-          value: this.n(s.value),
+          key: s.key,
+          value: s.value,
           description: slotCfg.overrideMeaning,
           allowDifference: slotCfg.allowOverrideDifference,
         };
