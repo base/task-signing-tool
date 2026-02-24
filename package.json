@@ -14,7 +14,8 @@
     "validate-structure": "tsx scripts/validate-structure.ts",
     "validate-folder": "tsx scripts/validate-structure.ts",
     "check-overrides": "tsx scripts/check-overrides.ts",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "fmt": "prettier --write ."
   },
   "dependencies": {
     "@sigstore/bundle": "4.0.0",

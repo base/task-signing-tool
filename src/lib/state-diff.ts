@@ -466,11 +466,14 @@ export class StateDiffClient {
     );
 
     // Phase 1: aggregate storage slots by address, merging duplicates
-    const aggregated = new Map<string, {
-      contract: ContractCfg | undefined;
-      name: string;
-      storageMap: Map<Hex, { key: Hex; value: Hex }>;
-    }>();
+    const aggregated = new Map<
+      string,
+      {
+        contract: ContractCfg | undefined;
+        name: string;
+        storageMap: Map<Hex, { key: Hex; value: Hex }>;
+      }
+    >();
     for (const o of sortedOverrides) {
       const addrLower = o.contractAddress.toLowerCase();
       let entry = aggregated.get(addrLower);
