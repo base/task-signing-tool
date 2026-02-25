@@ -17,6 +17,7 @@ export interface TaskOriginSignerResult {
 export interface TaskOriginValidation {
   enabled: boolean;
   results: TaskOriginSignerResult[];
+  hidden?: boolean;
 }
 
 export interface ValidationData {

@@ -206,6 +206,7 @@ const buildTaskOriginComparisons = (
 
   // If validation is disabled, return a single item representing the disabled state
   if (!enabled) {
+    if (validationResult.taskOriginValidation.hidden) return [];
     return [{ results: [], allPassed: true, isDisabled: true }];
   }
 
