@@ -94,6 +94,43 @@ function checkTestExclude(): OverrideCheck {
   };
 }
 
+/**
+ * Packages that pull in vulnerable minimatch versions.
+ * Each entry maps a package (at the version used by this project) to the
+ * minimum acceptable minimatch major version it should depend on.
+ */
+const MINIMATCH_CONSUMERS: { pkg: string; minMajor: number }[] = [
+  { pkg: 'eslint@9', minMajor: 10 },
+  { pkg: '@eslint/eslintrc@3', minMajor: 10 },
+  { pkg: 'eslint-plugin-import', minMajor: 10 },
+  { pkg: 'eslint-plugin-react', minMajor: 10 },
+];
+
+function checkMinimatch(): OverrideCheck {
+  const pkg = 'minimatch';
+  const currentOverride = '>=10.2.1';
+  const needsOverride: string[] = [];
+
+  for (const consumer of MINIMATCH_CONSUMERS) {
+    const dep = getPackageDependency(consumer.pkg, 'minimatch');
+    if (dep && !satisfiesMinMajor(dep, consumer.minMajor)) {
+      needsOverride.push(`${consumer.pkg} → minimatch@${dep}`);
+    }
+  }
+
+  const stillNeeded = needsOverride.length > 0;
+
+  return {
+    package: pkg,
+    currentOverride,
+    reason: 'Override to fix ReDoS vulnerability (GHSA-3ppc-4f35-3m26)',
+    stillNeeded,
+    details: stillNeeded
+      ? `Still needed for: ${needsOverride.join(', ')}`
+      : 'All upstream packages now use minimatch >= 10.x. Override may be removable.',
+  };
+}
+
 function checkGlob(testExcludeCheck: OverrideCheck): OverrideCheck {
   const pkg = 'glob';
   const currentOverride = '10.5.0';
@@ -124,7 +161,8 @@ function main(): void {
     const testExcludeCheck = checkTestExclude();
     const globCheck = checkGlob(testExcludeCheck);
 
-    const checks: OverrideCheck[] = [babelPluginCheck, testExcludeCheck, globCheck];
+    const minimatchCheck = checkMinimatch();
+    const checks: OverrideCheck[] = [babelPluginCheck, testExcludeCheck, globCheck, minimatchCheck];
 
     let allRemovable = true;
 
