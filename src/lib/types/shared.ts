@@ -2,6 +2,7 @@ export enum NetworkType {
   Sepolia = 'sepolia',
   Mainnet = 'mainnet',
   SepoliaAlpha = 'sepolia-alpha',
+  Zeronet = 'zeronet',
 }
 
 export enum TaskStatus {

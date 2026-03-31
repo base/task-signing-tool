@@ -32,7 +32,7 @@ git clone https://github.com/base/task-signing-tool.git
 
 ### Expected Directory Layout
 
-Place this repository at the root of your task repository. Network folders (e.g., `mainnet`, `sepolia`) must live alongside it, and each task must be a date-prefixed folder inside a network folder.
+Place this repository at the root of your task repository. Network folders (e.g., `mainnet`, `sepolia`, `zeronet`) must live alongside it, and each task must be a date-prefixed folder inside a network folder.
 
 ```12:40:root-of-your-task-repo
 contract-deployments/             # your task repo root (example)
@@ -57,17 +57,23 @@ contract-deployments/             # your task repo root (example)
 │     │  └─ base-sc-facilitator-signature.json
 │     └─ 2025-07-12-upgrade-bar/
 │        └─ ...
-└─ sepolia/
-   ├─ 2025-05-10-upgrade-baz/
+├─ sepolia/
+│  ├─ 2025-05-10-upgrade-baz/
+│  │  └─ ...
+│  └─ signatures/
+│     └─ 2025-05-10-upgrade-baz/
+│        └─ ...
+└─ zeronet/
+   ├─ 2025-08-01-upgrade-qux/
    │  └─ ...
    └─ signatures/
-      └─ 2025-05-10-upgrade-baz/
+      └─ 2025-08-01-upgrade-qux/
          └─ ...
 ```
 
 Key requirements and notes:
 
-- **Networks**: Supported networks are listed in `src/lib/constants.ts` and currently include `mainnet` and `sepolia`.
+- **Networks**: Supported networks are listed in `src/lib/constants.ts` and currently include `mainnet`, `sepolia`, `sepolia-alpha`, and `zeronet`.
 - **Task folder naming**: Task directories must begin with a date prefix, `YYYY-MM-DD-`, for example `2025-06-04-upgrade-foo`. The UI lists only folders matching that pattern.
 - **Validation configs**: For each task, place config files under `validations/` named by user type in kebab-case plus `.json`:
   - "Base SC" → `base-sc.json`

@@ -96,6 +96,64 @@
         "slots": "{{storageLayouts.disputeGameFactory}}"
       }
     },
+    "560048": {
+      "0x3d59999977e0896ee1f8783bb8251df16fb483e9": {
+        "name": "CB Coordinator Safe - Zeronet",
+        "slots": "{{storageLayouts.gnosisSafe}}"
+      },
+      "0x856611ed7e07d83243b15e93f6321f2df6865852": {
+        "name": "CB Signer Safe - Zeronet",
+        "slots": "{{storageLayouts.gnosisSafe}}"
+      },
+      "0xc4c0ad998b5dfa4cf4b298970f21b9015a5ee7ba": {
+        "name": "Security Council Safe - Zeronet",
+        "slots": "{{storageLayouts.gnosisSafe}}"
+      },
+      "0x154972ab98a5e321a9c7ab7677973f1f501a8090": {
+        "name": "DisputeGameFactory - Zeronet",
+        "slots": "{{storageLayouts.disputeGameFactory}}"
+      },
+      "0x60a6c389f0bc5ce4269a40d9695927bc58700328": {
+        "name": "AnchorStateRegistry - Zeronet",
+        "slots": "{{storageLayouts.anchorStateRegistry}}"
+      },
+      "0x7b9fb81a8e041814903c9385b22d88ac303df699": {
+        "name": "OptimismPortal - Zeronet",
+        "slots": "{{storageLayouts.optimismPortal}}"
+      },
+      "0xcc7c76564bea74a963a0bd75e0bc9bce3ff0ea80": {
+        "name": "SystemConfig - Zeronet",
+        "slots": "{{storageLayouts.systemConfig}}"
+      },
+      "0x276c216d241856199a83bf27b2286659e5b877d3": {
+        "name": "NitroEnclaveVerifier - Zeronet",
+        "slots": {}
+      },
+      "0x3347b4d90ebe72befb30444c9966b2b990ae9fcb": {
+        "name": "TEE Prover Registry Proxy - Zeronet",
+        "slots": {}
+      },
+      "0x3155755b79aa083bd953911c92705b7aa82a18f9": {
+        "name": "DelayedWETH Proxy - Zeronet",
+        "slots": {}
+      },
+      "0xe3011a37a904ab90c8881a99bd1f6e21401f1522": {
+        "name": "AggregateVerifier - Zeronet",
+        "slots": {}
+      },
+      "0x1f10f3ba7acb61b2f50b9d6ddcf91a6f787c0e82": {
+        "name": "OptimismPortal2 Impl - Zeronet",
+        "slots": {}
+      },
+      "0x457ccf29090fe5a24c19c1bc95f492168c0eafdb": {
+        "name": "DisputeGameFactory Impl - Zeronet",
+        "slots": {}
+      },
+      "0x525c7063e7c20997baae9bda922159152d0e8417": {
+        "name": "AnchorStateRegistry Impl - Zeronet",
+        "slots": {}
+      }
+    },
     "8453": {
       "0xd94e416cf2c7167608b2515b7e4102b41efff94f": {
         "name": "CB Signer Safe - Base Mainnet",
