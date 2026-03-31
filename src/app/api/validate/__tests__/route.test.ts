@@ -3,9 +3,7 @@ import { NextRequest } from 'next/server';
 import type { ValidationServiceOpts } from '@/lib/validation-service';
 import { NetworkType, type ValidationData } from '@/lib/types';
 
-const mockValidateUpgrade = jest.fn<
-  (opts: ValidationServiceOpts) => Promise<ValidationData>
->();
+const mockValidateUpgrade = jest.fn<(opts: ValidationServiceOpts) => Promise<ValidationData>>();
 
 jest.unstable_mockModule('@/lib/validation-service', () => ({
   validateUpgrade: mockValidateUpgrade,
