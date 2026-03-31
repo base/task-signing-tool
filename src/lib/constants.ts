@@ -4,6 +4,7 @@ export const availableNetworks: NetworkType[] = [
   NetworkType.Mainnet,
   NetworkType.Sepolia,
   NetworkType.SepoliaAlpha,
+  NetworkType.Zeronet,
 ];
 
 // Task origin signature file names (hardcoded per role)
