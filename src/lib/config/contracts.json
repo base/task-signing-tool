@@ -98,7 +98,7 @@
     },
     "560048": {
       "0x3d59999977e0896ee1f8783bb8251df16fb483e9": {
-        "name": "CB Coordinator Safe - Zeronet",
+        "name": "Proxy Admin Owner - Zeronet",
         "slots": "{{storageLayouts.gnosisSafe}}"
       },
       "0x856611ed7e07d83243b15e93f6321f2df6865852": {
@@ -110,19 +110,27 @@
         "slots": "{{storageLayouts.gnosisSafe}}"
       },
       "0x154972ab98a5e321a9c7ab7677973f1f501a8090": {
-        "name": "DisputeGameFactory - Zeronet",
+        "name": "DisputeGameFactory Proxy - Zeronet",
         "slots": "{{storageLayouts.disputeGameFactory}}"
       },
       "0x60a6c389f0bc5ce4269a40d9695927bc58700328": {
         "name": "AnchorStateRegistry - Zeronet",
         "slots": "{{storageLayouts.anchorStateRegistry}}"
       },
+      "0x4e69116d5c578faad6608ddd35357b15d7011a84": {
+        "name": "OptimismMintableERC20Factory - Zeronet",
+        "slots": "{{storageLayouts.optimismMintableErc20Factory}}"
+      },
+      "0x98be91ac4c84fcb1837fd75e8dee4992f35dbf35": {
+        "name": "L1StandardBridge - Zeronet",
+        "slots": "{{storageLayouts.l1StandardBridge}}"
+      },
       "0x7b9fb81a8e041814903c9385b22d88ac303df699": {
         "name": "OptimismPortal - Zeronet",
         "slots": "{{storageLayouts.optimismPortal}}"
       },
       "0xcc7c76564bea74a963a0bd75e0bc9bce3ff0ea80": {
-        "name": "SystemConfig - Zeronet",
+        "name": "System Config - Zeronet",
         "slots": "{{storageLayouts.systemConfig}}"
       },
       "0x276c216d241856199a83bf27b2286659e5b877d3": {
