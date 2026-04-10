@@ -133,32 +133,36 @@
         "name": "System Config - Zeronet",
         "slots": "{{storageLayouts.systemConfig}}"
       },
-      "0x276c216d241856199a83bf27b2286659e5b877d3": {
+      "0x5ed42a8eb9e1f0b466047c02156d894968d42ff9": {
         "name": "NitroEnclaveVerifier - Zeronet",
         "slots": {}
       },
-      "0x3347b4d90ebe72befb30444c9966b2b990ae9fcb": {
+      "0xf1d1441b7d98f191f5cfbe4660d3684fea004afc": {
         "name": "TEE Prover Registry Proxy - Zeronet",
-        "slots": {}
+        "slots": {
+          "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+            "type": "address",
+            "summary": "Updates TEEProverRegistry proxy implementation address.",
+            "overrideMeaning": "",
+            "allowDifference": false,
+            "allowOverrideDifference": false
+          }
+        }
       },
-      "0x3155755b79aa083bd953911c92705b7aa82a18f9": {
+      "0x8ff945fcad2ca8d66fa1ba63c70440328bb14ff3": {
         "name": "DelayedWETH Proxy - Zeronet",
-        "slots": {}
+        "slots": {
+          "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+            "type": "address",
+            "summary": "Updates DelayedWETH proxy implementation address.",
+            "overrideMeaning": "",
+            "allowDifference": false,
+            "allowOverrideDifference": false
+          }
+        }
       },
-      "0xe3011a37a904ab90c8881a99bd1f6e21401f1522": {
+      "0x6ed60b2e1bdc8bcf333e12e716af2bc63bb263d6": {
         "name": "AggregateVerifier - Zeronet",
-        "slots": {}
-      },
-      "0x1f10f3ba7acb61b2f50b9d6ddcf91a6f787c0e82": {
-        "name": "OptimismPortal2 Impl - Zeronet",
-        "slots": {}
-      },
-      "0x457ccf29090fe5a24c19c1bc95f492168c0eafdb": {
-        "name": "DisputeGameFactory Impl - Zeronet",
-        "slots": {}
-      },
-      "0x525c7063e7c20997baae9bda922159152d0e8417": {
-        "name": "AnchorStateRegistry Impl - Zeronet",
         "slots": {}
       }
     },
