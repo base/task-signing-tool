@@ -21,20 +21,20 @@
     "@sigstore/bundle": "4.0.0",
     "@sigstore/verify": "3.1.0",
     "lucide-react": "0.554.0",
-    "next": "16.1.6",
+    "next": "16.2.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-markdown": "10.1.0",
     "remark-gfm": "4.0.1",
     "shell-quote": "1.8.3",
-    "tar": "7.5.7",
+    "tar": "7.5.13",
     "viem": "2.38.2",
-    "yaml": "2.8.1",
+    "yaml": "2.8.3",
     "zod": "3.22.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3",
-    "@next/eslint-plugin-next": "16.1.6",
+    "@next/eslint-plugin-next": "16.2.3",
     "@tailwindcss/postcss": "4",
     "@types/jest": "29.5.12",
     "@types/node": "22.0.0",
@@ -43,7 +43,7 @@
     "@types/semver": "7.7.1",
     "@types/shell-quote": "1.7.5",
     "eslint": "9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.2.3",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.0.1",
     "jest": "30.2.0",
@@ -56,6 +56,7 @@
   "overrides": {
     "babel-plugin-istanbul": "7.0.1",
     "test-exclude": "7.0.1",
-    "glob": "10.5.0"
+    "glob": "10.5.0",
+    "brace-expansion": "1.1.14"
   }
 }
