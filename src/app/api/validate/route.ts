@@ -1,8 +1,12 @@
 import { validateUpgrade } from '@/lib/validation-service';
 import { NextRequest, NextResponse } from 'next/server';
 import { NetworkType } from '@/lib/types';
+import { rejectCrossOriginRequest } from '@/lib/request-origin';
 
 export async function POST(req: NextRequest) {
+  const crossOriginResponse = rejectCrossOriginRequest(req);
+  if (crossOriginResponse) return crossOriginResponse;
+
   try {
     const json = await req.json();
     const { upgradeId, network, userType } = json;
