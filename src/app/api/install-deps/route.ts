@@ -7,6 +7,7 @@ import { findContractDeploymentsRoot } from '@/lib/deployments';
 import { assertWithinDir } from '@/lib/path-validation';
 
 const execAsync = promisify(exec);
+const INSTALL_DEPS_TIMEOUT_MS = 20 * 60 * 1000;
 
 const pathExists = async (targetPath: string) => {
   try {
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     // Run make deps in the upgrade folder
     const { stdout, stderr } = await execAsync('make deps', {
       cwd: resolvedUpgradePath,
-      timeout: 300000, // 5 minutes timeout
+      timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
     });
 
@@ -127,7 +128,7 @@ export async function POST(req: NextRequest) {
         errorMessage = `make deps command failed. ${error.message}`;
       } else if (error.message.includes('timeout')) {
         errorMessage =
-          'Dependency installation timed out (5 minutes). This upgrade may require manual setup.';
+          'Dependency installation timed out (20 minutes). This upgrade may require manual setup.';
       } else if (error.message.includes('ENOENT')) {
         errorMessage = 'make command not found. Please ensure make is installed on the system.';
       }
