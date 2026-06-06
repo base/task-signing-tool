@@ -1,3 +1,4 @@
+import { parse as shellParse } from 'shell-quote';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { TASK_ORIGIN_COMMON_NAMES, TASK_ORIGIN_SIGNATURE_FILE_NAMES } from './constants';
@@ -91,7 +92,7 @@ async function runStateDiffSimulation(
 }> {
   try {
     console.log('Running state-diff simulation...');
-    const forgeCmd = cfg.cmd.trim().split(/\s+/);
+    const forgeCmd = shellParse(cfg.cmd).filter((token): token is string => typeof token === 'string');
     const stateDiffResult = await stateDiffClient.simulate(cfg.rpcUrl, forgeCmd, scriptPath);
 
     console.log(
