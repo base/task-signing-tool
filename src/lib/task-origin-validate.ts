@@ -34,8 +34,7 @@ async function getAllFilesRecursively(
 
   const entries = await fs.readdir(currentDir, { withFileTypes: true });
   const files: string[] = [];
-  // Exclude cache, out, and signer-tool folders from the tarball
-  const excludedFolders = ['cache', 'out', 'signer-tool'];
+  const excludedFolders = ['cache', 'out', 'task-signing-tool']; // matches documented clone directory name in README.md
 
   for (const entry of entries) {
     const fullPath = path.join(currentDir, entry.name);
