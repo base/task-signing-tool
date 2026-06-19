@@ -14,22 +14,20 @@ const toDisplayName = (name: string) =>
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const network = url.searchParams.get('network');
-  const upgradeId = url.searchParams.get('upgradeId');
 
-  if (!network || !upgradeId) {
+  if (!network) {
     return NextResponse.json(
-      { error: 'Missing required parameters: network and upgradeId are required' },
+      { error: 'Missing required parameter: network is required' },
       { status: 400 }
     );
   }
 
-  // Validate inputs to prevent path traversal attacks
   const safePathPattern = /^[a-zA-Z0-9_-]+$/;
-  if (!safePathPattern.test(network) || !safePathPattern.test(upgradeId)) {
+  if (!safePathPattern.test(network)) {
     return NextResponse.json(
       {
         error:
-          'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed',
+          'Invalid network: only alphanumeric characters, hyphens, and underscores are allowed',
       },
       { status: 400 }
     );
@@ -38,8 +36,10 @@ export async function GET(req: NextRequest) {
   const contractDeploymentsRoot = findContractDeploymentsRoot();
   const validationsJoinedPath = path.join(
     contractDeploymentsRoot,
+    'active',
+    'evm',
+    'config',
     network,
-    upgradeId,
     'validations'
   );
 
@@ -89,10 +89,9 @@ export async function GET(req: NextRequest) {
     );
 
     console.log(
-      'Found %d config options for %s/%s:',
+      'Found %d config options for %s:',
       configOptions.length,
       network,
-      upgradeId,
       configOptions.map(c => c.displayName)
     );
 

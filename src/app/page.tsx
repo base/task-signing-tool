@@ -157,29 +157,17 @@ export default function Home() {
         )}
 
         {currentStep === 'upgrade' && (
-          <UpgradeSelection
-            selectedWallet={selectedUpgrade?.id || null}
-            selectedNetwork={selectedNetwork}
-            onSelect={handleUpgradeSelection}
-          />
+          <UpgradeSelection selectedNetwork={selectedNetwork} onSelect={handleUpgradeSelection} />
         )}
 
         {currentStep === 'user' && selectedNetwork && selectedUpgrade && (
-          <UserSelection
-            network={selectedNetwork}
-            upgradeId={selectedUpgrade.id}
-            onSelect={handleUserSelection}
-          />
+          <UserSelection network={selectedNetwork} onSelect={handleUserSelection} />
         )}
 
         {currentStep === 'validation' && (
           <ValidationResults
             userType={selectedUser?.fileName || ''}
             network={selectedNetwork || ''}
-            selectedUpgrade={{
-              id: selectedUpgrade?.id || '',
-              name: selectedUpgrade?.name || '',
-            }}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
         )}
@@ -198,7 +186,6 @@ export default function Home() {
             user={selectedUser}
             network={selectedNetwork || ''}
             selectedUpgrade={{
-              id: selectedUpgrade?.id || '',
               name: selectedUpgrade?.name || '',
             }}
             signingData={signingData}

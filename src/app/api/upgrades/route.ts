@@ -20,9 +20,8 @@ export function GET(req: NextRequest) {
             network: network,
           }));
       });
-      // Sort by date (most recent first)
       return NextResponse.json(
-        allReadyToSignTasks.sort((a, b) => b.id.localeCompare(a.id)),
+        allReadyToSignTasks.sort((a, b) => b.date.localeCompare(a.date)),
         { status: 200 }
       );
     }

@@ -6,7 +6,6 @@ type RunnerStatus = 'idle' | 'installing-deps' | 'running' | 'success' | 'error'
 
 interface ValidationRunnerParams {
   network: string;
-  upgradeId: string;
   userType: string;
 }
 
@@ -61,7 +60,6 @@ interface UseValidationRunnerReturn extends ValidationRunnerState {
 
 export const useValidationRunner = ({
   network,
-  upgradeId,
   userType,
 }: ValidationRunnerParams): UseValidationRunnerReturn => {
   const [state, setState] = useState<ValidationRunnerState>(INITIAL_STATE);
@@ -82,10 +80,9 @@ export const useValidationRunner = ({
     });
 
     try {
-      console.log(`🔍 Checking dependencies for ${networkSlug}/${upgradeId}`);
+      console.log(`🔍 Checking dependencies for ${networkSlug}`);
       const depsResult = await postJson<InstallDepsResponse>('/api/install-deps', {
         network: networkSlug,
-        upgradeId,
       });
 
       if (!depsResult.success) {
@@ -96,11 +93,10 @@ export const useValidationRunner = ({
       }
 
       if (depsResult.depsInstalled) {
-        console.log(`✅ Dependencies installed successfully for ${networkSlug}/${upgradeId}`);
+        console.log(`✅ Dependencies installed successfully for ${networkSlug}`);
       }
 
       console.log('Running validation with options:', {
-        upgradeId,
         network,
         userType,
       });
@@ -112,7 +108,6 @@ export const useValidationRunner = ({
       });
 
       const validationResult = await postJson<ValidateResponse>('/api/validate', {
-        upgradeId,
         network: networkSlug,
         userType,
       });
@@ -149,7 +144,7 @@ export const useValidationRunner = ({
     } finally {
       isRunningRef.current = false;
     }
-  }, [network, upgradeId, userType]);
+  }, [network, userType]);
 
   const reset = useCallback(() => {
     setState(INITIAL_STATE);

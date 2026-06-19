@@ -26,7 +26,6 @@ describe('GET /api/upgrades', () => {
       if (network === NetworkType.Zeronet) {
         return [
           {
-            id: '2025-08-01-upgrade-qux',
             name: 'Upgrade Qux',
             description: 'Zeronet upgrade',
             date: '2025-08-01',
@@ -64,7 +63,6 @@ describe('GET /api/upgrades', () => {
     expect(body).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: '2025-08-01-upgrade-qux',
           network: NetworkType.Zeronet,
           status: TaskStatus.ReadyToSign,
         }),

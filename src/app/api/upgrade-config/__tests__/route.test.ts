@@ -54,86 +54,53 @@ describe('GET /api/upgrade-config', () => {
 
   describe('missing parameters', () => {
     it('returns 400 when network is missing', async () => {
-      const res = await GET(createRequest({ upgradeId: 'test' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/missing required parameters/i);
-    });
-
-    it('returns 400 when upgradeId is missing', async () => {
-      const res = await GET(createRequest({ network: 'mainnet' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/missing required parameters/i);
-    });
-
-    it('returns 400 when both are missing', async () => {
       const res = await GET(createRequest({}));
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.error).toMatch(/missing required parameters/i);
+      expect(body.error).toMatch(/missing required parameter/i);
     });
   });
 
   describe('path traversal prevention', () => {
     it('returns 400 when network contains ".."', async () => {
-      const res = await GET(createRequest({ network: '..', upgradeId: 'test' }));
+      const res = await GET(createRequest({ network: '..' }));
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.error).toMatch(/invalid network or upgradeId/i);
+      expect(body.error).toMatch(/invalid network/i);
     });
 
     it('returns 400 when network contains "/"', async () => {
-      const res = await GET(createRequest({ network: 'foo/bar', upgradeId: 'test' }));
+      const res = await GET(createRequest({ network: 'foo/bar' }));
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.error).toMatch(/invalid network or upgradeId/i);
-    });
-
-    it('returns 400 when upgradeId contains ".."', async () => {
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: '..' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/invalid network or upgradeId/i);
+      expect(body.error).toMatch(/invalid network/i);
     });
 
     it('returns 400 when network contains spaces', async () => {
-      const res = await GET(createRequest({ network: 'main net', upgradeId: 'test' }));
+      const res = await GET(createRequest({ network: 'main net' }));
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.error).toMatch(/invalid network or upgradeId/i);
-    });
-
-    it('returns 400 when upgradeId contains "@"', async () => {
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test@1' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/invalid network or upgradeId/i);
+      expect(body.error).toMatch(/invalid network/i);
     });
 
     it('returns 400 when network contains "." (single dot)', async () => {
-      const res = await GET(createRequest({ network: '.', upgradeId: 'test' }));
+      const res = await GET(createRequest({ network: '.' }));
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.error).toMatch(/invalid network or upgradeId/i);
+      expect(body.error).toMatch(/invalid network/i);
     });
   });
 
   describe('valid safe characters', () => {
-    it('accepts hyphens (e.g., "op-mainnet")', async () => {
-      const res = await GET(createRequest({ network: 'op-mainnet', upgradeId: 'test' }));
-      expect(res.status).toBe(200);
-    });
-
-    it('accepts underscores (e.g., "upgrade_1")', async () => {
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'upgrade_1' }));
+    it('accepts hyphens in network names', async () => {
+      const res = await GET(createRequest({ network: 'op-mainnet' }));
       expect(res.status).toBe(200);
     });
   });
 
   describe('happy path', () => {
     it('returns 200 with config options', async () => {
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
+      const res = await GET(createRequest({ network: 'mainnet' }));
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.configOptions).toHaveLength(1);
@@ -148,7 +115,7 @@ describe('GET /api/upgrade-config', () => {
     it('returns 200 with empty array on ENOENT', async () => {
       const enoentError = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
       mockReaddir.mockRejectedValue(enoentError);
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
+      const res = await GET(createRequest({ network: 'mainnet' }));
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.configOptions).toEqual([]);
@@ -158,7 +125,7 @@ describe('GET /api/upgrade-config', () => {
   describe('post-validation', () => {
     it('returns 500 on unexpected fs errors', async () => {
       mockReaddir.mockRejectedValue(new Error('Unexpected disk error'));
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
+      const res = await GET(createRequest({ network: 'mainnet' }));
       expect(res.status).toBe(500);
       const body = await res.json();
       expect(body.error).toMatch(/failed to fetch upgrade configuration/i);
@@ -167,7 +134,7 @@ describe('GET /api/upgrade-config', () => {
 
   describe('does not call fs', () => {
     it('readdir not called when validation rejects', async () => {
-      await GET(createRequest({ network: '..', upgradeId: 'test' }));
+      await GET(createRequest({ network: '..' }));
       expect(mockReaddir).not.toHaveBeenCalled();
       expect(mockFindContractDeploymentsRoot).not.toHaveBeenCalled();
     });

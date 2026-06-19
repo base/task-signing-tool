@@ -1,23 +1,33 @@
 import fs from 'fs';
 import path from 'path';
 import { NetworkType, TaskStatus } from './types';
-import { availableNetworks } from './constants';
 
 let cachedRoot: string | null = null;
 
-export function findContractDeploymentsRoot(): string {
+function isDirectory(dirPath: string): boolean {
+  try {
+    return fs.statSync(dirPath).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+export function resetContractDeploymentsRootCacheForTests(): void {
+  cachedRoot = null;
+}
+
+function hasTaskLayout(root: string): boolean {
+  return isDirectory(path.join(root, 'active', 'evm', 'config'));
+}
+
+export function findContractDeploymentsRoot(startDir: string = process.cwd()): string {
   if (cachedRoot) return cachedRoot;
 
-  let currentDir = process.cwd();
+  let currentDir = startDir;
   const root = path.parse(currentDir).root;
 
   while (currentDir !== root) {
-    const hasNetworkFolders = availableNetworks.some(network => {
-      const netPath = path.join(currentDir, network);
-      return fs.existsSync(netPath) && fs.statSync(netPath).isDirectory();
-    });
-
-    if (hasNetworkFolders) {
+    if (hasTaskLayout(currentDir)) {
       cachedRoot = currentDir;
       return currentDir;
     }
@@ -25,13 +35,12 @@ export function findContractDeploymentsRoot(): string {
     currentDir = path.dirname(currentDir);
   }
 
-  // Fallback for default behavior
+  // Fallback for default behavior when the tool is cloned inside the task repo root.
   cachedRoot = path.join(process.cwd(), '..');
   return cachedRoot;
 }
 
 export interface DeploymentInfo {
-  id: string;
   name: string;
   description: string;
   date: string;
@@ -47,13 +56,20 @@ const DEFAULT_DESCRIPTION = 'Smart contract upgrade deployment';
 const MAX_STATUS_SEARCH_LINES = 20;
 const MAX_STATUS_FOLLOW_UP_LINES = 5;
 
-function formatUpgradeName(folderName: string): string {
-  const slug = folderName.replace(/^\d{4}-\d{2}-\d{2}-/, '');
-  return slug
+function formatNetworkName(network: string): string {
+  return network
     .split('-')
     .filter(Boolean)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+function extractTitle(content: string): string | undefined {
+  const titleLine = content
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .find(line => /^#\s+/.test(line.trim()));
+  return titleLine?.replace(/^#\s+/, '').trim() || undefined;
 }
 
 function cleanMarkdownBlock(block: string): string {
@@ -175,60 +191,73 @@ function parseExecutionStatus(content: string): {
   }
 }
 
-function deriveDateFromFolder(folderName: string): string {
-  const match = folderName.match(/^(\d{4}-\d{2}-\d{2})/);
-  return match ? match[1] : folderName.substring(0, 10);
+function deriveDateFromContent(content: string): string | undefined {
+  const match = content.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  return match?.[1];
+}
+
+function readDeploymentInfoFromReadme(
+  baseInfo: DeploymentInfo,
+  readmePath: string,
+  options?: { useTitle?: boolean; defaultDate?: string }
+): DeploymentInfo {
+  try {
+    const content = fs.readFileSync(readmePath, 'utf-8');
+    const { status, executionLinks } = parseExecutionStatus(content);
+    return {
+      ...baseInfo,
+      name: options?.useTitle ? extractTitle(content) || baseInfo.name : baseInfo.name,
+      description: extractDescription(content),
+      date: options?.defaultDate ?? deriveDateFromContent(content) ?? baseInfo.date,
+      status,
+      executionLinks,
+    };
+  } catch (parseError) {
+    console.error(`Error parsing ${readmePath}:`, parseError);
+    return { ...baseInfo, description: DEFAULT_DESCRIPTION };
+  }
+}
+
+function getUpgradeOption(
+  contractDeploymentsPath: string,
+  network: NetworkType
+): DeploymentInfo | undefined {
+  if (!hasTaskLayout(contractDeploymentsPath)) {
+    return undefined;
+  }
+
+  const taskPath = path.join(contractDeploymentsPath, 'active', 'evm');
+  const networkConfigPath = path.join(taskPath, 'config', network);
+  const validationsPath = path.join(networkConfigPath, 'validations');
+
+  if (!fs.existsSync(validationsPath) || !fs.statSync(validationsPath).isDirectory()) {
+    return undefined;
+  }
+
+  const baseInfo: DeploymentInfo = {
+    name: `${formatNetworkName(network)} Task`,
+    description: '',
+    date: 'active',
+    network,
+  };
+
+  const readmePath = [
+    path.join(networkConfigPath, 'README.md'),
+    path.join(taskPath, 'README.md'),
+  ].find(filePath => fs.existsSync(filePath) && fs.statSync(filePath).isFile());
+
+  if (!readmePath) {
+    return baseInfo;
+  }
+
+  return readDeploymentInfoFromReadme(baseInfo, readmePath, {
+    useTitle: true,
+    defaultDate: deriveDateFromContent(fs.readFileSync(readmePath, 'utf-8')) ?? 'active',
+  });
 }
 
 export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
   const contractDeploymentsPath = findContractDeploymentsRoot();
-  const networkPath = path.join(contractDeploymentsPath, network);
-
-  if (!fs.existsSync(networkPath)) {
-    console.error(`Network path does not exist: ${networkPath}`);
-    return [];
-  }
-
-  try {
-    const folders = fs
-      .readdirSync(networkPath, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => dirent.name)
-      .filter(name => /^\d{4}-\d{2}-\d{2}-/.test(name));
-
-    const upgrades = folders.map(folderName => {
-      const date = deriveDateFromFolder(folderName);
-      const baseInfo: DeploymentInfo = {
-        id: folderName,
-        name: formatUpgradeName(folderName),
-        description: '',
-        date,
-        network,
-      };
-
-      const readmePath = path.join(networkPath, folderName, 'README.md');
-      if (!fs.existsSync(readmePath)) {
-        return baseInfo;
-      }
-
-      try {
-        const content = fs.readFileSync(readmePath, 'utf-8');
-        const { status, executionLinks } = parseExecutionStatus(content);
-        return {
-          ...baseInfo,
-          description: extractDescription(content),
-          status,
-          executionLinks,
-        };
-      } catch (parseError) {
-        console.error(`Error parsing ${folderName}:`, parseError);
-        return { ...baseInfo, description: DEFAULT_DESCRIPTION };
-      }
-    });
-
-    return upgrades.sort((a, b) => b.id.localeCompare(a.id));
-  } catch (error) {
-    console.error(`Error reading deployment folders for ${network}:`, error);
-    return [];
-  }
+  const option = getUpgradeOption(contractDeploymentsPath, network);
+  return option ? [option] : [];
 }

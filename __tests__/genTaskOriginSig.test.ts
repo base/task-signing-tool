@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import {
@@ -14,6 +15,7 @@ const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task');
 const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
 const INVALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/invalid');
 const MISSING_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/missing');
+const VALID_TASK_TARBALL = path.resolve(process.cwd(), 'valid-task.tar');
 
 // Task creator email
 const TASK_CREATOR_EMAIL = 'alexis.williams.1@coinbase.com';
@@ -32,6 +34,7 @@ describe('verifyTaskOrigin', () => {
   afterEach(() => {
     process.exitCode = originalExitCode;
     jest.restoreAllMocks();
+    return fs.rm(VALID_TASK_TARBALL, { force: true });
   });
 
   describe('valid signatures', () => {
@@ -134,6 +137,7 @@ describe('verifyAllSignatures', () => {
   afterEach(() => {
     process.exitCode = originalExitCode;
     jest.restoreAllMocks();
+    return fs.rm(VALID_TASK_TARBALL, { force: true });
   });
 
   it('validates successfully when all 3 signatures are valid', async () => {

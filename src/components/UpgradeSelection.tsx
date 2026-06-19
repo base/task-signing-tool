@@ -13,13 +13,11 @@ const STATUS_VARIANT_MAP: Record<TaskStatus, 'success' | 'warning' | 'neutral'> 
 };
 
 interface UpgradeSelectionProps {
-  selectedWallet: string | null;
   selectedNetwork: string | null;
   onSelect: (upgrade: Upgrade) => void;
 }
 
 export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
-  selectedWallet,
   selectedNetwork,
   onSelect,
 }) => {
@@ -137,12 +135,12 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
 
       <div className="space-y-4">
         {upgradeOptions.map(option => {
-          const isSelected = selectedWallet === option.id && selectedNetwork === option.network;
-          const isExpanded = !!expandedCards[option.id];
+          const isSelected = selectedNetwork === option.network;
+          const isExpanded = !!expandedCards[option.network];
 
           return (
             <Card
-              key={`${option.network}-${option.id}`}
+              key={option.network}
               interactive
               selected={isSelected}
               onClick={() => onSelect(option)}
@@ -214,7 +212,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        setExpandedCards(prev => ({ ...prev, [option.id]: !isExpanded }));
+                        setExpandedCards(prev => ({ ...prev, [option.network]: !isExpanded }));
                       }}
                       className="mt-2 text-xs font-medium text-[var(--cds-primary)] hover:text-[var(--cds-primary-hover)] focus:outline-none focus-visible:underline cursor-pointer"
                     >
