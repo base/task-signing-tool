@@ -80,14 +80,16 @@ describe('createDeterministicTarball', () => {
     expect(entries).toContain('test.txt');
   });
 
-  it('excludes cache/, out/, and signer-tool/ directories', async () => {
+  it('excludes cache/, out/, signer-tool/, and signatures/ directories', async () => {
     // Create excluded directories with files
     await fs.mkdir(path.join(tempDir, 'cache'), { recursive: true });
     await fs.mkdir(path.join(tempDir, 'out'), { recursive: true });
     await fs.mkdir(path.join(tempDir, 'signer-tool'), { recursive: true });
+    await fs.mkdir(path.join(tempDir, 'signatures'), { recursive: true });
     await fs.writeFile(path.join(tempDir, 'cache', 'cached.txt'), 'cached data');
     await fs.writeFile(path.join(tempDir, 'out', 'output.txt'), 'output data');
     await fs.writeFile(path.join(tempDir, 'signer-tool', 'tool.txt'), 'tool data');
+    await fs.writeFile(path.join(tempDir, 'signatures', 'creator-signature.json'), '{}');
 
     // Create an included file
     await fs.writeFile(path.join(tempDir, 'included.txt'), 'included data');
@@ -104,6 +106,7 @@ describe('createDeterministicTarball', () => {
     expect(entries.some(e => e.includes('cache'))).toBe(false);
     expect(entries.some(e => e.includes('out'))).toBe(false);
     expect(entries.some(e => e.includes('signer-tool'))).toBe(false);
+    expect(entries.some(e => e.includes('signatures'))).toBe(false);
   });
 
   it('produces deterministic output with identical hash', async () => {

@@ -43,15 +43,19 @@ contract-deployments/
 │     ├─ config/
 │     │  ├─ mainnet/
 │     │  │  ├─ validations/
+│     │  │  ├─ signatures/
+│     │  │  ├─ network.env
 │     │  │  └─ .env
 │     │  ├─ sepolia/
 │     │  │  ├─ validations/
+│     │  │  ├─ signatures/
+│     │  │  ├─ network.env
 │     │  │  └─ .env
 │     │  ├─ zeronet/
 │     │  │  ├─ validations/
+│     │  │  ├─ signatures/
+│     │  │  ├─ network.env
 │     │  │  └─ .env
-│     │  └─ signatures/
-│     │     └─ mainnet/
 │     ├─ script/
 │     │  └─ common/
 │     ├─ FACILITATOR.md
@@ -65,20 +69,17 @@ Notes:
 
 - **Signer experience**: The UI remains unchanged. The current task is listed as a normal task for each network with validation configs.
 - **Networks**: Supported networks are listed in `src/lib/constants.ts` and currently include `mainnet`, `sepolia`, `sepolia-alpha`, and `zeronet`.
-- **Validation configs**: Place config files under `active/evm/config/<network>/validations/` named by user type in kebab-case plus `.json`:
-  - "Base SC" → `base-sc.json`
-  - "Coinbase" → `coinbase.json`
-  - "OP" → `op.json`
+- **Validation configs**: Place config files under `active/evm/config/<network>/validations/` with concise human-readable names, such as `coinbase-signer.json` or `security-council-signer.json`.
 - **Script execution**: Validation commands run from `active/evm/`, so validation `cmd` values should reference scripts relative to that directory.
-- **Task origin verification**: Task-origin signatures are verified over `active/evm/config/mainnet/` only.
-- **Signature storage**: Store signatures outside the signed directory, for example `active/evm/config/signatures/mainnet/`, so generating signatures does not change the tarball content.
+- **Task origin verification**: Task-origin signatures are verified over the selected network config, `active/evm/config/<network>/`.
+- **Signature storage**: Store signatures in `active/evm/config/<network>/signatures/`. The signer tool excludes the nested `signatures/` directory from the signed tarball, so generating signatures does not change the attested payload.
 
 Generate task-origin signatures with:
 
 ```bash
 tsx task-signing-tool/scripts/genTaskOriginSig.ts sign \
   --task-folder active/evm/config/mainnet \
-  --signature-path active/evm/config/signatures/mainnet
+  --signature-path active/evm/config/mainnet/signatures
 ```
 
 ### Task README structure
@@ -194,7 +195,7 @@ Notes:
 
 - Sorting is not required; the tool sorts by address and storage slot for comparison.
 - The tool reads `rpcUrl` and `ledgerId` directly from this file.
-- When task origin validation is enabled, three signature files must exist in `active/evm/config/signatures/mainnet/` (see **Task Origin Signing** below).
+- When task origin validation is enabled, three signature files must exist in `active/evm/config/<network>/signatures/` (see **Task Origin Signing** below).
 
 Minimal example (`validations/base-sc.json`):
 
@@ -312,7 +313,7 @@ Use `scripts/genTaskOriginSig.ts` to sign task folders for origin validation. Ta
 
 #### Signature files
 
-When task origin validation is enabled, three signature files must exist in `active/evm/config/signatures/mainnet/`:
+When task origin validation is enabled, three signature files must exist in `active/evm/config/<network>/signatures/`:
 
 - **Task Creator**: `creator-signature.json` — common name is the email of the task author (e.g., `alice@example.com`)
 - **Base Facilitator**: `base-facilitator-signature.json` — common name is `base-facilitators` (group)
@@ -320,7 +321,7 @@ When task origin validation is enabled, three signature files must exist in `act
 
 The **common name** is extracted from the signer's X.509 certificate Subject Alternative Name (SAN). For task creators, this is their email address. For facilitators, it is the group name they belong to.
 
-Signatures are stored separately from `active/evm/config/mainnet/` to ensure the tarball content remains unchanged after signing.
+Signatures are stored under `active/evm/config/<network>/signatures/`. The signer tool excludes that nested `signatures/` directory from the deterministic tarball to ensure the tarball content remains unchanged after signing.
 
 #### Requirements
 
@@ -358,7 +359,7 @@ npx tsx scripts/genTaskOriginSig.ts --help
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
   --task-folder active/evm/config/mainnet \
-  --signature-path active/evm/config/signatures/mainnet
+  --signature-path active/evm/config/mainnet/signatures
 ```
 
 **Sign as Base facilitator:**
@@ -367,7 +368,7 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
   --task-folder active/evm/config/mainnet \
-  --signature-path active/evm/config/signatures/mainnet \
+  --signature-path active/evm/config/mainnet/signatures \
   --facilitator base
 ```
 
@@ -377,7 +378,7 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 npm ci
 npx tsx scripts/genTaskOriginSig.ts verify \
   --task-folder active/evm/config/mainnet \
-  --signature-path active/evm/config/signatures/mainnet \
+  --signature-path active/evm/config/mainnet/signatures \
   --common-name alice@example.com
 ```
 

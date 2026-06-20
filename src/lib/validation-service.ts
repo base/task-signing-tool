@@ -40,6 +40,10 @@ async function getConfigData(
     path.join(scriptPath, 'config', opts.network, 'validations'),
     CONTRACT_DEPLOYMENTS_ROOT
   );
+  const networkConfigDir = assertWithinDir(
+    path.join(scriptPath, 'config', opts.network),
+    CONTRACT_DEPLOYMENTS_ROOT
+  );
   const configFileName = `${opts.taskConfigFileName}.json`;
   const configPath = path.join(configDir, configFileName);
   assertWithinDir(configPath, CONTRACT_DEPLOYMENTS_ROOT);
@@ -70,12 +74,9 @@ async function getConfigData(
   return {
     cfg: parsedConfig.config,
     scriptPath,
-    taskOriginDir: assertWithinDir(
-      path.join(scriptPath, 'config', NetworkType.Mainnet),
-      CONTRACT_DEPLOYMENTS_ROOT
-    ),
+    taskOriginDir: networkConfigDir,
     signatureDir: assertWithinDir(
-      path.join(scriptPath, 'config', 'signatures', NetworkType.Mainnet),
+      path.join(networkConfigDir, 'signatures'),
       CONTRACT_DEPLOYMENTS_ROOT
     ),
   };
