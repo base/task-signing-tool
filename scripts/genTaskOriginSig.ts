@@ -5,14 +5,34 @@ import { parseArgs } from 'node:util';
 import { quote as shellQuote } from 'shell-quote';
 import { spawn as spawnProcess } from 'child_process';
 import { promises as fs } from 'fs';
-import { X509Certificate } from 'crypto';
-import { buildAndValidateSignature, createDeterministicTarball } from '@/lib/task-origin-validate';
+import { X509Certificate, createSign, createHash, createPrivateKey } from 'crypto';
+import { MessageSignatureBundleBuilder, TSAWitness } from '@sigstore/sign';
+import type { Signer, Signature } from '@sigstore/sign';
+import { bundleToJSON } from '@sigstore/bundle';
+import { pem as pemUtils } from '@sigstore/core';
+import { HashAlgorithm } from '@sigstore/protobuf-specs';
+import {
+  buildAndValidateSignature,
+  createDeterministicTarball,
+  getURIPrefix,
+} from '@/lib/task-origin-validate';
 import { TASK_ORIGIN_SIGNATURE_FILE_NAMES, TASK_ORIGIN_COMMON_NAMES } from '@/lib/constants';
 import type { TaskOriginRole } from '@/lib/types';
+
+const TSA_BASE_URL = 'https://timestamp.sigstore.dev';
 
 const CERT_PATH = path.join(os.homedir(), '.ottr');
 const DEVICE_CERT = 'device-certificate.pem';
 const DEVICE_CERT_KEY = 'device-certificate-key.pem';
+
+const ECDSA_CURVE_TO_HASH: Record<
+  string,
+  { nodeDigest: string; sigstoreAlgorithm: HashAlgorithm }
+> = {
+  prime256v1: { nodeDigest: 'sha256', sigstoreAlgorithm: HashAlgorithm.SHA2_256 },
+  secp384r1: { nodeDigest: 'sha384', sigstoreAlgorithm: HashAlgorithm.SHA2_384 },
+  secp521r1: { nodeDigest: 'sha512', sigstoreAlgorithm: HashAlgorithm.SHA2_512 },
+};
 
 export type FacilitatorType = 'base' | 'security-council';
 type VerificationResult = {
@@ -66,17 +86,16 @@ export function spawn(command: string): Promise<number | null> {
 }
 
 /**
- * Extracts the identity from an X.509 certificate's SAN.
+ * Extracts the SAN URI from an X.509 certificate, e.g.
+ * user:///email@coinbase.com or ldap:///base-facilitators.
  */
-function extractCommonNameFromCert(cert: X509Certificate): string {
+function parseURIFromCertificate(cert: X509Certificate): string {
   const san = cert.subjectAltName;
   if (!san) {
     throw new Error('No Subject Alternative Name found in certificate');
   }
 
-  // Parse the SAN to extract the identity
-  // SAN format: "URI:user:///email@example.com" or "URI:ldap:///group-name"
-  const uriMatch = san.match(/URI:(?:user|ldap):\/\/\/([^,\s]+)/);
+  const uriMatch = san.match(/URI:((?:user|ldap):\/\/\/[^,\s]+)/);
   if (!uriMatch) {
     throw new Error(`Could not extract identity from SAN: ${san}`);
   }
@@ -84,47 +103,13 @@ function extractCommonNameFromCert(cert: X509Certificate): string {
   return uriMatch[1];
 }
 
-/**
- * Extracts the common name (email) from a task origin signature bundle.
- */
-export async function extractCommonNameFromSignature(signatureFile: string): Promise<string> {
-  const bundleJSON = JSON.parse(await fs.readFile(signatureFile, 'utf8'));
-
-  // Extract the leaf certificate (index 0) from the bundle
-  const certificates = bundleJSON?.verificationMaterial?.x509CertificateChain?.certificates;
-  if (!certificates || certificates.length === 0) {
-    throw new Error('No certificates found in signature bundle');
-  }
-
-  // The leaf certificate is at index 0
-  const leafCertBase64 = certificates[0]?.rawBytes;
-  if (!leafCertBase64) {
-    throw new Error('Leaf certificate rawBytes not found in bundle');
-  }
-
-  // Parse the X.509 certificate
-  const certDer = Buffer.from(leafCertBase64, 'base64');
-  const cert = new X509Certificate(new Uint8Array(certDer));
-
-  return extractCommonNameFromCert(cert);
+export function parseIdentityFromCertificate(cert: X509Certificate): string {
+  return parseURIFromCertificate(cert).replace(/^(?:user|ldap):\/\/\//, '');
 }
 
-/**
- * Extracts the common name (email) from a PEM certificate file.
- */
-export async function extractCommonNameFromCertFile(certPath: string): Promise<string> {
-  const certPem = await fs.readFile(certPath, 'utf8');
-  const cert = new X509Certificate(certPem);
-  return extractCommonNameFromCert(cert);
-}
-
-/**
- * Generates a device certificate and returns the certificate and key paths.
- * Returns the common name extracted from the generated certificate.
- */
 export async function generateDeviceCertificate(
   facilitator: FacilitatorType | undefined
-): Promise<{ certPath: string; keyPath: string; commonName: string }> {
+): Promise<{ certPath: string; keyPath: string; identity: string }> {
   console.log('🔐 Generating device certificate...');
 
   const certCommand = [
@@ -156,11 +141,49 @@ export async function generateDeviceCertificate(
   const certPath = path.join(CERT_PATH, DEVICE_CERT);
   const keyPath = path.join(CERT_PATH, DEVICE_CERT_KEY);
 
-  // Extract common name from the generated certificate
-  const commonName = await extractCommonNameFromCertFile(certPath);
-  console.log(`  Common Name: ${commonName}`);
+  // Identity returned from function must exclude user:/// scheme as the
+  // existing verification logic for the Base Task Signer Tool UI uses
+  // the raw email address within the `taskOriginConfig` JSON block.
+  const certificate = new X509Certificate(await fs.readFile(certPath, 'utf8'));
+  const identity = parseIdentityFromCertificate(certificate);
+  console.log(`  Identity: ${identity}`);
 
-  return { certPath, keyPath, commonName };
+  return { certPath, keyPath, identity };
+}
+
+const BEGIN_CERTIFICATE_PEM = '-----BEGIN CERTIFICATE-----';
+const END_CERTIFICATE_PEM = '-----END CERTIFICATE-----';
+
+export function parseCertificateChainPEM(pemData: string): Buffer[] {
+  return pemData
+    .split(END_CERTIFICATE_PEM)
+    .filter(block => block.includes(BEGIN_CERTIFICATE_PEM))
+    .map(block => pemUtils.toDER(block + END_CERTIFICATE_PEM));
+}
+
+export function resolveSignatureHash(keyPem: string): {
+  nodeDigest: string;
+  sigstoreAlgorithm: HashAlgorithm;
+} {
+  const namedCurve = createPrivateKey(keyPem).asymmetricKeyDetails?.namedCurve;
+  const match = namedCurve ? ECDSA_CURVE_TO_HASH[namedCurve] : undefined;
+  return match ?? ECDSA_CURVE_TO_HASH.prime256v1;
+}
+
+class DeviceCertificateSigner implements Signer {
+  constructor(
+    private keyPem: string,
+    private leafCertificatePem: string,
+    private nodeDigest: string
+  ) {}
+
+  async sign(data: Buffer): Promise<Signature> {
+    const signature = createSign(this.nodeDigest).update(new Uint8Array(data)).sign(this.keyPem);
+    return {
+      signature,
+      key: { $case: 'x509Certificate', certificate: this.leafCertificatePem },
+    };
+  }
 }
 
 /**
@@ -183,24 +206,39 @@ export async function signTaskWithCert(
   const tarballPath = await createDeterministicTarball(taskFolderPath);
   console.log(`  Tarball: ${tarballPath}`);
 
-  const command = shellQuote([
-    'ottr-cli',
-    'generate',
-    'signature',
-    '--data',
-    tarballPath,
-    '--private-key',
-    keyPath,
-    '--certificate',
-    certPath,
-    '--bundle-output',
-    signatureFileOut,
-  ]);
-  const code = await spawn(command);
-  if (code !== 0) {
-    console.error(`  Error: Command failed with exit code ${code}`);
+  const keyPem = await fs.readFile(keyPath, 'utf8');
+  const certificateChainPem = await fs.readFile(certPath, 'utf8');
+
+  const certificateChain = parseCertificateChainPEM(certificateChainPem);
+  if (certificateChain.length === 0) {
+    console.error('  Error: No certificates found in certificate chain file');
     return undefined;
   }
+
+  const { nodeDigest, sigstoreAlgorithm } = resolveSignatureHash(keyPem);
+  const bundler = new MessageSignatureBundleBuilder({
+    signer: new DeviceCertificateSigner(keyPem, pemUtils.fromDER(certificateChain[0]), nodeDigest),
+    witnesses: [new TSAWitness({ tsaBaseURL: TSA_BASE_URL })],
+  });
+
+  const tarball = await fs.readFile(tarballPath);
+  const bundle = await bundler.create({ data: tarball });
+
+  if (bundle.content.$case === 'messageSignature') {
+    bundle.content.messageSignature.messageDigest = {
+      algorithm: sigstoreAlgorithm,
+      digest: createHash(nodeDigest).update(new Uint8Array(tarball)).digest(),
+    };
+  }
+
+  if (bundle.verificationMaterial.content.$case === 'x509CertificateChain') {
+    bundle.verificationMaterial.content.x509CertificateChain.certificates = certificateChain.map(
+      rawBytes => ({ rawBytes })
+    );
+  }
+
+  const bundleJson = bundleToJSON(bundle);
+  await fs.writeFile(signatureFileOut, JSON.stringify(bundleJson, null, 2));
 
   console.log(`  Signature: ${signatureFileOut}`);
   return signatureFileOut;
@@ -215,6 +253,24 @@ export function facilitatorToRole(facilitator: FacilitatorType | undefined): Tas
 
 export function facilitatorToGroup(facilitator: FacilitatorType): string {
   return facilitator === 'base' ? 'base-facilitators' : 'base-sc-facilitators';
+}
+
+/**
+ * Asserts that the certificate URI uses the scheme expected for the role
+ * user:/// for Task Creators and ldap:/// for Facilitators.
+ */
+export async function assertURIPrefix(
+  certificatePath: string,
+  role: TaskOriginRole
+): Promise<void> {
+  const certificate = new X509Certificate(await fs.readFile(certificatePath, 'utf8'));
+  const uri = parseURIFromCertificate(certificate);
+  const expectedPrefix = getURIPrefix(role);
+  if (!uri.startsWith(expectedPrefix)) {
+    throw new Error(
+      `Certificate URI "${uri}" does not use the expected "${expectedPrefix}" scheme for Task Origin Role "${role}".`
+    );
+  }
 }
 
 /**
@@ -238,6 +294,7 @@ export async function signTask(
 
   try {
     const { certPath, keyPath } = await generateDeviceCertificate(facilitator);
+    await assertURIPrefix(certPath, role);
     return await signTaskWithCert(taskFolderPath, signatureDir, certPath, keyPath, role);
   } catch (error) {
     console.error(`  Error: ${error instanceof Error ? error.message : error}`);
@@ -257,23 +314,22 @@ export async function verifyTaskOrigin(
   const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
   const signatureFile = path.join(signatureDir, signatureFileName);
 
-  // Determine common name
-  let actualCommonName: string;
+  let identity: string;
   if (facilitator) {
-    actualCommonName =
+    identity =
       TASK_ORIGIN_COMMON_NAMES[
         role === 'baseFacilitator' ? 'baseFacilitator' : 'securityCouncilFacilitator'
       ];
     console.log(`  Facilitator: ${facilitator}`);
-    console.log(`  Common Name: ${actualCommonName}`);
+    console.log(`  Identity: ${identity}`);
   } else {
     if (!commonName) {
       console.error('  Error: --common-name is required when not using --facilitator');
       process.exitCode = 1;
       return;
     }
-    actualCommonName = commonName;
-    console.log(`  Common Name: ${actualCommonName}`);
+    identity = commonName;
+    console.log(`  Identity: ${identity}`);
   }
 
   console.log(`  Signature File: ${signatureFile}`);
@@ -282,11 +338,11 @@ export async function verifyTaskOrigin(
     await buildAndValidateSignature({
       taskFolderPath,
       signatureFile,
-      commonName: actualCommonName,
+      commonName: identity,
       role,
     });
   } catch (error) {
-    console.error('  Error:', error);
+    console.error(`❌ Verification failed: ${error instanceof Error ? error.message : error}`);
     process.exitCode = 1;
     return;
   }
@@ -320,8 +376,7 @@ export async function verifyAllSignatures(
     const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
     const signatureFile = path.join(signatureDir, signatureFileName);
 
-    // Determine common name for this role
-    const commonName =
+    const identity =
       role === 'taskCreator' ? taskCreatorCommonName : TASK_ORIGIN_COMMON_NAMES[role];
 
     try {
@@ -332,7 +387,7 @@ export async function verifyAllSignatures(
       await buildAndValidateSignature({
         taskFolderPath,
         signatureFile,
-        commonName,
+        commonName: identity,
         role,
       });
 

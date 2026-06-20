@@ -15,7 +15,7 @@ export type TaskOriginVerifyOptions = {
   allowedDir?: string;
 };
 
-function getSubjectAlternativeNamePrefix(role: TaskOriginRole): string {
+export function getURIPrefix(role: TaskOriginRole): string {
   // Task creators use user:/// prefix, facilitators use ldap:/// prefix
   return role === 'taskCreator' ? 'user:///' : 'ldap:///';
 }
@@ -213,9 +213,8 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
   // Convert bundle to signed entity for verification
   const signedEntity = toSignedEntity(bundleSig, tarball); // tarball is already a Buffer
 
-  // Build SAN with appropriate prefix based on role
-  const sanPrefix = getSubjectAlternativeNamePrefix(role);
-  const subjectAlternativeName = `${sanPrefix}${commonName}`;
+  const uriPrefix = getURIPrefix(role);
+  const subjectAlternativeName = `${uriPrefix}${commonName}`;
 
   // Define the verification policy with the created subject alternative name
   const verificationPolicy = {
@@ -228,7 +227,6 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
     verifier.verify(signedEntity, verificationPolicy);
     console.log('✅ Verification successful!');
   } catch (error: unknown) {
-    console.error('  Error details:', error);
     throw new Error(`Validation failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
