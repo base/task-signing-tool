@@ -246,7 +246,7 @@ Minimal example (`validations/base-sc.json`):
 
 ### Generate a validation file from a Foundry run
 
-Use `scripts/genValidationFile.ts` to transform a Foundry run (which emits a `stateDiff.json` file in your task directory) into the validation JSON the app consumes.
+Use `scripts/genValidationFile.ts` to transform a Foundry run (which emits a `stateDiff.json` file in `active/evm`) into the validation JSON the app consumes.
 
 Requirements:
 
@@ -422,12 +422,12 @@ When you enable `--estimate-l2-gas`:
 ```bash
 npx tsx scripts/genValidationFile.ts \
   --rpc-url https://mainnet.example \
-  --workdir mainnet/2025-06-04-my-l2-deposit \
+  --workdir active/evm \
   --forge-cmd "forge script script/MyDeposit.s.sol:MyDeposit --sig 'run()' --sender 0xabc --json" \
   --estimate-l2-gas \
   --l2-rpc-url https://base-mainnet.example \
   --l2-gas-buffer 25 \
-  --out validations/base-sc.json
+  --out active/evm/config/<network>/validations/base-sc.json
 ```
 
 #### Validation File Output
