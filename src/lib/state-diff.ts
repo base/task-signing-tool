@@ -93,7 +93,7 @@ export class StateDiffClient {
     console.log(`🔧 Running forge in ${normalizedWorkdir}: ${cmd}`);
 
     const { command, args, env: envAssignments } = this.extractCommandDetails(forgeCmdParts);
-    const spawnEnv = { ...process.env, ...envAssignments, RECORD_STATE_DIFF: 'true' };
+    const spawnEnv = { ...process.env, ...envAssignments };
 
     const { stdout, stderr, code } = await this.runCommand(
       command,
