@@ -17,9 +17,11 @@ import {
   getURIPrefix,
 } from '@/lib/task-origin-validate';
 import { TASK_ORIGIN_SIGNATURE_FILE_NAMES, TASK_ORIGIN_COMMON_NAMES } from '@/lib/constants';
+import trustedRoot from '@/lib/config/trusted-root.json';
 import type { TaskOriginRole } from '@/lib/types';
 
 const TSA_BASE_URL = 'https://timestamp.sigstore.dev';
+const TSA_TIMESTAMP_PATH = '/api/v1/timestamp';
 
 const CERT_PATH = path.join(os.homedir(), '.ottr');
 const DEVICE_CERT = 'device-certificate.pem';
@@ -170,6 +172,27 @@ export function resolveSignatureHash(keyPem: string): {
   return match ?? ECDSA_CURVE_TO_HASH.prime256v1;
 }
 
+/**
+ * Ensures the configured TSA endpoint matches a timestamp authority declared in
+ * the trusted root used for verification. Signing against a TSA the trusted root
+ * does not recognize produces timestamps that always fail verification, so we
+ * fail fast if someone changes TSA_BASE_URL without updating the trusted root.
+ */
+export function assertTimestampAuthorityTrustedRoot(): void {
+  const expectedURL = `${TSA_BASE_URL}${TSA_TIMESTAMP_PATH}`;
+  const trustedURIs = (trustedRoot.timestampAuthorities ?? [])
+    .map(tsa => tsa.uri)
+    .filter((uri): uri is string => Boolean(uri));
+
+  if (!trustedURIs.includes(expectedURL)) {
+    throw new Error(
+      `Configured TSA endpoint "${expectedURL}" does not match any timestamp authority ` +
+        `in the trusted root (${trustedURIs.join(', ') || 'none'}). ` +
+        `Update TSA_BASE_URL or the trusted root so they agree.`
+    );
+  }
+}
+
 class DeviceCertificateSigner implements Signer {
   constructor(
     private keyPem: string,
@@ -214,6 +237,8 @@ export async function signTaskWithCert(
     console.error('  Error: No certificates found in certificate chain file');
     return undefined;
   }
+
+  assertTimestampAuthorityTrustedRoot();
 
   const { nodeDigest, sigstoreAlgorithm } = resolveSignatureHash(keyPem);
   const bundler = new MessageSignatureBundleBuilder({

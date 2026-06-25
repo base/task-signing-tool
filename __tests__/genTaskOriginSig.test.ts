@@ -12,6 +12,7 @@ import {
   verifyAllSignatures,
   signTaskWithCert,
   assertURIPrefix,
+  assertTimestampAuthorityTrustedRoot,
   parseIdentityFromCertificate,
   parseCertificateChainPEM,
   resolveSignatureHash,
@@ -342,6 +343,12 @@ describe('assertURIPrefix', () => {
   it('fails to assert certificate has no user:/// or ldap:/// URI prefix', async () => {
     const { certPath } = generateSelfSignedCertificate(directory);
     await expect(assertURIPrefix(certPath, 'taskCreator')).rejects.toThrow();
+  });
+});
+
+describe('assertTimestampAuthorityTrustedRoot', () => {
+  it('does not throw when the configured TSA matches the bundled trusted root', () => {
+    expect(() => assertTimestampAuthorityTrustedRoot()).not.toThrow();
   });
 });
 

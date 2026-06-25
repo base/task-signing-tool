@@ -244,6 +244,38 @@ describe('buildAndValidateSignature', () => {
       ).rejects.toThrow();
     });
 
+    it('fails validation with a common name that is a prefix of the real identity', async () => {
+      trackTarball(VALID_TASK_FOLDER);
+
+      const commonName = TASK_CREATOR_EMAIL.replace(/\.com$/, ''); // alexis.williams.1@coinbase
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
+          commonName,
+          role: 'taskCreator' as TaskOriginRole,
+        })
+      ).rejects.toThrow(
+        `Verification failed: certificate identity error, expected user:///${commonName} but received user:///${TASK_CREATOR_EMAIL}`
+      );
+    });
+
+    it('fails validation with a common name that uses a regex wildcard', async () => {
+      trackTarball(VALID_TASK_FOLDER);
+
+      const commonName = TASK_CREATOR_EMAIL.replace('.1@', '..@'); // alexis.williams..@coinbase.com
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
+          commonName,
+          role: 'taskCreator' as TaskOriginRole,
+        })
+      ).rejects.toThrow(
+        `Verification failed: certificate identity error, expected user:///${commonName} but received user:///${TASK_CREATOR_EMAIL}`
+      );
+    });
+
     it('fails validation when task creator signature is verified as facilitator role', async () => {
       trackTarball(VALID_TASK_FOLDER);
 
