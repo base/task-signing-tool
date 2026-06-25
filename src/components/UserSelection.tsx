@@ -12,10 +12,11 @@ export interface ConfigOption {
 
 interface UserSelectionProps {
   network: string;
+  upgradeId: string;
   onSelect: (cfg: ConfigOption) => void;
 }
 
-export function UserSelection({ network, onSelect }: UserSelectionProps) {
+export function UserSelection({ network, upgradeId, onSelect }: UserSelectionProps) {
   const [availableUsers, setAvailableUsers] = useState<ConfigOption[]>([]);
   const [selectedUser, setSelectedUser] = useState<ConfigOption | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -29,7 +30,7 @@ export function UserSelection({ network, onSelect }: UserSelectionProps) {
       setLoadingUsers(false);
     };
 
-    if (!network) {
+    if (!network || !upgradeId) {
       resetState();
       return;
     }
@@ -42,7 +43,9 @@ export function UserSelection({ network, onSelect }: UserSelectionProps) {
 
     const fetchAvailableUsers = async () => {
       try {
-        const response = await fetch(`/api/upgrade-config?network=${network.toLowerCase()}`);
+        const response = await fetch(
+          `/api/upgrade-config?network=${network.toLowerCase()}&upgradeId=${upgradeId}`
+        );
         if (!response.ok) {
           const message = await response.text();
           throw new Error(message || response.statusText);
@@ -76,7 +79,7 @@ export function UserSelection({ network, onSelect }: UserSelectionProps) {
     return () => {
       isActive = false;
     };
-  }, [network]);
+  }, [network, upgradeId]);
 
   const handleUserSelect = (userOption: ConfigOption) => {
     setSelectedUser(userOption);

@@ -157,17 +157,26 @@ export default function Home() {
         )}
 
         {currentStep === 'upgrade' && (
-          <UpgradeSelection selectedNetwork={selectedNetwork} onSelect={handleUpgradeSelection} />
+          <UpgradeSelection
+            selectedUpgradeId={selectedUpgrade?.id ?? null}
+            selectedNetwork={selectedNetwork}
+            onSelect={handleUpgradeSelection}
+          />
         )}
 
         {currentStep === 'user' && selectedNetwork && selectedUpgrade && (
-          <UserSelection network={selectedNetwork} onSelect={handleUserSelection} />
+          <UserSelection
+            network={selectedNetwork}
+            upgradeId={selectedUpgrade.id}
+            onSelect={handleUserSelection}
+          />
         )}
 
-        {currentStep === 'validation' && (
+        {currentStep === 'validation' && selectedUpgrade && (
           <ValidationResults
             userType={selectedUser?.fileName || ''}
             network={selectedNetwork || ''}
+            upgradeId={selectedUpgrade.id}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
         )}

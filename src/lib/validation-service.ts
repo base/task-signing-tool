@@ -22,6 +22,7 @@ import {
 import { TASK_ORIGIN_ROLE_LABELS } from './validation-results-utils';
 
 export type ValidationServiceOpts = {
+  upgradeId: string;
   network: NetworkType;
   taskConfigFileName: string;
 };
@@ -36,12 +37,16 @@ async function getConfigData(
     path.join(CONTRACT_DEPLOYMENTS_ROOT, 'active', 'evm'),
     CONTRACT_DEPLOYMENTS_ROOT
   );
+  const taskPath = assertWithinDir(
+    path.join(scriptPath, 'tasks', opts.upgradeId),
+    CONTRACT_DEPLOYMENTS_ROOT
+  );
   const configDir = assertWithinDir(
-    path.join(scriptPath, 'config', opts.network, 'validations'),
+    path.join(taskPath, 'config', opts.network, 'validations'),
     CONTRACT_DEPLOYMENTS_ROOT
   );
   const networkConfigDir = assertWithinDir(
-    path.join(scriptPath, 'config', opts.network),
+    path.join(taskPath, 'config', opts.network),
     CONTRACT_DEPLOYMENTS_ROOT
   );
   const configFileName = `${opts.taskConfigFileName}.json`;
@@ -246,7 +251,7 @@ async function runTaskOriginValidation(
  * Main validation flow that orchestrates script extraction, simulation, and config parsing.
  */
 export async function validateUpgrade(opts: ValidationServiceOpts): Promise<ValidationData> {
-  console.log(`🚀 Starting validation on ${opts.network}`);
+  console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
 
   const { cfg, scriptPath, taskOriginDir, signatureDir } = await getConfigData(opts);
 

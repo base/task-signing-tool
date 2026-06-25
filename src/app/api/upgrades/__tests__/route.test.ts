@@ -26,6 +26,7 @@ describe('GET /api/upgrades', () => {
       if (network === NetworkType.Zeronet) {
         return [
           {
+            id: '2025-08-01-upgrade-qux',
             name: 'Upgrade Qux',
             description: 'Zeronet upgrade',
             date: '2025-08-01',

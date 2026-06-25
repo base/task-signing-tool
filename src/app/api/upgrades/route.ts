@@ -21,7 +21,9 @@ export function GET(req: NextRequest) {
           }));
       });
       return NextResponse.json(
-        allReadyToSignTasks.sort((a, b) => b.date.localeCompare(a.date)),
+        allReadyToSignTasks.sort(
+          (a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)
+        ),
         { status: 200 }
       );
     }

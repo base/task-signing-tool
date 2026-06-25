@@ -109,14 +109,13 @@ describe('normalizeUrl', () => {
 });
 
 describe('getUpgradeOptions', () => {
-  it('discovers the current task without root-level network folders', async () => {
+  it('discovers active task folders without root-level network folders', async () => {
     const toolDir = path.join(tempDir, 'task-signing-tool');
-    await fs.mkdir(path.join(tempDir, 'active', 'evm', 'config', 'mainnet', 'validations'), {
-      recursive: true,
-    });
+    const taskPath = path.join(tempDir, 'active', 'evm', 'tasks', '2026-06-19-upgrade');
+    await fs.mkdir(path.join(taskPath, 'config', 'mainnet', 'validations'), { recursive: true });
     await fs.mkdir(toolDir, { recursive: true });
     await fs.writeFile(
-      path.join(tempDir, 'active', 'evm', 'README.md'),
+      path.join(taskPath, 'README.md'),
       [
         '# 2026-06-19 Verifier Hash Update',
         '',
@@ -133,12 +132,65 @@ describe('getUpgradeOptions', () => {
 
     expect(upgrades).toEqual([
       expect.objectContaining({
+        id: '2026-06-19-upgrade',
         name: '2026-06-19 Verifier Hash Update',
         date: '2026-06-19',
         network: NetworkType.Mainnet,
         status: TaskStatus.ReadyToSign,
         description: 'Update verifier hashes for mainnet.',
       }),
+    ]);
+  });
+
+  it('returns all active task folders that have validations for the selected network', async () => {
+    const toolDir = path.join(tempDir, 'task-signing-tool');
+    await fs.mkdir(
+      path.join(
+        tempDir,
+        'active',
+        'evm',
+        'tasks',
+        '2026-06-18-beryl-1',
+        'config',
+        'mainnet',
+        'validations'
+      ),
+      { recursive: true }
+    );
+    await fs.mkdir(
+      path.join(
+        tempDir,
+        'active',
+        'evm',
+        'tasks',
+        '2026-06-18-beryl-2',
+        'config',
+        'mainnet',
+        'validations'
+      ),
+      { recursive: true }
+    );
+    await fs.mkdir(
+      path.join(
+        tempDir,
+        'active',
+        'evm',
+        'tasks',
+        '2026-06-18-beryl-2',
+        'config',
+        'zeronet',
+        'validations'
+      ),
+      { recursive: true }
+    );
+    await fs.mkdir(toolDir, { recursive: true });
+    process.chdir(toolDir);
+
+    const upgrades = getUpgradeOptions(NetworkType.Mainnet);
+
+    expect(upgrades.map(upgrade => upgrade.id)).toEqual([
+      '2026-06-18-beryl-2',
+      '2026-06-18-beryl-1',
     ]);
   });
 

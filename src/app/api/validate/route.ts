@@ -5,20 +5,23 @@ import { NetworkType } from '@/lib/types';
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { network, userType } = json;
+    const { upgradeId, network, userType } = json;
 
     if (
+      typeof upgradeId !== 'string' ||
       typeof network !== 'string' ||
       typeof userType !== 'string' ||
+      !upgradeId.trim() ||
       !network.trim() ||
       !userType.trim()
     ) {
       return NextResponse.json(
-        { message: 'Missing required parameters: network and userType are required' },
+        { message: 'Missing required parameters: upgradeId, network, and userType are required' },
         { status: 400 }
       );
     }
 
+    const trimmedUpgradeId = upgradeId.trim();
     const trimmedUserType = userType.trim();
     const normalizedNetwork = network.trim().toLowerCase();
 
@@ -34,6 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     const validationResult = await validateUpgrade({
+      upgradeId: trimmedUpgradeId,
       network: normalizedNetwork as NetworkType,
       taskConfigFileName: trimmedUserType,
     });

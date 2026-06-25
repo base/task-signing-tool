@@ -46,7 +46,7 @@ function printUsage(): void {
     --help, -h           Show this help message
 
   Example:
-    tsx scripts/genTaskOriginSig.ts sign --task-folder ../active/evm/config/mainnet --signature-path ../active/evm/config/mainnet/signatures
+    tsx scripts/genTaskOriginSig.ts sign --task-folder ../active/evm/tasks/2026-06-18-beryl-1/config/mainnet --signature-path ../active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures
   `;
   console.log(msg);
 }

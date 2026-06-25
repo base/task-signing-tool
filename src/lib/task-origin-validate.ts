@@ -35,7 +35,7 @@ async function getAllFilesRecursively(
   const entries = await fs.readdir(currentDir, { withFileTypes: true });
   const files: string[] = [];
   // Exclude generated folders from the signed tarball. In the active EVM layout,
-  // signatures are stored under config/<network>/signatures, inside the task
+  // signatures are stored under tasks/<task-id>/config/<network>/signatures, inside the task
   // origin directory, so they must not be part of the payload they attest to.
   const excludedFolders = ['cache', 'out', 'signer-tool', 'signatures'];
 

@@ -17,6 +17,7 @@ export interface ExecutionLink {
 }
 
 export interface Upgrade {
+  id: string;
   name: string;
   description: string;
   date: string;
