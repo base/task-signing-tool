@@ -61,7 +61,7 @@ contract-deployments/
 
 Notes:
 
-- **Signer experience**: The UI remains unchanged. The current task is listed as a normal task for each network with validation configs.
+- **Signer experience**: The UI lists active tasks first, then asks you to choose one of the task's ready-to-sign network configs.
 - **Networks**: Supported networks are listed in `src/lib/constants.ts` and currently include `mainnet`, `sepolia`, `sepolia-alpha`, and `zeronet`.
 - **Validation configs**: Place config files under `active/evm/tasks/<task-id>/config/<network>/validations/` with concise human-readable names, such as `coinbase-signer.json` or `security-council-signer.json`.
 - **Script execution**: Validation commands run from `active/evm/`, so validation `cmd` values should reference scripts relative to that directory.
@@ -93,7 +93,7 @@ When present, `active/evm/tasks/<task-id>/config/<network>/README.md`, `active/e
 
 - **Title (optional)**: You may start with a `#` title. It is ignored for parsing the description fallback, but is fine for readability.
 
-- **Task name display**: The UI uses the first `#` heading when present, otherwise it falls back to `<Network> Task`.
+- **Task name display**: The UI uses the first `#` heading when present, otherwise it falls back to the formatted task folder name.
 
 Examples
 
@@ -421,7 +421,7 @@ npx tsx scripts/genValidationFile.ts \
   --estimate-l2-gas \
   --l2-rpc-url https://base-mainnet.example \
   --l2-gas-buffer 25 \
-  --out active/evm/config/<network>/validations/base-sc.json
+  --out active/evm/tasks/<task-id>/config/<network>/validations/base-sc.json
 ```
 
 #### Validation File Output
