@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import {
+  NetworkSelection,
+  NetworkSummary,
   UpgradeSelection,
   UserSelection,
   ValidationResults,
@@ -15,10 +17,12 @@ import { NetworkType, ValidationData, Upgrade } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 
-type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
+type Step = 'upgrade' | 'network' | 'user' | 'validation' | 'ledger' | 'signing';
+type StepStatus = 'current' | 'completed' | 'pending';
 
 const STEP_LAYOUT_WIDTH: Record<Step, string> = {
   upgrade: 'max-w-4xl',
+  network: 'max-w-3xl',
   user: 'max-w-3xl',
   validation: 'max-w-[1200px]',
   ledger: 'max-w-4xl',
@@ -29,18 +33,24 @@ export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('upgrade');
   const [selectedUser, setSelectedUser] = useState<ConfigOption>();
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
+  const [availableNetworksForTask, setAvailableNetworksForTask] = useState<NetworkType[]>([]);
   const [selectedUpgrade, setSelectedUpgrade] = useState<Upgrade | null>(null);
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<LedgerSigningResult | null>(null);
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
-  const resetSelectionsFrom = (step: 'upgrade' | 'user') => {
+  const resetSelectionsFrom = (step: 'upgrade' | 'network' | 'user') => {
     if (step === 'upgrade') {
       setSelectedNetwork(null);
       setSelectedUpgrade(null);
+      setAvailableNetworksForTask([]);
     }
 
-    if (step === 'upgrade' || step === 'user') {
+    if (step === 'network') {
+      setSelectedNetwork(null);
+    }
+
+    if (step === 'upgrade' || step === 'network' || step === 'user') {
       setSelectedUser(undefined);
       setValidationData(null);
       setSigningData(null);
@@ -48,9 +58,23 @@ export default function Home() {
     }
   };
 
-  const handleUpgradeSelection = (upgrade: Upgrade) => {
+  const handleUpgradeSelection = (upgrade: Upgrade, networks: NetworkType[]) => {
     setSelectedUpgrade(upgrade);
-    setSelectedNetwork(upgrade.network as NetworkType);
+    setSelectedNetwork(null);
+    setSelectedUser(undefined);
+    setValidationData(null);
+    setSigningData(null);
+    setUserLedgerAccount(0);
+    setAvailableNetworksForTask(networks);
+    setCurrentStep('network');
+  };
+
+  const handleNetworkSelection = (network: NetworkType) => {
+    setSelectedNetwork(network);
+    setSelectedUser(undefined);
+    setValidationData(null);
+    setSigningData(null);
+    setUserLedgerAccount(0);
     setCurrentStep('user');
   };
 
@@ -75,12 +99,24 @@ export default function Home() {
     setCurrentStep('upgrade');
   };
 
+  const handleGoToNetworkSelection = () => {
+    resetSelectionsFrom('network');
+    setCurrentStep('network');
+  };
+
   const handleGoToUserSelection = () => {
     resetSelectionsFrom('user');
     setCurrentStep('user');
   };
 
   const canEditUpgrade =
+    currentStep === 'network' ||
+    currentStep === 'user' ||
+    currentStep === 'validation' ||
+    currentStep === 'ledger' ||
+    currentStep === 'signing';
+
+  const canEditNetwork =
     currentStep === 'user' ||
     currentStep === 'validation' ||
     currentStep === 'ledger' ||
@@ -100,15 +136,20 @@ export default function Home() {
           : ((selectedUpgrade ? 'completed' : 'pending') as 'current' | 'completed' | 'pending'),
     },
     {
+      id: 'network',
+      label: 'Select Network',
+      status:
+        currentStep === 'network'
+          ? 'current'
+          : ((selectedNetwork ? 'completed' : 'pending') as StepStatus),
+    },
+    {
       id: 'user',
       label: 'Select User',
       status:
         currentStep === 'user'
           ? 'current'
-          : ((selectedUser ? 'completed' : selectedUpgrade ? 'pending' : 'pending') as
-              | 'current'
-              | 'completed'
-              | 'pending'),
+          : ((selectedUser ? 'completed' : 'pending') as StepStatus),
     },
     {
       id: 'validation',
@@ -116,10 +157,7 @@ export default function Home() {
       status:
         currentStep === 'validation'
           ? 'current'
-          : ((validationData ? 'completed' : selectedUser ? 'pending' : 'pending') as
-              | 'current'
-              | 'completed'
-              | 'pending'),
+          : ((validationData ? 'completed' : 'pending') as StepStatus),
     },
     {
       id: 'ledger',
@@ -127,16 +165,12 @@ export default function Home() {
       status:
         currentStep === 'ledger'
           ? 'current'
-          : ((signingData ? 'completed' : validationData ? 'pending' : 'pending') as
-              | 'current'
-              | 'completed'
-              | 'pending'),
+          : ((signingData ? 'completed' : 'pending') as StepStatus),
     },
     {
       id: 'signing',
       label: 'Confirmation',
-      status:
-        currentStep === 'signing' ? 'current' : ('pending' as 'current' | 'completed' | 'pending'),
+      status: currentStep === 'signing' ? 'current' : ('pending' as StepStatus),
     },
   ];
 
@@ -152,6 +186,10 @@ export default function Home() {
           />
         )}
 
+        {canEditNetwork && (
+          <NetworkSummary selectedNetwork={selectedNetwork} onChange={handleGoToNetworkSelection} />
+        )}
+
         {canEditUser && (
           <UserSummary selectedUser={selectedUser} onChange={handleGoToUserSelection} />
         )}
@@ -159,8 +197,15 @@ export default function Home() {
         {currentStep === 'upgrade' && (
           <UpgradeSelection
             selectedUpgradeId={selectedUpgrade?.id ?? null}
-            selectedNetwork={selectedNetwork}
             onSelect={handleUpgradeSelection}
+          />
+        )}
+
+        {currentStep === 'network' && selectedUpgrade && (
+          <NetworkSelection
+            selectedNetwork={selectedNetwork}
+            networks={availableNetworksForTask}
+            onSelect={handleNetworkSelection}
           />
         )}
 

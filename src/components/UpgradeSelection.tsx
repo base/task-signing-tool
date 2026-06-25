@@ -1,5 +1,5 @@
-import { TaskStatus, Upgrade, ExecutionLink } from '@/lib/types';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { TaskStatus, Upgrade, ExecutionLink, NetworkType } from '@/lib/types';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Card } from './ui/Card';
@@ -14,13 +14,11 @@ const STATUS_VARIANT_MAP: Record<TaskStatus, 'success' | 'warning' | 'neutral'> 
 
 interface UpgradeSelectionProps {
   selectedUpgradeId: string | null;
-  selectedNetwork: string | null;
-  onSelect: (upgrade: Upgrade) => void;
+  onSelect: (upgrade: Upgrade, networks: NetworkType[]) => void;
 }
 
 export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
   selectedUpgradeId,
-  selectedNetwork,
   onSelect,
 }) => {
   const [upgradeOptions, setUpgradeOptions] = useState<Upgrade[]>([]);
@@ -65,6 +63,32 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
     return () => abortControllerRef.current?.abort();
   }, [fetchUpgrades]);
 
+  const taskOptions = useMemo(() => {
+    const grouped = new Map<string, { upgrade: Upgrade; networks: NetworkType[] }>();
+
+    for (const upgrade of upgradeOptions) {
+      const existing = grouped.get(upgrade.id);
+      const network = upgrade.network as NetworkType;
+
+      if (existing) {
+        if (!existing.networks.includes(network)) {
+          existing.networks.push(network);
+        }
+        continue;
+      }
+
+      grouped.set(upgrade.id, {
+        upgrade,
+        networks: [network],
+      });
+    }
+
+    return Array.from(grouped.values()).map(option => ({
+      ...option,
+      networks: option.networks.sort((a, b) => a.localeCompare(b)),
+    }));
+  }, [upgradeOptions]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
@@ -105,7 +129,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
     );
   }
 
-  if (upgradeOptions.length === 0) {
+  if (taskOptions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center min-h-[400px] bg-white rounded-2xl border border-[var(--cds-border)] border-dashed">
         <div className="h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-4">
@@ -136,28 +160,31 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
       <SectionHeader title="Select Task" description="Choose a task to validate and sign." />
 
       <div className="space-y-4">
-        {upgradeOptions.map(option => {
-          const isSelected = selectedUpgradeId === option.id && selectedNetwork === option.network;
+        {taskOptions.map(({ upgrade: option, networks }) => {
+          const isSelected = selectedUpgradeId === option.id;
           const isExpanded = !!expandedCards[option.id];
 
           return (
             <Card
-              key={`${option.network}-${option.id}`}
+              key={option.id}
               interactive
               selected={isSelected}
-              onClick={() => onSelect(option)}
+              onClick={() => onSelect(option, networks)}
               className="relative group"
             >
               <div className="flex items-start justify-between gap-6">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
-                    <Badge
-                      variant="neutral"
-                      size="sm"
-                      className="uppercase tracking-wider text-[10px] font-bold"
-                    >
-                      {option.network}
-                    </Badge>
+                    {networks.map(network => (
+                      <Badge
+                        key={network}
+                        variant="neutral"
+                        size="sm"
+                        className="uppercase tracking-wider text-[10px] font-bold"
+                      >
+                        {network}
+                      </Badge>
+                    ))}
                     <span className="text-xs text-[var(--cds-text-tertiary)]">{option.date}</span>
                   </div>
 

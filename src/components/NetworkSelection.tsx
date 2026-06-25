@@ -1,26 +1,80 @@
-import { Globe } from 'lucide-react';
-import { availableNetworks } from '@/lib/constants';
+import { Check, Globe } from 'lucide-react';
 import { NetworkType } from '@/lib/types';
+import { Badge } from './ui/Badge';
+import { Card } from './ui/Card';
+import { SectionHeader } from './ui/SectionHeader';
 
 interface NetworkSelectionProps {
+  selectedNetwork?: NetworkType | null;
+  networks: NetworkType[];
   onSelect: (network: NetworkType) => void;
 }
 
-export function NetworkSelection({ onSelect }: NetworkSelectionProps) {
+const formatNetworkName = (network: NetworkType) =>
+  network
+    .split('-')
+    .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+
+export function NetworkSelection({ selectedNetwork, networks, onSelect }: NetworkSelectionProps) {
+  if (networks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center min-h-[320px] bg-white rounded-2xl border border-[var(--cds-border)] border-dashed">
+        <div className="h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+          <Globe size={24} className="text-[var(--cds-text-tertiary)]" aria-hidden="true" />
+        </div>
+        <h3 className="text-lg font-semibold text-[var(--cds-text-primary)]">No networks found</h3>
+        <p className="text-sm text-[var(--cds-text-secondary)] mt-1">
+          This task does not have any ready-to-sign network configs.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="text-center">
-      <h2 className="mb-8 text-2xl font-semibold text-gray-700">Select Network</h2>
-      <div className="flex flex-col gap-3">
-        {availableNetworks.map(option => (
-          <button
-            key={option}
-            onClick={() => onSelect(option)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white p-5 text-base font-medium text-gray-700 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 cursor-pointer"
-          >
-            <Globe size={20} aria-hidden="true" />{' '}
-            {option.charAt(0).toUpperCase() + option.slice(1)}
-          </button>
-        ))}
+    <div className="w-full animate-fade-in">
+      <SectionHeader title="Select Network" description="Choose which network config to sign." />
+
+      <div className="space-y-4">
+        {networks.map(network => {
+          const isSelected = selectedNetwork === network;
+
+          return (
+            <Card
+              key={network}
+              interactive
+              selected={isSelected}
+              onClick={() => onSelect(network)}
+              className="relative group"
+            >
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="h-10 w-10 rounded-full bg-blue-100 text-[var(--cds-primary)] flex items-center justify-center shrink-0">
+                    <Globe size={20} aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-[var(--cds-text-primary)] truncate">
+                      {formatNetworkName(network)}
+                    </h3>
+                    <Badge
+                      variant="neutral"
+                      size="sm"
+                      className="mt-1 uppercase tracking-wider text-[10px] font-bold"
+                    >
+                      {network}
+                    </Badge>
+                  </div>
+                </div>
+
+                {isSelected && (
+                  <div className="h-6 w-6 rounded-full bg-[var(--cds-primary)] text-white flex items-center justify-center shrink-0">
+                    <Check size={14} strokeWidth={3} aria-hidden="true" />
+                  </div>
+                )}
+              </div>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
