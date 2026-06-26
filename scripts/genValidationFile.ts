@@ -182,15 +182,12 @@ async function main() {
     }
   }
 
-  // Generate device certificate and get the common name (task creator identity)
-  const { commonName } = await generateDeviceCertificate(undefined);
-
-  // Add taskOriginConfig with the task creator's common name
+  const { identity } = await generateDeviceCertificate(undefined);
   const resultWithTaskOrigin = {
     ...resultWithL2Gas,
     taskOriginConfig: {
       taskCreator: {
-        commonName,
+        commonName: identity,
       },
     },
   };
