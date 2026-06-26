@@ -15,7 +15,7 @@ export type TaskOriginVerifyOptions = {
   allowedDir?: string;
 };
 
-function getSubjectAlternativeNamePrefix(role: TaskOriginRole): string {
+export function getURIPrefix(role: TaskOriginRole): string {
   // Task creators use user:/// prefix, facilitators use ldap:/// prefix
   return role === 'taskCreator' ? 'user:///' : 'ldap:///';
 }
@@ -215,24 +215,36 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
   // Convert bundle to signed entity for verification
   const signedEntity = toSignedEntity(bundleSig, tarball); // tarball is already a Buffer
 
-  // Build SAN with appropriate prefix based on role
-  const sanPrefix = getSubjectAlternativeNamePrefix(role);
-  const subjectAlternativeName = `${sanPrefix}${commonName}`;
+  const uriPrefix = getURIPrefix(role);
+  const expectedSubjectAlternativeName = `${uriPrefix}${commonName}`;
 
-  // Define the verification policy with the created subject alternative name
+  // Define the verification policy with the expected subject alternative name.
   const verificationPolicy = {
-    subjectAlternativeName,
+    subjectAlternativeName: expectedSubjectAlternativeName,
   };
 
-  // Verify the signature
+  // Verify the signature. @sigstore/verify validates the certificate chain,
+  // signature, and timestamp, checks the certificate identity against the policy, and
+  // returns the signer whose identity is extracted from the verified leaf certificate.
+  let signer;
   try {
     console.log('  Performing verification...');
-    verifier.verify(signedEntity, verificationPolicy);
-    console.log('✅ Verification successful!');
+    signer = verifier.verify(signedEntity, verificationPolicy);
   } catch (error: unknown) {
-    console.error('  Error details:', error);
     throw new Error(`Validation failed: ${error instanceof Error ? error.message : String(error)}`);
   }
+
+  // @sigstore/verify matches the policy Subject Alternative Name as a regular
+  // expression, so the policy check above also accepts prefixes and wildcards of
+  // the identity. We add this guardrail to require an exact match.
+  const actualSubjectAlternativeName = signer.identity?.subjectAlternativeName;
+  if (actualSubjectAlternativeName !== expectedSubjectAlternativeName) {
+    throw new Error(
+      `❌ Verification failed: certificate identity error, expected ${expectedSubjectAlternativeName} but received ${actualSubjectAlternativeName ?? 'undefined'}`
+    );
+  }
+
+  console.log('✅ Verification successful!');
 }
 
 export async function verifyTaskOrigin(options: TaskOriginVerifyOptions): Promise<void> {
