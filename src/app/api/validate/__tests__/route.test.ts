@@ -63,4 +63,36 @@ describe('POST /api/validate', () => {
     expect(body.message).toMatch(/unsupported network/i);
     expect(body.message).toContain('zeronet');
   });
+
+  it('rejects path separators in upgradeId', async () => {
+    const res = await POST(
+      createRequest({
+        upgradeId: '../2026-06-18-beryl-1',
+        network: 'mainnet',
+        userType: 'base-sc',
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect(mockValidateUpgrade).not.toHaveBeenCalled();
+
+    const body = await res.json();
+    expect(body.message).toMatch(/invalid upgradeId or userType/i);
+  });
+
+  it('rejects path separators in userType', async () => {
+    const res = await POST(
+      createRequest({
+        upgradeId: '2026-06-18-beryl-1',
+        network: 'mainnet',
+        userType: '../base-sc',
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect(mockValidateUpgrade).not.toHaveBeenCalled();
+
+    const body = await res.json();
+    expect(body.message).toMatch(/invalid upgradeId or userType/i);
+  });
 });

@@ -65,14 +65,14 @@ Notes:
 - **Networks**: Supported networks are listed in `src/lib/constants.ts` and currently include `mainnet`, `sepolia`, `sepolia-alpha`, and `zeronet`.
 - **Validation configs**: Place config files under `active/evm/tasks/<task-id>/config/<network>/validations/` with concise human-readable names, such as `coinbase-signer.json` or `security-council-signer.json`.
 - **Script execution**: Validation commands run from `active/evm/`, so validation `cmd` values should reference scripts relative to that directory.
-- **Task origin verification**: Task-origin signatures are verified over the selected network config, `active/evm/tasks/<task-id>/config/<network>/`.
+- **Task origin verification**: Task-origin signatures are verified over `active/evm/`, which is the same directory used for simulation.
 - **Signature storage**: Store signatures in `active/evm/tasks/<task-id>/config/<network>/signatures/`. The signer tool excludes the nested `signatures/` directory from the signed tarball, so generating signatures does not change the attested payload.
 
 Generate task-origin signatures with:
 
 ```bash
 tsx task-signing-tool/scripts/genTaskOriginSig.ts sign \
-  --task-folder active/evm/tasks/2026-06-18-beryl-1/config/mainnet \
+  --task-folder active/evm \
   --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures
 ```
 
@@ -315,7 +315,7 @@ When task origin validation is enabled, three signature files must exist in `act
 
 The **common name** is extracted from the signer's X.509 certificate Subject Alternative Name (SAN). For task creators, this is their email address. For facilitators, it is the group name they belong to.
 
-Signatures are stored under `active/evm/tasks/<task-id>/config/<network>/signatures/`. The signer tool excludes that nested `signatures/` directory from the deterministic tarball to ensure the tarball content remains unchanged after signing.
+Signatures are verified over `active/evm/`, matching the directory used for simulation. Store signatures under `active/evm/tasks/<task-id>/config/<network>/signatures/`; the signer tool excludes nested `signatures/` directories from the deterministic tarball so signing does not change the attested payload.
 
 #### Requirements
 
@@ -332,7 +332,7 @@ The script supports four commands:
 
 #### Flags
 
-- `--task-folder, -t`: **Required.** Path to the task folder to sign/verify
+- `--task-folder, -t`: **Required.** Path to the active EVM folder to sign/verify
 - `--signature-path, -p`: Directory to store/read signatures (defaults to task folder)
 - `--facilitator, -f`: Facilitator type: `base` or `security-council`. Omit to sign/verify as task creator
 - `--common-name, -c`: Common name for verification (required for task creator verification)
@@ -352,7 +352,7 @@ npx tsx scripts/genTaskOriginSig.ts --help
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
-  --task-folder active/evm/tasks/2026-06-18-beryl-1/config/mainnet \
+  --task-folder active/evm \
   --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures
 ```
 
@@ -361,7 +361,7 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
-  --task-folder active/evm/tasks/2026-06-18-beryl-1/config/mainnet \
+  --task-folder active/evm \
   --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures \
   --facilitator base
 ```
@@ -371,7 +371,7 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts verify \
-  --task-folder active/evm/tasks/2026-06-18-beryl-1/config/mainnet \
+  --task-folder active/evm \
   --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures \
   --common-name alice@example.com
 ```
