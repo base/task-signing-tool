@@ -1,4 +1,5 @@
 import { Globe } from 'lucide-react';
+import { formatNetworkName } from '@/lib/network-utils';
 import { NetworkType } from '@/lib/types';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
@@ -8,12 +9,6 @@ interface NetworkSummaryProps {
   selectedNetwork: NetworkType | null;
   onChange?: () => void;
 }
-
-const formatNetworkName = (network: NetworkType) =>
-  network
-    .split('-')
-    .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ');
 
 export function NetworkSummary({ selectedNetwork, onChange }: NetworkSummaryProps) {
   if (!selectedNetwork) return null;

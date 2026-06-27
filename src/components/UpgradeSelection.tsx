@@ -1,4 +1,5 @@
-import { TaskStatus, Upgrade, ExecutionLink, NetworkType } from '@/lib/types';
+import { groupUpgradesByTask, TaskOption } from '@/lib/task-selection';
+import { TaskStatus, Upgrade, ExecutionLink } from '@/lib/types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -14,7 +15,7 @@ const STATUS_VARIANT_MAP: Record<TaskStatus, 'success' | 'warning' | 'neutral'> 
 
 interface UpgradeSelectionProps {
   selectedUpgradeId: string | null;
-  onSelect: (upgrade: Upgrade, networks: NetworkType[]) => void;
+  onSelect: (taskOption: TaskOption) => void;
 }
 
 export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
@@ -63,31 +64,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
     return () => abortControllerRef.current?.abort();
   }, [fetchUpgrades]);
 
-  const taskOptions = useMemo(() => {
-    const grouped = new Map<string, { upgrade: Upgrade; networks: NetworkType[] }>();
-
-    for (const upgrade of upgradeOptions) {
-      const existing = grouped.get(upgrade.id);
-      const network = upgrade.network as NetworkType;
-
-      if (existing) {
-        if (!existing.networks.includes(network)) {
-          existing.networks.push(network);
-        }
-        continue;
-      }
-
-      grouped.set(upgrade.id, {
-        upgrade,
-        networks: [network],
-      });
-    }
-
-    return Array.from(grouped.values()).map(option => ({
-      ...option,
-      networks: option.networks.sort((a, b) => a.localeCompare(b)),
-    }));
-  }, [upgradeOptions]);
+  const taskOptions = useMemo(() => groupUpgradesByTask(upgradeOptions), [upgradeOptions]);
 
   if (loading) {
     return (
@@ -160,7 +137,8 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
       <SectionHeader title="Select Task" description="Choose a task to validate and sign." />
 
       <div className="space-y-4">
-        {taskOptions.map(({ upgrade: option, networks }) => {
+        {taskOptions.map(taskOption => {
+          const { displayUpgrade: option, networks } = taskOption;
           const isSelected = selectedUpgradeId === option.id;
           const isExpanded = !!expandedCards[option.id];
 
@@ -169,7 +147,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
               key={option.id}
               interactive
               selected={isSelected}
-              onClick={() => onSelect(option, networks)}
+              onClick={() => onSelect(taskOption)}
               className="relative group"
             >
               <div className="flex items-start justify-between gap-6">

@@ -14,6 +14,7 @@ import {
 } from '@/components';
 import { PageShell, StepIndicator } from '@/components/ui';
 import { NetworkType, ValidationData, Upgrade } from '@/lib/types';
+import { getUpgradeForNetwork, TaskOption } from '@/lib/task-selection';
 import { ConfigOption } from '@/components/UserSelection';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 
@@ -35,6 +36,7 @@ export default function Home() {
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
   const [availableNetworksForTask, setAvailableNetworksForTask] = useState<NetworkType[]>([]);
   const [selectedUpgrade, setSelectedUpgrade] = useState<Upgrade | null>(null);
+  const [selectedTaskOption, setSelectedTaskOption] = useState<TaskOption | null>(null);
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<LedgerSigningResult | null>(null);
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
@@ -43,6 +45,7 @@ export default function Home() {
     if (step === 'upgrade') {
       setSelectedNetwork(null);
       setSelectedUpgrade(null);
+      setSelectedTaskOption(null);
       setAvailableNetworksForTask([]);
     }
 
@@ -58,18 +61,29 @@ export default function Home() {
     }
   };
 
-  const handleUpgradeSelection = (upgrade: Upgrade, networks: NetworkType[]) => {
-    setSelectedUpgrade(upgrade);
+  const handleUpgradeSelection = (taskOption: TaskOption) => {
+    setSelectedTaskOption(taskOption);
+    setSelectedUpgrade(taskOption.displayUpgrade);
     setSelectedNetwork(null);
     setSelectedUser(undefined);
     setValidationData(null);
     setSigningData(null);
     setUserLedgerAccount(0);
-    setAvailableNetworksForTask(networks);
+    setAvailableNetworksForTask(taskOption.networks);
     setCurrentStep('network');
   };
 
   const handleNetworkSelection = (network: NetworkType) => {
+    const networkUpgrade = selectedTaskOption
+      ? getUpgradeForNetwork(selectedTaskOption, network)
+      : undefined;
+
+    if (!networkUpgrade) {
+      console.error(`No upgrade metadata found for ${network}`);
+      return;
+    }
+
+    setSelectedUpgrade(networkUpgrade);
     setSelectedNetwork(network);
     setSelectedUser(undefined);
     setValidationData(null);

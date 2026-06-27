@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { formatNetworkName } from './network-utils';
 import { NetworkType, TaskStatus } from './types';
 
 let cachedRoot: string | null = null;
@@ -56,14 +57,6 @@ export interface DeploymentInfo {
 const DEFAULT_DESCRIPTION = 'Smart contract upgrade deployment';
 const MAX_STATUS_SEARCH_LINES = 20;
 const MAX_STATUS_FOLLOW_UP_LINES = 5;
-
-function formatNetworkName(network: string): string {
-  return network
-    .split('-')
-    .filter(Boolean)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
 
 function formatUpgradeName(folderName: string): string {
   const slug = folderName.replace(/^\d{4}-\d{2}-\d{2}-/, '');
