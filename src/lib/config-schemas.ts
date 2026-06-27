@@ -75,7 +75,10 @@ export const TaskOriginValidationConfigSchema = z.object({
 export const TaskConfigSchema = z.object({
   cmd: z.string(),
   ledgerId: z.number().int().nonnegative(),
-  rpcUrl: z.string().url().min(1),
+  rpcUrl: z.string().url().min(1).refine(
+    (val) => val.startsWith('https://'),
+    (val) => ({ message: `rpcUrl must use HTTPS (got: ${val})` })
+  ),
   expectedDomainAndMessageHashes: ExpectedHashesSchema,
   stateOverrides: z.array(StateOverrideSchema),
   stateChanges: z.array(StateChangeSchema),
