@@ -105,10 +105,7 @@ const TaskOriginSkippedCard: React.FC = () => {
 interface ValidationResultsProps {
   userType: string;
   network: string;
-  selectedUpgrade: {
-    id: string;
-    name: string;
-  };
+  upgradeId: string;
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
 
@@ -131,7 +128,7 @@ const getIcon = (iconName: string, size: number = 24, className?: string) => {
 export const ValidationResults: React.FC<ValidationResultsProps> = ({
   userType,
   network,
-  selectedUpgrade,
+  upgradeId,
   onProceedToLedgerSigning,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -145,7 +142,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     runValidation,
   } = useValidationRunner({
     network,
-    upgradeId: selectedUpgrade.id,
+    upgradeId,
     userType,
   });
 

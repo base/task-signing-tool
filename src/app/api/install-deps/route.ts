@@ -31,12 +31,11 @@ export async function POST(req: NextRequest) {
     }
 
     const actualNetwork = network.toLowerCase();
+    const actualUpgradeId = String(upgradeId);
     const shouldForceInstall = Boolean(forceInstall);
 
-    // Validate inputs to prevent path traversal attacks
-    // Only allow alphanumeric characters, hyphens, and underscores
     const safePathPattern = /^[a-zA-Z0-9_-]+$/;
-    if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
+    if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(actualUpgradeId)) {
       return NextResponse.json(
         {
           error:
@@ -46,9 +45,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Construct the path to the upgrade folder and lib subdirectory
     const contractDeploymentsPath = findContractDeploymentsRoot();
-    const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
+    const upgradePath = path.join(contractDeploymentsPath, 'active', 'evm');
+    const taskPath = path.join(upgradePath, 'tasks', actualUpgradeId);
 
     // Verify the resolved path is within the allowed directory
     let resolvedUpgradePath: string;
@@ -59,12 +58,20 @@ export async function POST(req: NextRequest) {
     }
 
     const libPath = path.join(resolvedUpgradePath, 'lib');
+    const resolvedTaskPath = assertWithinDir(taskPath, contractDeploymentsPath);
 
-    // Check if the upgrade folder exists
     const upgradePathExists = await pathExists(resolvedUpgradePath);
     if (!upgradePathExists) {
       return NextResponse.json(
-        { error: `Upgrade folder not found: ${network}/${upgradeId}` },
+        { error: `Task folder not found: ${path.relative(contractDeploymentsPath, upgradePath)}` },
+        { status: 404 }
+      );
+    }
+
+    const taskPathExists = await pathExists(resolvedTaskPath);
+    if (!taskPathExists) {
+      return NextResponse.json(
+        { error: `Task folder not found: ${path.relative(contractDeploymentsPath, taskPath)}` },
         { status: 404 }
       );
     }
@@ -72,11 +79,11 @@ export async function POST(req: NextRequest) {
     const libExistsBeforeInstall = await pathExists(libPath);
 
     if (!shouldForceInstall && libExistsBeforeInstall) {
-      console.log(`Deps already installed for ${actualNetwork}/${upgradeId}; skipping.`);
+      console.log(`Deps already installed for ${actualNetwork}/${actualUpgradeId}; skipping.`);
       return NextResponse.json(
         {
           success: true,
-          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
+          message: `Dependencies already installed for ${actualNetwork}/${actualUpgradeId}`,
           libExists: true,
           installed: false,
           depsInstalled: false,
@@ -88,17 +95,16 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(
-      `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
+      `Installing dependencies for ${actualNetwork}/${actualUpgradeId} (cwd: ${resolvedUpgradePath})`
     );
 
-    // Run make deps in the upgrade folder
     const { stdout, stderr } = await execAsync('make deps', {
       cwd: resolvedUpgradePath,
       timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
     });
 
-    console.log(`Dependencies installed for ${actualNetwork}/${upgradeId}`);
+    console.log(`Dependencies installed for ${actualNetwork}/${actualUpgradeId}`);
 
     // Verify that lib folder was created
     const libExistsAfterInstall = await pathExists(libPath);
@@ -106,7 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: `Dependencies installed successfully for ${actualNetwork}/${upgradeId}`,
+        message: `Dependencies installed successfully for ${actualNetwork}/${actualUpgradeId}`,
         libExists: libExistsAfterInstall,
         installed: true,
         depsInstalled: true,

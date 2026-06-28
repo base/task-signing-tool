@@ -1,6 +1,8 @@
 export { ComparisonCard } from './ComparisonCard';
 export { HighlightedText } from './HighlightedText';
 export { LedgerSigning } from './LedgerSigning';
+export { NetworkSelection } from './NetworkSelection';
+export { NetworkSummary } from './NetworkSummary';
 export { SelectionSummary } from './SelectionSummary';
 export { SigningConfirmation } from './SigningConfirmation';
 export { UpgradeSelection } from './UpgradeSelection';

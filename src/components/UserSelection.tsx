@@ -22,7 +22,6 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Fetch available users when network and upgradeId change
   useEffect(() => {
     const resetState = () => {
       setAvailableUsers([]);

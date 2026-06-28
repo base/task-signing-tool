@@ -64,7 +64,6 @@ describe('GET /api/upgrades', () => {
     expect(body).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: '2025-08-01-upgrade-qux',
           network: NetworkType.Zeronet,
           status: TaskStatus.ReadyToSign,
         }),
