@@ -231,10 +231,6 @@ function getUpgradeOption(
   taskId: string,
   network: NetworkType
 ): DeploymentInfo | undefined {
-  if (!hasTaskLayout(contractDeploymentsPath)) {
-    return undefined;
-  }
-
   const evmPath = path.join(contractDeploymentsPath, 'active', 'evm');
   const taskPath = path.join(evmPath, 'tasks', taskId);
   const networkConfigPath = path.join(taskPath, 'config', network);
@@ -262,10 +258,7 @@ function getUpgradeOption(
     return baseInfo;
   }
 
-  return readDeploymentInfoFromReadme(baseInfo, readmePath, {
-    useTitle: true,
-    defaultDate: deriveDateFromContent(fs.readFileSync(readmePath, 'utf-8')) ?? baseInfo.date,
-  });
+  return readDeploymentInfoFromReadme(baseInfo, readmePath, { useTitle: true });
 }
 
 export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {

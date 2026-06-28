@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { promisify } from 'util';
 import { findContractDeploymentsRoot } from '@/lib/deployments';
-import { assertWithinDir } from '@/lib/path-validation';
+import { assertWithinDir, isSafePathSegment } from '@/lib/path-validation';
 
 const execAsync = promisify(exec);
 const INSTALL_DEPS_TIMEOUT_MS = 20 * 60 * 1000;
@@ -34,8 +34,7 @@ export async function POST(req: NextRequest) {
     const actualUpgradeId = String(upgradeId);
     const shouldForceInstall = Boolean(forceInstall);
 
-    const safePathPattern = /^[a-zA-Z0-9_-]+$/;
-    if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(actualUpgradeId)) {
+    if (!isSafePathSegment(actualNetwork) || !isSafePathSegment(actualUpgradeId)) {
       return NextResponse.json(
         {
           error:
