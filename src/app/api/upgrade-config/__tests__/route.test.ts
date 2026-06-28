@@ -54,7 +54,7 @@ describe('GET /api/upgrade-config', () => {
 
   describe('missing parameters', () => {
     it('returns 400 when network is missing', async () => {
-      const res = await GET(createRequest({ upgradeId: '2026-06-18-beryl-1' }));
+      const res = await GET(createRequest({ upgradeId: 'test' }));
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/missing required parameter/i);
@@ -70,14 +70,14 @@ describe('GET /api/upgrade-config', () => {
 
   describe('path traversal prevention', () => {
     it('returns 400 when network contains ".."', async () => {
-      const res = await GET(createRequest({ network: '..', upgradeId: '2026-06-18-beryl-1' }));
+      const res = await GET(createRequest({ network: '..', upgradeId: 'test' }));
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid network/i);
     });
 
     it('returns 400 when network contains "/"', async () => {
-      const res = await GET(createRequest({ network: 'foo/bar', upgradeId: '2026-06-18-beryl-1' }));
+      const res = await GET(createRequest({ network: 'foo/bar', upgradeId: 'test' }));
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid network/i);
@@ -85,7 +85,7 @@ describe('GET /api/upgrade-config', () => {
 
     it('returns 400 when network contains spaces', async () => {
       const res = await GET(
-        createRequest({ network: 'main net', upgradeId: '2026-06-18-beryl-1' })
+        createRequest({ network: 'main net', upgradeId: 'test' })
       );
       expect(res.status).toBe(400);
       const body = await res.json();
@@ -93,7 +93,7 @@ describe('GET /api/upgrade-config', () => {
     });
 
     it('returns 400 when network contains "." (single dot)', async () => {
-      const res = await GET(createRequest({ network: '.', upgradeId: '2026-06-18-beryl-1' }));
+      const res = await GET(createRequest({ network: '.', upgradeId: 'test' }));
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toMatch(/invalid network/i);
@@ -109,7 +109,7 @@ describe('GET /api/upgrade-config', () => {
   describe('valid safe characters', () => {
     it('accepts hyphens in network names', async () => {
       const res = await GET(
-        createRequest({ network: 'op-mainnet', upgradeId: '2026-06-18-beryl-1' })
+        createRequest({ network: 'op-mainnet', upgradeId: 'test' })
       );
       expect(res.status).toBe(200);
     });
@@ -117,7 +117,7 @@ describe('GET /api/upgrade-config', () => {
 
   describe('happy path', () => {
     it('returns 200 with config options', async () => {
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: '2026-06-18-beryl-1' }));
+      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.configOptions).toHaveLength(1);
@@ -132,7 +132,7 @@ describe('GET /api/upgrade-config', () => {
     it('returns 200 with empty array on ENOENT', async () => {
       const enoentError = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
       mockReaddir.mockRejectedValue(enoentError);
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: '2026-06-18-beryl-1' }));
+      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.configOptions).toEqual([]);
@@ -142,7 +142,7 @@ describe('GET /api/upgrade-config', () => {
   describe('post-validation', () => {
     it('returns 500 on unexpected fs errors', async () => {
       mockReaddir.mockRejectedValue(new Error('Unexpected disk error'));
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: '2026-06-18-beryl-1' }));
+      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
       expect(res.status).toBe(500);
       const body = await res.json();
       expect(body.error).toMatch(/failed to fetch upgrade configuration/i);
@@ -151,7 +151,7 @@ describe('GET /api/upgrade-config', () => {
 
   describe('does not call fs', () => {
     it('readdir not called when validation rejects', async () => {
-      await GET(createRequest({ network: '..', upgradeId: '2026-06-18-beryl-1' }));
+      await GET(createRequest({ network: '..', upgradeId: 'test' }));
       expect(mockReaddir).not.toHaveBeenCalled();
       expect(mockFindContractDeploymentsRoot).not.toHaveBeenCalled();
     });
