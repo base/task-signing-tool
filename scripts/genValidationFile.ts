@@ -30,19 +30,19 @@ Examples:
   # Basic validation file generation
   tsx scripts/genValidationFile.ts \
     --rpc-url https://mainnet.example \
-    --workdir mainnet/2025-06-04-upgrade-foo \
+    --workdir active/evm \
     --forge-cmd "forge script script/Simulate.s.sol:Simulate --sig 'run()' --sender 0xabc --json" \
-    --out mainnet/2025-06-04-upgrade-foo/validations/base-sc.json
+    --out active/evm/tasks/<task-id>/config/<network>/validations/base-sc.json
 
   # With L2 gas estimation for deposit transactions (-vvvv is added automatically)
   tsx scripts/genValidationFile.ts \
     --rpc-url https://mainnet.example \
-    --workdir mainnet/2025-06-04-my-l2-deposit \
+    --workdir active/evm \
     --forge-cmd "forge script script/MyDeposit.s.sol:MyDeposit --sig 'run()' --sender 0xabc --json" \
     --estimate-l2-gas \
     --l2-rpc-url https://base-mainnet.example \
     --l2-gas-buffer 25 \
-    --out validations/base-sc.json
+    --out active/evm/tasks/<task-id>/config/<network>/validations/base-sc.json
 `;
   console.log(msg);
 }

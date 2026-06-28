@@ -18,6 +18,7 @@ import {
   resolveSignatureHash,
   FacilitatorType,
 } from '../scripts/genTaskOriginSig';
+import { createDeterministicTarball } from '../src/lib/task-origin-validate';
 
 // Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -295,12 +296,13 @@ describe('signTaskWithCert', () => {
     expect(bundle.messageSignature.messageDigest.algorithm).toBe('SHA2_256'); // RSA key -> SHA-256
     expect(bundle.verificationMaterial.x509CertificateChain.certificates[0].rawBytes).toBeTruthy();
 
-    const tarballPath = path.resolve(process.cwd(), 'task.tar');
-    const tarball = await fsp.readFile(tarballPath).catch(() => null);
-    if (tarball) {
+    const tarballPath = await createDeterministicTarball(taskFolder);
+    try {
+      const tarball = await fsp.readFile(tarballPath);
       const expectedDigest = createHash('sha256').update(new Uint8Array(tarball)).digest('base64');
       expect(bundle.messageSignature.messageDigest.digest).toBe(expectedDigest);
-      await fsp.unlink(tarballPath).catch(() => {});
+    } finally {
+      await cleanupCreatedTarball(tarballPath);
     }
   });
 });
@@ -396,6 +398,14 @@ async function writeFixtureLeafCertificate(bundlePath: string, directory: string
   const certificatePath = path.join(directory, 'leaf.pem');
   await fsp.writeFile(certificatePath, parseEndEntityCertificate(bundlePath).toString());
   return certificatePath;
+}
+
+async function cleanupCreatedTarball(tarballPath: string): Promise<void> {
+  const tarballDir = path.dirname(tarballPath);
+  const tmpRoot = await fsp.realpath(os.tmpdir());
+  const tarballDirReal = await fsp.realpath(tarballDir);
+  expect(tarballDirReal.startsWith(`${tmpRoot}${path.sep}`)).toBe(true);
+  await fsp.rm(tarballDir, { recursive: true, force: true });
 }
 
 // Returns the full certificate chain from a Sigstore bundle as a PEM string,

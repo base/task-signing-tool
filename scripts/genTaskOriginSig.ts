@@ -66,6 +66,9 @@ function printUsage(): void {
     --facilitator, -f    Facilitator type: "base" or "security-council" (used for 'sign' and 'verify' commands, omit this flag to sign/verify as task creator)
     --common-name, -c    Common name for task creator (required when not using --facilitator in 'verify' and 'verify-all' commands)
     --help, -h           Show this help message
+
+  Example:
+    tsx scripts/genTaskOriginSig.ts sign --task-folder ../active/evm --signature-path ../active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures
   `;
   console.log(msg);
 }
@@ -229,44 +232,52 @@ export async function signTaskWithCert(
   const tarballPath = await createDeterministicTarball(taskFolderPath);
   console.log(`  Tarball: ${tarballPath}`);
 
-  const keyPem = await fs.readFile(keyPath, 'utf8');
-  const certificateChainPem = await fs.readFile(certPath, 'utf8');
+  try {
+    const keyPem = await fs.readFile(keyPath, 'utf8');
+    const certificateChainPem = await fs.readFile(certPath, 'utf8');
 
-  const certificateChain = parseCertificateChainPEM(certificateChainPem);
-  if (certificateChain.length === 0) {
-    console.error('  Error: No certificates found in certificate chain file');
-    return undefined;
+    const certificateChain = parseCertificateChainPEM(certificateChainPem);
+    if (certificateChain.length === 0) {
+      console.error('  Error: No certificates found in certificate chain file');
+      return undefined;
+    }
+
+    assertTimestampAuthorityTrustedRoot();
+
+    const { nodeDigest, sigstoreAlgorithm } = resolveSignatureHash(keyPem);
+    const bundler = new MessageSignatureBundleBuilder({
+      signer: new DeviceCertificateSigner(
+        keyPem,
+        pemUtils.fromDER(certificateChain[0]),
+        nodeDigest
+      ),
+      witnesses: [new TSAWitness({ tsaBaseURL: TSA_BASE_URL })],
+    });
+
+    const tarball = await fs.readFile(tarballPath);
+    const bundle = await bundler.create({ data: tarball });
+
+    if (bundle.content.$case === 'messageSignature') {
+      bundle.content.messageSignature.messageDigest = {
+        algorithm: sigstoreAlgorithm,
+        digest: createHash(nodeDigest).update(new Uint8Array(tarball)).digest(),
+      };
+    }
+
+    if (bundle.verificationMaterial.content.$case === 'x509CertificateChain') {
+      bundle.verificationMaterial.content.x509CertificateChain.certificates = certificateChain.map(
+        rawBytes => ({ rawBytes })
+      );
+    }
+
+    const bundleJson = bundleToJSON(bundle);
+    await fs.writeFile(signatureFileOut, JSON.stringify(bundleJson, null, 2));
+
+    console.log(`  Signature: ${signatureFileOut}`);
+    return signatureFileOut;
+  } finally {
+    await fs.rm(path.dirname(tarballPath), { recursive: true, force: true });
   }
-
-  assertTimestampAuthorityTrustedRoot();
-
-  const { nodeDigest, sigstoreAlgorithm } = resolveSignatureHash(keyPem);
-  const bundler = new MessageSignatureBundleBuilder({
-    signer: new DeviceCertificateSigner(keyPem, pemUtils.fromDER(certificateChain[0]), nodeDigest),
-    witnesses: [new TSAWitness({ tsaBaseURL: TSA_BASE_URL })],
-  });
-
-  const tarball = await fs.readFile(tarballPath);
-  const bundle = await bundler.create({ data: tarball });
-
-  if (bundle.content.$case === 'messageSignature') {
-    bundle.content.messageSignature.messageDigest = {
-      algorithm: sigstoreAlgorithm,
-      digest: createHash(nodeDigest).update(new Uint8Array(tarball)).digest(),
-    };
-  }
-
-  if (bundle.verificationMaterial.content.$case === 'x509CertificateChain') {
-    bundle.verificationMaterial.content.x509CertificateChain.certificates = certificateChain.map(
-      rawBytes => ({ rawBytes })
-    );
-  }
-
-  const bundleJson = bundleToJSON(bundle);
-  await fs.writeFile(signatureFileOut, JSON.stringify(bundleJson, null, 2));
-
-  console.log(`  Signature: ${signatureFileOut}`);
-  return signatureFileOut;
 }
 
 export function facilitatorToRole(facilitator: FacilitatorType | undefined): TaskOriginRole {
