@@ -66,9 +66,6 @@ function printUsage(): void {
     --facilitator, -f    Facilitator type: "base" or "security-council" (used for 'sign' and 'verify' commands, omit this flag to sign/verify as task creator)
     --common-name, -c    Common name for task creator (required when not using --facilitator in 'verify' and 'verify-all' commands)
     --help, -h           Show this help message
-
-  Example:
-    tsx scripts/genTaskOriginSig.ts sign --task-folder ../active/evm --signature-path ../active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures
   `;
   console.log(msg);
 }

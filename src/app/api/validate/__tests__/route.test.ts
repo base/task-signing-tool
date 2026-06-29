@@ -33,7 +33,7 @@ describe('POST /api/validate', () => {
   it('accepts zeronet as a supported network', async () => {
     const res = await POST(
       createRequest({
-        upgradeId: '2025-08-01-upgrade-qux',
+        upgradeId: '2025-01-01-upgrade-example',
         network: 'zeronet',
         userType: 'base-sc',
       })
@@ -41,7 +41,7 @@ describe('POST /api/validate', () => {
 
     expect(res.status).toBe(200);
     expect(mockValidateUpgrade).toHaveBeenCalledWith({
-      upgradeId: '2025-08-01-upgrade-qux',
+      upgradeId: '2025-01-01-upgrade-example',
       network: NetworkType.Zeronet,
       taskConfigFileName: 'base-sc',
     });
@@ -50,7 +50,7 @@ describe('POST /api/validate', () => {
   it('rejects unsupported networks and lists zeronet in supported values', async () => {
     const res = await POST(
       createRequest({
-        upgradeId: '2025-08-01-upgrade-qux',
+        upgradeId: '2025-01-01-upgrade-example',
         network: 'hoodi',
         userType: 'base-sc',
       })
@@ -83,7 +83,7 @@ describe('POST /api/validate', () => {
   it('rejects path separators in userType', async () => {
     const res = await POST(
       createRequest({
-        upgradeId: '2025-08-01-upgrade-qux',
+        upgradeId: '2025-01-01-upgrade-example',
         network: 'mainnet',
         userType: '../base-sc',
       })
