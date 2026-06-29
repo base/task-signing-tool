@@ -21,6 +21,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate inputs to prevent path traversal attacks
+    const safePathPattern = /^[a-zA-Z0-9_-]+$/;
+    if (!safePathPattern.test(upgradeId) || !safePathPattern.test(userType)) {
+      return NextResponse.json(
+        { message: 'Invalid parameters: upgradeId and userType must only contain alphanumeric characters, underscores, and hyphens' },
+        { status: 400 }
+      );
+    }
+
     const trimmedUpgradeId = upgradeId.trim();
     const trimmedUserType = userType.trim();
     const normalizedNetwork = network.trim().toLowerCase();
