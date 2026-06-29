@@ -111,19 +111,19 @@ describe('normalizeUrl', () => {
 describe('getUpgradeOptions', () => {
   it('discovers active task folders without root-level network folders', async () => {
     const toolDir = path.join(tempDir, 'task-signing-tool');
-    const taskPath = path.join(tempDir, 'active', 'evm', 'tasks', '2026-06-19-upgrade');
+    const taskPath = path.join(tempDir, 'active', 'evm', 'tasks', '2025-06-04-upgrade-foo');
     await fs.mkdir(path.join(taskPath, 'config', 'mainnet', 'validations'), { recursive: true });
     await fs.mkdir(toolDir, { recursive: true });
     await fs.writeFile(
       path.join(taskPath, 'README.md'),
       [
-        '# 2026-06-19 Verifier Hash Update',
+        '# Upgrade Foo',
         '',
         'Status: READY TO SIGN',
         '',
         '## Description',
         '',
-        'Update verifier hashes for mainnet.',
+        'Example upgrade task.',
       ].join('\n')
     );
     process.chdir(toolDir);
@@ -132,12 +132,12 @@ describe('getUpgradeOptions', () => {
 
     expect(upgrades).toEqual([
       expect.objectContaining({
-        id: '2026-06-19-upgrade',
-        name: '2026-06-19 Verifier Hash Update',
-        date: '2026-06-19',
+        id: '2025-06-04-upgrade-foo',
+        name: 'Upgrade Foo',
+        date: '2025-06-04',
         network: NetworkType.Mainnet,
         status: TaskStatus.ReadyToSign,
-        description: 'Update verifier hashes for mainnet.',
+        description: 'Example upgrade task.',
       }),
     ]);
   });
@@ -150,7 +150,7 @@ describe('getUpgradeOptions', () => {
         'active',
         'evm',
         'tasks',
-        '2026-06-18-beryl-1',
+        '2025-06-04-upgrade-foo',
         'config',
         'mainnet',
         'validations'
@@ -163,7 +163,7 @@ describe('getUpgradeOptions', () => {
         'active',
         'evm',
         'tasks',
-        '2026-06-18-beryl-2',
+        '2025-07-12-upgrade-bar',
         'config',
         'mainnet',
         'validations'
@@ -176,7 +176,7 @@ describe('getUpgradeOptions', () => {
         'active',
         'evm',
         'tasks',
-        '2026-06-18-beryl-2',
+        '2025-07-12-upgrade-bar',
         'config',
         'zeronet',
         'validations'
@@ -189,19 +189,19 @@ describe('getUpgradeOptions', () => {
     const upgrades = getUpgradeOptions(NetworkType.Mainnet);
 
     expect(upgrades.map(upgrade => upgrade.id)).toEqual([
-      '2026-06-18-beryl-2',
-      '2026-06-18-beryl-1',
+      '2025-07-12-upgrade-bar',
+      '2025-06-04-upgrade-foo',
     ]);
   });
 
   it('does not discover old root-level network tasks', async () => {
     const toolDir = path.join(tempDir, 'task-signing-tool');
-    await fs.mkdir(path.join(tempDir, 'mainnet', '2026-06-19-upgrade', 'validations'), {
+    await fs.mkdir(path.join(tempDir, 'mainnet', '2025-06-04-upgrade-foo', 'validations'), {
       recursive: true,
     });
     await fs.mkdir(toolDir, { recursive: true });
     await fs.writeFile(
-      path.join(tempDir, 'mainnet', '2026-06-19-upgrade', 'README.md'),
+      path.join(tempDir, 'mainnet', '2025-06-04-upgrade-foo', 'README.md'),
       ['# Upgrade', '', 'Status: READY TO SIGN', '', '## Description', '', 'Legacy task.'].join(
         '\n'
       )

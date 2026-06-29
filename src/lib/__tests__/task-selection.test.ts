@@ -11,7 +11,7 @@ function upgrade({
     id,
     name: `${network} name`,
     description: `${network} description`,
-    date: '2026-06-18',
+    date: '2025-06-04',
     network,
     status: TaskStatus.ReadyToSign,
     ...overrides,
@@ -21,32 +21,32 @@ function upgrade({
 describe('task selection helpers', () => {
   it('groups upgrades by task id and sorts the available networks', () => {
     const options = groupUpgradesByTask([
-      upgrade({ id: '2026-06-18-beryl-1', network: NetworkType.Zeronet }),
-      upgrade({ id: '2026-06-18-beryl-1', network: NetworkType.Mainnet }),
-      upgrade({ id: '2026-06-19-jasper-1', network: NetworkType.Sepolia }),
+      upgrade({ id: '2025-06-04-upgrade-foo', network: NetworkType.Zeronet }),
+      upgrade({ id: '2025-06-04-upgrade-foo', network: NetworkType.Mainnet }),
+      upgrade({ id: '2025-07-12-upgrade-bar', network: NetworkType.Sepolia }),
     ]);
 
     expect(options).toHaveLength(2);
     expect(options[0]).toMatchObject({
-      id: '2026-06-18-beryl-1',
+      id: '2025-06-04-upgrade-foo',
       networks: [NetworkType.Mainnet, NetworkType.Zeronet],
     });
     expect(options[1]).toMatchObject({
-      id: '2026-06-19-jasper-1',
+      id: '2025-07-12-upgrade-bar',
       networks: [NetworkType.Sepolia],
     });
   });
 
   it('keeps network-specific metadata for the selected network', () => {
     const mainnetUpgrade = upgrade({
-      id: '2026-06-18-beryl-1',
+      id: '2025-06-04-upgrade-foo',
       network: NetworkType.Mainnet,
       name: 'Mainnet title',
       description: 'Mainnet README content',
       status: TaskStatus.ReadyToSign,
     });
     const zeronetUpgrade = upgrade({
-      id: '2026-06-18-beryl-1',
+      id: '2025-06-04-upgrade-foo',
       network: NetworkType.Zeronet,
       name: 'Zeronet title',
       description: 'Zeronet README content',

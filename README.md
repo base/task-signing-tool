@@ -41,15 +41,19 @@ contract-deployments/
 ├─ active/
 │  └─ evm/
 │     ├─ tasks/
-│     │  ├─ 2026-06-18-beryl-1/
+│     │  ├─ 2025-06-04-upgrade-foo/
 │     │  │  ├─ README.md
 │     │  │  ├─ config/
-│     │  │  │  └─ mainnet/
-│     │  │  │     ├─ validations/
-│     │  │  │     ├─ signatures/
-│     │  │  │     ├─ network.env
-│     │  │  │     └─ .env
-│     │  └─ 2026-06-18-beryl-2/
+│     │  │  │  ├─ mainnet/
+│     │  │  │  │  ├─ validations/
+│     │  │  │  │  ├─ signatures/
+│     │  │  │  │  ├─ network.env
+│     │  │  │  │  └─ .env
+│     │  │  │  ├─ zeronet/
+│     │  │  │  │  └─ validations/
+│     │  │  │  └─ sepolia/
+│     │  │  │     └─ validations/
+│     │  └─ 2025-07-12-upgrade-bar/
 │     │     └─ config/
 │     ├─ script/
 │     │  └─ common/
@@ -73,7 +77,7 @@ Generate task-origin signatures with:
 ```bash
 tsx task-signing-tool/scripts/genTaskOriginSig.ts sign \
   --task-folder active/evm \
-  --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures
+  --signature-path active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet/signatures
 ```
 
 ### Task README structure
@@ -292,7 +296,7 @@ cd "$SIGNER_TOOL_PATH" && \
   bun run scripts/genValidationFile.ts --rpc-url "$L1_RPC_URL" \
     --workdir ../active/evm \
     --forge-cmd 'forge script --rpc-url "$L1_RPC_URL" SwapOwner --sig "sign()" --sender "$SENDER"' \
-    --out ../active/evm/tasks/2026-06-18-beryl-1/config/mainnet/validations/test.json
+    --out ../active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet/validations/test.json
 ```
 
 Notes:
@@ -353,7 +357,7 @@ npx tsx scripts/genTaskOriginSig.ts --help
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
   --task-folder active/evm \
-  --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures
+  --signature-path active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet/signatures
 ```
 
 **Sign as Base facilitator:**
@@ -362,7 +366,7 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
   --task-folder active/evm \
-  --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures \
+  --signature-path active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet/signatures \
   --facilitator base
 ```
 
@@ -372,7 +376,7 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 npm ci
 npx tsx scripts/genTaskOriginSig.ts verify \
   --task-folder active/evm \
-  --signature-path active/evm/tasks/2026-06-18-beryl-1/config/mainnet/signatures \
+  --signature-path active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet/signatures \
   --common-name alice@example.com
 ```
 

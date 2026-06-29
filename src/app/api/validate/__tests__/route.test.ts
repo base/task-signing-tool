@@ -67,7 +67,7 @@ describe('POST /api/validate', () => {
   it('rejects path separators in upgradeId', async () => {
     const res = await POST(
       createRequest({
-        upgradeId: '../2026-06-18-beryl-1',
+        upgradeId: '../2025-01-01-upgrade-example',
         network: 'mainnet',
         userType: 'base-sc',
       })
