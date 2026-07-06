@@ -13,9 +13,3 @@ export function assertWithinDir(targetPath: string, allowedDir: string): string 
   }
   return resolved;
 }
-
-const SAFE_PATH_SEGMENT_PATTERN = /^[a-zA-Z0-9_-]+$/;
-
-export function isSafePathSegment(value: string): boolean {
-  return SAFE_PATH_SEGMENT_PATTERN.test(value);
-}

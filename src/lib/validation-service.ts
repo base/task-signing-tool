@@ -3,7 +3,7 @@ import path from 'path';
 import { TASK_ORIGIN_COMMON_NAMES, TASK_ORIGIN_SIGNATURE_FILE_NAMES } from './constants';
 import { findContractDeploymentsRoot } from './deployments';
 import { getValidationSummary, parseFromString } from './parser';
-import { assertWithinDir, isSafePathSegment } from './path-validation';
+import { assertWithinDir } from './path-validation';
 import { StateDiffClient } from './state-diff';
 import { verifyTaskOrigin } from './task-origin-validate';
 import {
@@ -50,12 +50,6 @@ async function withValidationLock<T>(fn: () => Promise<T>): Promise<T> {
 async function getConfigData(
   opts: ValidationServiceOpts
 ): Promise<{ cfg: TaskConfig; scriptPath: string; signatureDir: string }> {
-  if (!isSafePathSegment(opts.upgradeId) || !isSafePathSegment(opts.taskConfigFileName)) {
-    throw new Error(
-      'ValidationService::getConfigData: upgradeId and taskConfigFileName must be path-safe segments'
-    );
-  }
-
   const scriptPath = assertWithinDir(
     path.join(CONTRACT_DEPLOYMENTS_ROOT, 'active', 'evm'),
     CONTRACT_DEPLOYMENTS_ROOT
