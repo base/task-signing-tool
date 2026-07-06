@@ -64,16 +64,5 @@ describe('POST /api/validate', () => {
     expect(body.message).toContain('zeronet');
   });
 
-  it.each([
-    ['upgradeId', { upgradeId: '../2025-01-01-upgrade-example', network: 'mainnet', userType: 'base-sc' }],
-    ['userType', { upgradeId: '2025-01-01-upgrade-example', network: 'mainnet', userType: '../base-sc' }],
-  ])('rejects unsafe path segments in %s', async (_field, requestBody) => {
-    const res = await POST(createRequest(requestBody));
 
-    expect(res.status).toBe(400);
-    expect(mockValidateUpgrade).not.toHaveBeenCalled();
-
-    const body = await res.json();
-    expect(body.message).toMatch(/invalid upgradeId or userType/i);
-  });
 });

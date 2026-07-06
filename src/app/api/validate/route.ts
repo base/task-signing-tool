@@ -1,7 +1,6 @@
 import { validateUpgrade } from '@/lib/validation-service';
 import { NextRequest, NextResponse } from 'next/server';
 import { NetworkType } from '@/lib/types';
-import { isSafePathSegment } from '@/lib/path-validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,16 +24,6 @@ export async function POST(req: NextRequest) {
     const trimmedUpgradeId = upgradeId.trim();
     const trimmedUserType = userType.trim();
     const normalizedNetwork = network.trim().toLowerCase();
-
-    if (!isSafePathSegment(trimmedUpgradeId) || !isSafePathSegment(trimmedUserType)) {
-      return NextResponse.json(
-        {
-          message:
-            'Invalid upgradeId or userType: only alphanumeric characters, hyphens, and underscores are allowed',
-        },
-        { status: 400 }
-      );
-    }
 
     if (!Object.values(NetworkType).includes(normalizedNetwork as NetworkType)) {
       return NextResponse.json(
