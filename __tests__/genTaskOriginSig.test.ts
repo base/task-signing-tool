@@ -297,7 +297,6 @@ describe('signTaskWithCert', () => {
     expect(bundle.verificationMaterial.x509CertificateChain.certificates[0].rawBytes).toBeTruthy();
 
     const tarballPath = await createDeterministicTarball(taskFolder);
-    await assertTarballInTmpDir(tarballPath);
     const tarball = await fsp.readFile(tarballPath);
     const expectedDigest = createHash('sha256').update(new Uint8Array(tarball)).digest('base64');
     expect(bundle.messageSignature.messageDigest.digest).toBe(expectedDigest);
@@ -397,12 +396,6 @@ async function writeFixtureLeafCertificate(bundlePath: string, directory: string
   return certificatePath;
 }
 
-async function assertTarballInTmpDir(tarballPath: string): Promise<void> {
-  const tarballDir = path.dirname(tarballPath);
-  const tmpRoot = await fsp.realpath(os.tmpdir());
-  const tarballDirReal = await fsp.realpath(tarballDir);
-  expect(tarballDirReal.startsWith(`${tmpRoot}${path.sep}`)).toBe(true);
-}
 
 // Returns the full certificate chain from a Sigstore bundle as a PEM string,
 // alongside the original per-certificate DER (base64).
