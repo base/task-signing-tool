@@ -49,7 +49,7 @@ async function withValidationLock<T>(fn: () => Promise<T>): Promise<T> {
 
 async function getConfigData(
   opts: ValidationServiceOpts
-): Promise<{ cfg: TaskConfig; scriptPath: string; taskOriginDir: string; signatureDir: string }> {
+): Promise<{ cfg: TaskConfig; scriptPath: string; signatureDir: string }> {
   if (!isSafePathSegment(opts.upgradeId) || !isSafePathSegment(opts.taskConfigFileName)) {
     throw new Error(
       'ValidationService::getConfigData: upgradeId and taskConfigFileName must be path-safe segments'
@@ -66,10 +66,6 @@ async function getConfigData(
   );
   const configDir = assertWithinDir(
     path.join(taskPath, 'config', opts.network, 'validations'),
-    CONTRACT_DEPLOYMENTS_ROOT
-  );
-  const networkConfigDir = assertWithinDir(
-    path.join(taskPath, 'config', opts.network),
     CONTRACT_DEPLOYMENTS_ROOT
   );
   const configFileName = `${opts.taskConfigFileName}.json`;
@@ -102,9 +98,8 @@ async function getConfigData(
   return {
     cfg: parsedConfig.config,
     scriptPath,
-    taskOriginDir: scriptPath,
     signatureDir: assertWithinDir(
-      path.join(networkConfigDir, 'signatures'),
+      path.join(taskPath, 'signatures'),
       CONTRACT_DEPLOYMENTS_ROOT
     ),
   };
@@ -164,8 +159,7 @@ async function validateSigner(
   role: TaskOriginRole,
   commonNameOverride?: string // Only used for taskCreator
 ): Promise<TaskOriginSignerResult> {
-  const taskFolderPath = taskOriginDir;
-  assertWithinDir(taskFolderPath, CONTRACT_DEPLOYMENTS_ROOT);
+  assertWithinDir(taskOriginDir, CONTRACT_DEPLOYMENTS_ROOT);
 
   // Get signatureFileName from constants (hardcoded for all roles)
   const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
@@ -177,7 +171,7 @@ async function validateSigner(
     commonNameOverride ?? TASK_ORIGIN_COMMON_NAMES[role as keyof typeof TASK_ORIGIN_COMMON_NAMES];
 
   await verifyTaskOrigin({
-    taskFolderPath,
+    taskFolderPath: taskOriginDir,
     signatureFile,
     commonName,
     role,
@@ -277,7 +271,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
   return withValidationLock(async () => {
     console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
 
-    const { cfg, scriptPath, taskOriginDir, signatureDir } = await getConfigData(opts);
+    const { cfg, scriptPath, signatureDir } = await getConfigData(opts);
 
     // Determine task origin validation state
     let taskOriginValidation: TaskOriginValidation;
@@ -298,7 +292,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
     } else {
       console.log('🔐 Running task origin validation (must pass before simulation)...');
       taskOriginValidation = await runTaskOriginValidation(
-        taskOriginDir,
+        scriptPath,
         signatureDir,
         cfg.taskOriginConfig
       );

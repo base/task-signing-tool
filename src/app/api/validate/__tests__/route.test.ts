@@ -64,30 +64,11 @@ describe('POST /api/validate', () => {
     expect(body.message).toContain('zeronet');
   });
 
-  it('rejects path separators in upgradeId', async () => {
-    const res = await POST(
-      createRequest({
-        upgradeId: '../2025-01-01-upgrade-example',
-        network: 'mainnet',
-        userType: 'base-sc',
-      })
-    );
-
-    expect(res.status).toBe(400);
-    expect(mockValidateUpgrade).not.toHaveBeenCalled();
-
-    const body = await res.json();
-    expect(body.message).toMatch(/invalid upgradeId or userType/i);
-  });
-
-  it('rejects path separators in userType', async () => {
-    const res = await POST(
-      createRequest({
-        upgradeId: '2025-01-01-upgrade-example',
-        network: 'mainnet',
-        userType: '../base-sc',
-      })
-    );
+  it.each([
+    ['upgradeId', { upgradeId: '../2025-01-01-upgrade-example', network: 'mainnet', userType: 'base-sc' }],
+    ['userType', { upgradeId: '2025-01-01-upgrade-example', network: 'mainnet', userType: '../base-sc' }],
+  ])('rejects unsafe path segments in %s', async (_field, requestBody) => {
+    const res = await POST(createRequest(requestBody));
 
     expect(res.status).toBe(400);
     expect(mockValidateUpgrade).not.toHaveBeenCalled();

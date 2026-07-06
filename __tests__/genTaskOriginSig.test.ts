@@ -297,13 +297,10 @@ describe('signTaskWithCert', () => {
     expect(bundle.verificationMaterial.x509CertificateChain.certificates[0].rawBytes).toBeTruthy();
 
     const tarballPath = await createDeterministicTarball(taskFolder);
-    try {
-      const tarball = await fsp.readFile(tarballPath);
-      const expectedDigest = createHash('sha256').update(new Uint8Array(tarball)).digest('base64');
-      expect(bundle.messageSignature.messageDigest.digest).toBe(expectedDigest);
-    } finally {
-      await cleanupCreatedTarball(tarballPath);
-    }
+    await assertTarballInTmpDir(tarballPath);
+    const tarball = await fsp.readFile(tarballPath);
+    const expectedDigest = createHash('sha256').update(new Uint8Array(tarball)).digest('base64');
+    expect(bundle.messageSignature.messageDigest.digest).toBe(expectedDigest);
   });
 });
 
@@ -400,12 +397,11 @@ async function writeFixtureLeafCertificate(bundlePath: string, directory: string
   return certificatePath;
 }
 
-async function cleanupCreatedTarball(tarballPath: string): Promise<void> {
+async function assertTarballInTmpDir(tarballPath: string): Promise<void> {
   const tarballDir = path.dirname(tarballPath);
   const tmpRoot = await fsp.realpath(os.tmpdir());
   const tarballDirReal = await fsp.realpath(tarballDir);
   expect(tarballDirReal.startsWith(`${tmpRoot}${path.sep}`)).toBe(true);
-  await fsp.rm(tarballDir, { recursive: true, force: true });
 }
 
 // Returns the full certificate chain from a Sigstore bundle as a PEM string,
