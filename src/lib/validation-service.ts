@@ -92,10 +92,7 @@ async function getConfigData(
   return {
     cfg: parsedConfig.config,
     scriptPath,
-    signatureDir: assertWithinDir(
-      path.join(taskPath, 'signatures'),
-      CONTRACT_DEPLOYMENTS_ROOT
-    ),
+    signatureDir: assertWithinDir(path.join(taskPath, 'signatures'), CONTRACT_DEPLOYMENTS_ROOT),
   };
 }
 

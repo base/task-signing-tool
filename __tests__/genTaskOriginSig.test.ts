@@ -396,7 +396,6 @@ async function writeFixtureLeafCertificate(bundlePath: string, directory: string
   return certificatePath;
 }
 
-
 // Returns the full certificate chain from a Sigstore bundle as a PEM string,
 // alongside the original per-certificate DER (base64).
 function certificateChainFromBundle(bundlePath: string): {
