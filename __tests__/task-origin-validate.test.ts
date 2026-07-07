@@ -88,7 +88,6 @@ describe('createDeterministicTarball', () => {
     expect(entries).toContain('test.txt');
   });
 
-
   it('produces deterministic output with identical hash', async () => {
     // Create some files
     await fs.writeFile(path.join(tempDir, 'file1.txt'), 'content 1');

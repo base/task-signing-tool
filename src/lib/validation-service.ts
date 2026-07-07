@@ -47,9 +47,7 @@ async function withValidationLock<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-async function getConfigData(
-  opts: ValidationServiceOpts
-): Promise<{
+async function getConfigData(opts: ValidationServiceOpts): Promise<{
   cfg: TaskConfig;
   scriptPath: string;
   networkConfigDir: string;
