@@ -35,18 +35,10 @@ async function getAllFilesRecursively(
 
   const entries = await fs.readdir(currentDir, { withFileTypes: true });
   const files: string[] = [];
-  // Exclude generated folders from the signed tarball. In the active EVM layout,
-  // signatures are stored under tasks/<task-id>/signatures, inside the task origin directory,
-  // so they must not be part of the payload they attest to.
-  const excludedFolders = ['cache', 'out', 'signer-tool', 'signatures'];
 
   for (const entry of entries) {
     const fullPath = path.join(currentDir, entry.name);
     if (entry.isDirectory()) {
-      // Skip excluded folders
-      if (excludedFolders.includes(entry.name)) {
-        continue;
-      }
       files.push(...(await getAllFilesRecursively(fullPath, baseDir, allowedDir)));
     } else if (entry.isFile()) {
       files.push(path.relative(baseDir, fullPath));
@@ -113,10 +105,6 @@ export async function createDeterministicTarball(
   return tarballPath;
 }
 
-async function cleanupTarball(tarballPath: string): Promise<void> {
-  await fs.rm(path.dirname(tarballPath), { recursive: true, force: true });
-}
-
 export async function buildAndValidateSignature(options: TaskOriginVerifyOptions): Promise<void> {
   const { taskFolderPath, signatureFile, commonName, role, allowedDir } = options;
   console.log(`  Task folder: ${taskFolderPath}`);
@@ -134,128 +122,122 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
 
   // Regenerate the tarball from the provided task folder
   const tarballPath = await createDeterministicTarball(taskFolderPath, allowedDir);
+  const tarball = await fs.readFile(tarballPath); // Read as binary Buffer
+
+  // Extract the deployment-specific intermediate CA from bundle
+  // Bundle structure: [0]=leaf, [1]=runtime intermediate, [2]=static intermediate, [3]=root
+  // Trusted root has: [static intermediate, root]
+  // We need to inject [1] (runtime intermediate) to build the complete chain
+  const bundleCerts =
+    bundleSig.verificationMaterial?.content?.$case === 'x509CertificateChain'
+      ? bundleSig.verificationMaterial.content.x509CertificateChain.certificates
+      : [];
+
+  // Extract the runtime intermediate (cert [1]) and root (cert [3]) - keep as Buffers
+  const runtimeIntermediate = bundleCerts[1] ? { rawBytes: bundleCerts[1].rawBytes } : null;
+  const rootCert = bundleCerts[3] ? { rawBytes: bundleCerts[3].rawBytes } : null;
+
+  // Prepare trust material with:
+  // 1. Date strings converted to Date objects (required for filtering)
+  // 2. Runtime intermediate CA injected into certificate chain
+  const normalizedTrustedRoot = {
+    ...trustedRoot,
+    tlogs: trustedRoot.tlogs || [],
+    ctlogs: trustedRoot.ctlogs || [],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    certificateAuthorities: trustedRoot.certificateAuthorities?.map((ca: any) => {
+      // Convert base64 strings to Buffers for all certificates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const baseCerts = ca.certChain.certificates.map((cert: any) => ({
+        rawBytes: Buffer.from(cert.rawBytes, 'base64'),
+      }));
+
+      // Build the certificate chain: base certs + runtime intermediate + root
+      const certChain = [...baseCerts];
+      if (runtimeIntermediate) certChain.push(runtimeIntermediate);
+      if (rootCert) certChain.push(rootCert);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const normalized: any = {
+        subject: ca.subject,
+        certChain: {
+          certificates: certChain,
+        },
+        validFor: {
+          start: ca.validFor?.start ? new Date(ca.validFor.start) : undefined,
+          end: ca.validFor?.end ? new Date(ca.validFor.end) : undefined,
+        },
+      };
+      if (ca.uri) normalized.uri = ca.uri;
+      return normalized;
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    timestampAuthorities: trustedRoot.timestampAuthorities?.map((tsa: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const normalized: any = {
+        subject: tsa.subject,
+        uri: tsa.uri,
+        certChain: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          certificates: tsa.certChain.certificates.map((cert: any) => ({
+            rawBytes: Buffer.from(cert.rawBytes, 'base64'),
+          })),
+        },
+        validFor: {
+          start: tsa.validFor?.start ? new Date(tsa.validFor.start) : undefined,
+          end: tsa.validFor?.end ? new Date(tsa.validFor.end) : undefined,
+        },
+      };
+      return normalized;
+    }),
+  };
+
+  // Create trust material from the custom trusted root
+  const trustMaterial = toTrustMaterial(normalizedTrustedRoot);
+
+  // Configure verifier options
+  const verifierOptions = {
+    tsaThreshold: 1, // Require TSA timestamp verification
+    ctlogThreshold: 0, // No CT logs for custom CA
+    tlogThreshold: 0, // No transparency logs for custom CA
+  };
+
+  // Create the verifier with custom trust material
+  const verifier = new Verifier(trustMaterial, verifierOptions);
+
+  // Convert bundle to signed entity for verification
+  const signedEntity = toSignedEntity(bundleSig, tarball); // tarball is already a Buffer
+
+  const uriPrefix = getURIPrefix(role);
+  const expectedSubjectAlternativeName = `${uriPrefix}${commonName}`;
+
+  // Define the verification policy with the expected subject alternative name.
+  const verificationPolicy = {
+    subjectAlternativeName: expectedSubjectAlternativeName,
+  };
+
+  // Verify the signature. @sigstore/verify validates the certificate chain,
+  // signature, and timestamp, checks the certificate identity against the policy, and
+  // returns the signer whose identity is extracted from the verified leaf certificate.
+  let signer;
   try {
-    const tarball = await fs.readFile(tarballPath); // Read as binary Buffer
-
-    // Extract the deployment-specific intermediate CA from bundle
-    // Bundle structure: [0]=leaf, [1]=runtime intermediate, [2]=static intermediate, [3]=root
-    // Trusted root has: [static intermediate, root]
-    // We need to inject [1] (runtime intermediate) to build the complete chain
-    const bundleCerts =
-      bundleSig.verificationMaterial?.content?.$case === 'x509CertificateChain'
-        ? bundleSig.verificationMaterial.content.x509CertificateChain.certificates
-        : [];
-
-    // Extract the runtime intermediate (cert [1]) and root (cert [3]) - keep as Buffers
-    const runtimeIntermediate = bundleCerts[1] ? { rawBytes: bundleCerts[1].rawBytes } : null;
-    const rootCert = bundleCerts[3] ? { rawBytes: bundleCerts[3].rawBytes } : null;
-
-    // Prepare trust material with:
-    // 1. Date strings converted to Date objects (required for filtering)
-    // 2. Runtime intermediate CA injected into certificate chain
-    const normalizedTrustedRoot = {
-      ...trustedRoot,
-      tlogs: trustedRoot.tlogs || [],
-      ctlogs: trustedRoot.ctlogs || [],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      certificateAuthorities: trustedRoot.certificateAuthorities?.map((ca: any) => {
-        // Convert base64 strings to Buffers for all certificates
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const baseCerts = ca.certChain.certificates.map((cert: any) => ({
-          rawBytes: Buffer.from(cert.rawBytes, 'base64'),
-        }));
-
-        // Build the certificate chain: base certs + runtime intermediate + root
-        const certChain = [...baseCerts];
-        if (runtimeIntermediate) certChain.push(runtimeIntermediate);
-        if (rootCert) certChain.push(rootCert);
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const normalized: any = {
-          subject: ca.subject,
-          certChain: {
-            certificates: certChain,
-          },
-          validFor: {
-            start: ca.validFor?.start ? new Date(ca.validFor.start) : undefined,
-            end: ca.validFor?.end ? new Date(ca.validFor.end) : undefined,
-          },
-        };
-        if (ca.uri) normalized.uri = ca.uri;
-        return normalized;
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      timestampAuthorities: trustedRoot.timestampAuthorities?.map((tsa: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const normalized: any = {
-          subject: tsa.subject,
-          uri: tsa.uri,
-          certChain: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            certificates: tsa.certChain.certificates.map((cert: any) => ({
-              rawBytes: Buffer.from(cert.rawBytes, 'base64'),
-            })),
-          },
-          validFor: {
-            start: tsa.validFor?.start ? new Date(tsa.validFor.start) : undefined,
-            end: tsa.validFor?.end ? new Date(tsa.validFor.end) : undefined,
-          },
-        };
-        return normalized;
-      }),
-    };
-
-    // Create trust material from the custom trusted root
-    const trustMaterial = toTrustMaterial(normalizedTrustedRoot);
-
-    // Configure verifier options
-    const verifierOptions = {
-      tsaThreshold: 1, // Require TSA timestamp verification
-      ctlogThreshold: 0, // No CT logs for custom CA
-      tlogThreshold: 0, // No transparency logs for custom CA
-    };
-
-    // Create the verifier with custom trust material
-    const verifier = new Verifier(trustMaterial, verifierOptions);
-
-    // Convert bundle to signed entity for verification
-    const signedEntity = toSignedEntity(bundleSig, tarball); // tarball is already a Buffer
-
-    const uriPrefix = getURIPrefix(role);
-    const expectedSubjectAlternativeName = `${uriPrefix}${commonName}`;
-
-    // Define the verification policy with the expected subject alternative name.
-    const verificationPolicy = {
-      subjectAlternativeName: expectedSubjectAlternativeName,
-    };
-
-    // Verify the signature. @sigstore/verify validates the certificate chain,
-    // signature, and timestamp, checks the certificate identity against the policy, and
-    // returns the signer whose identity is extracted from the verified leaf certificate.
-    let signer;
-    try {
-      console.log('  Performing verification...');
-      signer = verifier.verify(signedEntity, verificationPolicy);
-    } catch (error: unknown) {
-      throw new Error(
-        `Validation failed: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-
-    // @sigstore/verify matches the policy Subject Alternative Name as a regular
-    // expression, so the policy check above also accepts prefixes and wildcards of
-    // the identity. We add this guardrail to require an exact match.
-    const actualSubjectAlternativeName = signer.identity?.subjectAlternativeName;
-    if (actualSubjectAlternativeName !== expectedSubjectAlternativeName) {
-      throw new Error(
-        `❌ Verification failed: certificate identity error, expected ${expectedSubjectAlternativeName} but received ${actualSubjectAlternativeName ?? 'undefined'}`
-      );
-    }
-
-    console.log('✅ Verification successful!');
-  } finally {
-    await cleanupTarball(tarballPath);
+    console.log('  Performing verification...');
+    signer = verifier.verify(signedEntity, verificationPolicy);
+  } catch (error: unknown) {
+    throw new Error(`Validation failed: ${error instanceof Error ? error.message : String(error)}`);
   }
+
+  // @sigstore/verify matches the policy Subject Alternative Name as a regular
+  // expression, so the policy check above also accepts prefixes and wildcards of
+  // the identity. We add this guardrail to require an exact match.
+  const actualSubjectAlternativeName = signer.identity?.subjectAlternativeName;
+  if (actualSubjectAlternativeName !== expectedSubjectAlternativeName) {
+    throw new Error(
+      `❌ Verification failed: certificate identity error, expected ${expectedSubjectAlternativeName} but received ${actualSubjectAlternativeName ?? 'undefined'}`
+    );
+  }
+
+  console.log('✅ Verification successful!');
 }
 
 export async function verifyTaskOrigin(options: TaskOriginVerifyOptions): Promise<void> {
