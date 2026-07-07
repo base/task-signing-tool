@@ -49,7 +49,7 @@ async function withValidationLock<T>(fn: () => Promise<T>): Promise<T> {
 
 async function getConfigData(
   opts: ValidationServiceOpts
-): Promise<{ cfg: TaskConfig; scriptPath: string; signatureDir: string }> {
+): Promise<{ cfg: TaskConfig; scriptPath: string; taskPath: string; signatureDir: string }> {
   const scriptPath = assertWithinDir(
     path.join(CONTRACT_DEPLOYMENTS_ROOT, 'active', 'evm'),
     CONTRACT_DEPLOYMENTS_ROOT
@@ -92,6 +92,7 @@ async function getConfigData(
   return {
     cfg: parsedConfig.config,
     scriptPath,
+    taskPath,
     signatureDir: assertWithinDir(path.join(taskPath, 'signatures'), CONTRACT_DEPLOYMENTS_ROOT),
   };
 }
@@ -262,7 +263,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
   return withValidationLock(async () => {
     console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
 
-    const { cfg, scriptPath, signatureDir } = await getConfigData(opts);
+    const { cfg, scriptPath, taskPath, signatureDir } = await getConfigData(opts);
 
     // Determine task origin validation state
     let taskOriginValidation: TaskOriginValidation;
@@ -283,7 +284,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
     } else {
       console.log('🔐 Running task origin validation (must pass before simulation)...');
       taskOriginValidation = await runTaskOriginValidation(
-        scriptPath,
+        taskPath,
         signatureDir,
         cfg.taskOriginConfig
       );

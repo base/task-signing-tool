@@ -359,8 +359,8 @@ npx tsx scripts/genTaskOriginSig.ts --help
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
-  --task-folder <path>/<network>/<task> \
-  --signature-path <path>/<network>/signatures/<task>
+  --task-folder active/evm/tasks/2025-06-04-upgrade-foo \
+  --signature-path active/evm/tasks/2025-06-04-upgrade-foo/signatures
 ```
 
 **Sign as Base facilitator:**
@@ -368,8 +368,8 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
-  --task-folder <path>/<network>/<task> \
-  --signature-path <path>/<network>/signatures/<task> \
+  --task-folder active/evm/tasks/2025-06-04-upgrade-foo \
+  --signature-path active/evm/tasks/2025-06-04-upgrade-foo/signatures \
   --facilitator base
 ```
 
@@ -378,8 +378,8 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts verify \
-  --task-folder <path>/<network>/<task> \
-  --signature-path <path>/<network>/signatures/<task> \
+  --task-folder active/evm/tasks/2025-06-04-upgrade-foo \
+  --signature-path active/evm/tasks/2025-06-04-upgrade-foo/signatures \
   --common-name alice@example.com
 ```
 
