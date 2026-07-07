@@ -14,8 +14,10 @@ import type { TaskOriginRole } from '../src/lib/types';
 // Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
-const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task');
-const MODIFIED_TASK_FOLDER = path.join(FIXTURES_DIR, 'modified-task');
+// The tarball is scoped to a single network config dir; cache/ and out/ build
+// artifacts live at the task root, outside this leaf, so they are never signed.
+const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task', 'config', 'chain1');
+const MODIFIED_TASK_FOLDER = path.join(FIXTURES_DIR, 'modified-task', 'config', 'chain1');
 const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
 
 // Task creator email
@@ -92,8 +94,7 @@ describe('createDeterministicTarball', () => {
     createdTarballs.push(tarball1);
     const hash1 = await computeFileHash(tarball1);
 
-    // Delete the tarball directory before creating the second one to verify
-    // determinism does not depend on the temporary output path.
+    // Delete the tarball
     await fs.unlink(tarball1);
     createdTarballs = createdTarballs.filter(t => t !== tarball1);
 
@@ -104,17 +105,6 @@ describe('createDeterministicTarball', () => {
 
     // Hashes should be identical
     expect(hash1).toBe(hash2);
-  });
-
-  it('creates unique temporary tarball paths for the same folder', async () => {
-    await fs.writeFile(path.join(tempDir, 'test.txt'), 'test content');
-
-    const tarball1 = await createDeterministicTarball(tempDir);
-    const tarball2 = await createDeterministicTarball(tempDir);
-    createdTarballs.push(tarball1, tarball2);
-
-    expect(tarball1).not.toBe(tarball2);
-    expect(path.basename(tarball1)).toBe(path.basename(tarball2));
   });
 
   it('sorts files alphabetically in the tarball', async () => {

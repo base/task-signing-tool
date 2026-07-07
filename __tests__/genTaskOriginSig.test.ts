@@ -23,7 +23,7 @@ import { createDeterministicTarball } from '../src/lib/task-origin-validate';
 // Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
-const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task');
+const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task', 'config', 'chain1');
 const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
 const INVALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/invalid');
 const MISSING_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/missing');
