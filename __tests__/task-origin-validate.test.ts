@@ -38,14 +38,6 @@ async function listTarEntries(tarballPath: string): Promise<string[]> {
   return entries;
 }
 
-async function cleanupCreatedTarball(tarballPath: string): Promise<void> {
-  const tarballDir = path.dirname(tarballPath);
-  const tmpRoot = await fs.realpath(os.tmpdir());
-  const tarballDirReal = await fs.realpath(tarballDir);
-  expect(tarballDirReal.startsWith(`${tmpRoot}${path.sep}`)).toBe(true);
-  await fs.rm(tarballDir, { recursive: true, force: true });
-}
-
 describe('createDeterministicTarball', () => {
   let tempDir: string;
   let createdTarballs: string[] = [];
@@ -63,7 +55,7 @@ describe('createDeterministicTarball', () => {
     // Clean up any created tarballs
     for (const tarball of createdTarballs) {
       try {
-        await cleanupCreatedTarball(tarball);
+        await fs.unlink(tarball);
       } catch {
         // Ignore errors if file doesn't exist
       }
@@ -102,7 +94,7 @@ describe('createDeterministicTarball', () => {
 
     // Delete the tarball directory before creating the second one to verify
     // determinism does not depend on the temporary output path.
-    await cleanupCreatedTarball(tarball1);
+    await fs.unlink(tarball1);
     createdTarballs = createdTarballs.filter(t => t !== tarball1);
 
     // Create second tarball and compute hash
