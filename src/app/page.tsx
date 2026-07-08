@@ -16,6 +16,7 @@ import { ConfigOption } from '@/components/UserSelection';
 import { LedgerSigningResult } from '@/lib/ledger-signing';
 
 type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
+type StepStatus = 'current' | 'completed' | 'pending';
 
 const STEP_LAYOUT_WIDTH: Record<Step, string> = {
   upgrade: 'max-w-4xl',
@@ -80,16 +81,11 @@ export default function Home() {
     setCurrentStep('user');
   };
 
-  const canEditUpgrade =
-    currentStep === 'user' ||
-    currentStep === 'validation' ||
-    currentStep === 'ledger' ||
-    currentStep === 'signing';
+  const canEditUpgrade = currentStep !== 'upgrade';
 
   const canEditUser =
     currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing';
 
-  // Map current step to step indicator format
   const steps = [
     {
       id: 'upgrade',
@@ -105,10 +101,7 @@ export default function Home() {
       status:
         currentStep === 'user'
           ? 'current'
-          : ((selectedUser ? 'completed' : selectedUpgrade ? 'pending' : 'pending') as
-              | 'current'
-              | 'completed'
-              | 'pending'),
+          : ((selectedUser ? 'completed' : 'pending') as StepStatus),
     },
     {
       id: 'validation',
@@ -116,10 +109,7 @@ export default function Home() {
       status:
         currentStep === 'validation'
           ? 'current'
-          : ((validationData ? 'completed' : selectedUser ? 'pending' : 'pending') as
-              | 'current'
-              | 'completed'
-              | 'pending'),
+          : ((validationData ? 'completed' : 'pending') as StepStatus),
     },
     {
       id: 'ledger',
@@ -127,16 +117,12 @@ export default function Home() {
       status:
         currentStep === 'ledger'
           ? 'current'
-          : ((signingData ? 'completed' : validationData ? 'pending' : 'pending') as
-              | 'current'
-              | 'completed'
-              | 'pending'),
+          : ((signingData ? 'completed' : 'pending') as StepStatus),
     },
     {
       id: 'signing',
       label: 'Confirmation',
-      status:
-        currentStep === 'signing' ? 'current' : ('pending' as 'current' | 'completed' | 'pending'),
+      status: currentStep === 'signing' ? 'current' : ('pending' as StepStatus),
     },
   ];
 
@@ -158,8 +144,8 @@ export default function Home() {
 
         {currentStep === 'upgrade' && (
           <UpgradeSelection
-            selectedWallet={selectedUpgrade?.id || null}
-            selectedNetwork={selectedNetwork}
+            selectedUpgradeId={selectedUpgrade?.id ?? null}
+            selectedNetwork={selectedNetwork ?? null}
             onSelect={handleUpgradeSelection}
           />
         )}
@@ -172,14 +158,11 @@ export default function Home() {
           />
         )}
 
-        {currentStep === 'validation' && (
+        {currentStep === 'validation' && selectedUpgrade && (
           <ValidationResults
             userType={selectedUser?.fileName || ''}
             network={selectedNetwork || ''}
-            selectedUpgrade={{
-              id: selectedUpgrade?.id || '',
-              name: selectedUpgrade?.name || '',
-            }}
+            upgradeId={selectedUpgrade.id}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
           />
         )}
@@ -198,7 +181,6 @@ export default function Home() {
             user={selectedUser}
             network={selectedNetwork || ''}
             selectedUpgrade={{
-              id: selectedUpgrade?.id || '',
               name: selectedUpgrade?.name || '',
             }}
             signingData={signingData}

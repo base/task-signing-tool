@@ -20,11 +20,9 @@ export function GET(req: NextRequest) {
             network: network,
           }));
       });
-      // Sort by date (most recent first)
-      return NextResponse.json(
-        allReadyToSignTasks.sort((a, b) => b.id.localeCompare(a.id)),
-        { status: 200 }
-      );
+      // Sort by id (newest first) across all networks; per-network lists are sorted independently.
+      allReadyToSignTasks.sort((a, b) => b.id.localeCompare(a.id));
+      return NextResponse.json(allReadyToSignTasks, { status: 200 });
     }
     return NextResponse.json({ error: 'Missing required network parameter' }, { status: 400 });
   }

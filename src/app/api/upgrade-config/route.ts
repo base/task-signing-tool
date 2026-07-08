@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Validate inputs to prevent path traversal attacks
   const safePathPattern = /^[a-zA-Z0-9_-]+$/;
   if (!safePathPattern.test(network) || !safePathPattern.test(upgradeId)) {
     return NextResponse.json(
@@ -38,8 +37,12 @@ export async function GET(req: NextRequest) {
   const contractDeploymentsRoot = findContractDeploymentsRoot();
   const validationsJoinedPath = path.join(
     contractDeploymentsRoot,
-    network,
+    'active',
+    'evm',
+    'tasks',
     upgradeId,
+    'config',
+    network,
     'validations'
   );
 
@@ -89,10 +92,9 @@ export async function GET(req: NextRequest) {
     );
 
     console.log(
-      'Found %d config options for %s/%s:',
+      'Found %d config options for %s:',
       configOptions.length,
-      network,
-      upgradeId,
+      `${network}/${upgradeId}`,
       configOptions.map(c => c.displayName)
     );
 

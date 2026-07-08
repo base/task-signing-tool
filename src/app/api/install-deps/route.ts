@@ -33,8 +33,6 @@ export async function POST(req: NextRequest) {
     const actualNetwork = network.toLowerCase();
     const shouldForceInstall = Boolean(forceInstall);
 
-    // Validate inputs to prevent path traversal attacks
-    // Only allow alphanumeric characters, hyphens, and underscores
     const safePathPattern = /^[a-zA-Z0-9_-]+$/;
     if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
       return NextResponse.json(
@@ -46,9 +44,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Construct the path to the upgrade folder and lib subdirectory
     const contractDeploymentsPath = findContractDeploymentsRoot();
-    const upgradePath = path.join(contractDeploymentsPath, actualNetwork, upgradeId);
+    const upgradePath = path.join(contractDeploymentsPath, 'active', 'evm');
+    const taskPath = path.join(upgradePath, 'tasks', upgradeId);
 
     // Verify the resolved path is within the allowed directory
     let resolvedUpgradePath: string;
@@ -59,12 +57,12 @@ export async function POST(req: NextRequest) {
     }
 
     const libPath = path.join(resolvedUpgradePath, 'lib');
+    const resolvedTaskPath = assertWithinDir(taskPath, contractDeploymentsPath);
 
-    // Check if the upgrade folder exists
-    const upgradePathExists = await pathExists(resolvedUpgradePath);
-    if (!upgradePathExists) {
+    const taskPathExists = await pathExists(resolvedTaskPath);
+    if (!taskPathExists) {
       return NextResponse.json(
-        { error: `Upgrade folder not found: ${network}/${upgradeId}` },
+        { error: `Task folder not found: ${path.relative(contractDeploymentsPath, taskPath)}` },
         { status: 404 }
       );
     }
@@ -91,7 +89,6 @@ export async function POST(req: NextRequest) {
       `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
     );
 
-    // Run make deps in the upgrade folder
     const { stdout, stderr } = await execAsync('make deps', {
       cwd: resolvedUpgradePath,
       timeout: INSTALL_DEPS_TIMEOUT_MS,

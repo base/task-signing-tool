@@ -10,7 +10,6 @@ interface SigningConfirmationProps {
   user?: ConfigOption;
   network: string;
   selectedUpgrade: {
-    id: string;
     name: string;
   };
   signingData?: LedgerSigningResult | null;
