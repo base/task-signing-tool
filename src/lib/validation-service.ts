@@ -30,23 +30,6 @@ export type ValidationServiceOpts = {
 const CONTRACT_DEPLOYMENTS_ROOT = findContractDeploymentsRoot();
 const stateDiffClient = new StateDiffClient(0, CONTRACT_DEPLOYMENTS_ROOT);
 
-let activeValidation: Promise<void> = Promise.resolve();
-
-async function withValidationLock<T>(fn: () => Promise<T>): Promise<T> {
-  const previousValidation = activeValidation;
-  let releaseCurrentValidation!: () => void;
-  activeValidation = new Promise(resolve => {
-    releaseCurrentValidation = resolve;
-  });
-
-  await previousValidation;
-  try {
-    return await fn();
-  } finally {
-    releaseCurrentValidation();
-  }
-}
-
 async function getConfigData(opts: ValidationServiceOpts): Promise<{
   cfg: TaskConfig;
   scriptPath: string;
@@ -267,62 +250,60 @@ async function runTaskOriginValidation(
  * Main validation flow that orchestrates script extraction, simulation, and config parsing.
  */
 export async function validateUpgrade(opts: ValidationServiceOpts): Promise<ValidationData> {
-  return withValidationLock(async () => {
-    console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
+  console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
 
-    const { cfg, scriptPath, networkConfigDir, signatureDir } = await getConfigData(opts);
+  const { cfg, scriptPath, networkConfigDir, signatureDir } = await getConfigData(opts);
 
-    // Determine task origin validation state
-    let taskOriginValidation: TaskOriginValidation;
-    if (cfg.skipTaskOriginValidation === true) {
-      console.log(
-        '⚠️ Task origin validation is explicitly skipped in config (acceptable for testnet)'
-      );
-      taskOriginValidation = {
-        enabled: false,
-        results: [],
-        hidden: cfg.hideTaskOriginSkippedPage === true,
-      };
-    } else if (!cfg.taskOriginConfig) {
-      throw new Error(
-        'ValidationService::validateUpgrade: taskOriginConfig is required when task origin validation is enabled. ' +
-          'Set skipTaskOriginValidation: true to disable validation (acceptable for testnet environments).'
-      );
-    } else {
-      console.log('🔐 Running task origin validation (must pass before simulation)...');
-      taskOriginValidation = await runTaskOriginValidation(
-        networkConfigDir,
-        signatureDir,
-        cfg.taskOriginConfig
-      );
-    }
+  // Determine task origin validation state
+  let taskOriginValidation: TaskOriginValidation;
+  if (cfg.skipTaskOriginValidation === true) {
+    console.log(
+      '⚠️ Task origin validation is explicitly skipped in config (acceptable for testnet)'
+    );
+    taskOriginValidation = {
+      enabled: false,
+      results: [],
+      hidden: cfg.hideTaskOriginSkippedPage === true,
+    };
+  } else if (!cfg.taskOriginConfig) {
+    throw new Error(
+      'ValidationService::validateUpgrade: taskOriginConfig is required when task origin validation is enabled. ' +
+        'Set skipTaskOriginValidation: true to disable validation (acceptable for testnet environments).'
+    );
+  } else {
+    console.log('🔐 Running task origin validation (must pass before simulation)...');
+    taskOriginValidation = await runTaskOriginValidation(
+      networkConfigDir,
+      signatureDir,
+      cfg.taskOriginConfig
+    );
+  }
 
-    // Check if task origin validation failed - if so, skip simulation
-    const hasTaskOriginFailure =
-      taskOriginValidation.enabled && taskOriginValidation.results.some(r => !r.success);
+  // Check if task origin validation failed - if so, skip simulation
+  const hasTaskOriginFailure =
+    taskOriginValidation.enabled && taskOriginValidation.results.some(r => !r.success);
 
-    if (hasTaskOriginFailure) {
-      console.log('❌ Task origin validation failed - skipping simulation');
-      const expected = getExpectedData(cfg);
-      return {
-        expected,
-        actual: {
-          stateOverrides: [],
-          stateChanges: [],
-          balanceChanges: [],
-        },
-        taskOriginValidation,
-      };
-    }
-
-    // Run the task simulation
+  if (hasTaskOriginFailure) {
+    console.log('❌ Task origin validation failed - skipping simulation');
     const expected = getExpectedData(cfg);
-    const actual = await runStateDiffSimulation(scriptPath, cfg);
-
     return {
       expected,
-      actual,
+      actual: {
+        stateOverrides: [],
+        stateChanges: [],
+        balanceChanges: [],
+      },
       taskOriginValidation,
     };
-  });
+  }
+
+  // Run the task simulation
+  const expected = getExpectedData(cfg);
+  const actual = await runStateDiffSimulation(scriptPath, cfg);
+
+  return {
+    expected,
+    actual,
+    taskOriginValidation,
+  };
 }
