@@ -1,5 +1,4 @@
 import * as tar from 'tar';
-import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 import { Verifier, toTrustMaterial, toSignedEntity } from '@sigstore/verify';
@@ -60,8 +59,7 @@ export async function createDeterministicTarball(
   }
 
   const folderName = path.basename(resolvedTaskFolderPath);
-  const tarballDir = await fs.mkdtemp(path.join(os.tmpdir(), 'task-origin-'));
-  const tarballPath = path.join(tarballDir, `${folderName}.tar`);
+  const tarballPath = path.resolve(process.cwd(), `${folderName}.tar`);
 
   // Check if lib/ folder exists for reproducibility
   const libPath = path.join(resolvedTaskFolderPath, 'lib');
