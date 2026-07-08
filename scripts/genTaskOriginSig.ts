@@ -242,11 +242,7 @@ export async function signTaskWithCert(
 
   const { nodeDigest, sigstoreAlgorithm } = resolveSignatureHash(keyPem);
   const bundler = new MessageSignatureBundleBuilder({
-    signer: new DeviceCertificateSigner(
-      keyPem,
-      pemUtils.fromDER(certificateChain[0]),
-      nodeDigest
-    ),
+    signer: new DeviceCertificateSigner(keyPem, pemUtils.fromDER(certificateChain[0]), nodeDigest),
     witnesses: [new TSAWitness({ tsaBaseURL: TSA_BASE_URL })],
   });
 
