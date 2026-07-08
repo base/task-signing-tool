@@ -32,43 +32,37 @@ git clone https://github.com/base/task-signing-tool.git
 
 ### Expected Directory Layout
 
-Place this repository at the root of your task repository. Network folders (e.g., `mainnet`, `sepolia`, `zeronet`) must live alongside it, and each task must be a date-prefixed folder inside a network folder.
+Place this repository at the root of your task repository. Tasks live under `active/evm/tasks/`, each a date-prefixed folder (`YYYY-MM-DD-task-name`) holding a per-network `config/<network>/` directory (Foundry project + validation configs) and a per-network `signatures/<network>/` directory.
 
 ```12:40:root-of-your-task-repo
 contract-deployments/             # your task repo root (example)
 ├─ task-signing-tool/             # this repo cloned here
 │  ├─ src/
 │  └─ ...
-├─ mainnet/                       # network directory
-│  ├─ 2025-06-04-upgrade-foo/     # task directory (YYYY-MM-DD-task-name)
-│  │  ├─ README.md                # optional, used for status parsing
-│  │  ├─ validations/
-│  │  │  ├─ base-sc.json          # config for "Base SC" user type
-│  │  │  ├─ coinbase.json         # config for "Coinbase" user type
-│  │  │  └─ op.json               # config for "OP" user type
-│  │  └─ foundry-project/         # directory where you run Foundry scripts
-│  │     └─ ...
-│  ├─ 2025-07-12-upgrade-bar/
-│  │  └─ ...
-│  └─ signatures/                 # signatures directory (separate from tasks)
-│     ├─ 2025-06-04-upgrade-foo/  # matches task directory name
-│     │  ├─ creator-signature.json
-│     │  ├─ base-facilitator-signature.json
-│     │  └─ base-sc-facilitator-signature.json
-│     └─ 2025-07-12-upgrade-bar/
-│        └─ ...
-├─ sepolia/
-│  ├─ 2025-05-10-upgrade-baz/
-│  │  └─ ...
-│  └─ signatures/
-│     └─ 2025-05-10-upgrade-baz/
-│        └─ ...
-└─ zeronet/
-   ├─ 2025-08-01-upgrade-qux/
-   │  └─ ...
-   └─ signatures/
-      └─ 2025-08-01-upgrade-qux/
-         └─ ...
+└─ active/
+   └─ evm/
+      └─ tasks/
+         ├─ 2025-06-04-upgrade-foo/           # task directory (YYYY-MM-DD-task-name)
+         │  ├─ config/
+         │  │  ├─ mainnet/                     # per-network config + Foundry project
+         │  │  │  ├─ README.md                 # optional, used for status parsing
+         │  │  │  ├─ validations/
+         │  │  │  │  ├─ base-sc.json           # config for "Base SC" user type
+         │  │  │  │  ├─ coinbase.json          # config for "Coinbase" user type
+         │  │  │  │  └─ op.json                # config for "OP" user type
+         │  │  │  ├─ script/                   # Foundry scripts
+         │  │  │  └─ lib/                      # Foundry dependencies
+         │  │  └─ sepolia/
+         │  │     └─ ...
+         │  └─ signatures/                     # signatures (separate from config, per-network)
+         │     ├─ mainnet/
+         │     │  ├─ creator-signature.json
+         │     │  ├─ base-facilitator-signature.json
+         │     │  └─ base-sc-facilitator-signature.json
+         │     └─ sepolia/
+         │        └─ ...
+         └─ 2025-07-12-upgrade-bar/
+            └─ ...
 ```
 
 Key requirements and notes:
@@ -79,13 +73,13 @@ Key requirements and notes:
   - "Base SC" → `base-sc.json`
   - "Coinbase" → `coinbase.json`
   - "OP" → `op.json`
-- **Task origin signatures**: By default, tasks require three signature files stored in `<network>/signatures/<task-name>/`: `creator-signature.json`, `base-facilitator-signature.json`, and `base-sc-facilitator-signature.json`. Signatures are stored separately from task directories to avoid changing the tarball content. Use the `genTaskOriginSig.ts` script to generate these. Set `skipTaskOriginValidation: true` in the validation config to opt out.
-- **Script execution**: The tool executes Foundry from the task directory root (`<network>/<task>/`). Ensure your Foundry project or script context is available under that path; the tool will run the `cmd` specified in your validation config. Temporary outputs like `temp-script-output.txt` will be written there.
-- **Optional README parsing**: If `<network>/<task>/README.md` exists, the tool may parse it to display status and execution links.
+- **Task origin signatures**: By default, tasks require three signature files stored per-network in `tasks/<task-name>/signatures/<network>/`: `creator-signature.json`, `base-facilitator-signature.json`, and `base-sc-facilitator-signature.json`. Signatures are stored separately from the config directory (which is what the tarball is signed over) so signing does not change the signed content. Use the `genTaskOriginSig.ts` script to generate these. Set `skipTaskOriginValidation: true` in the validation config to opt out.
+- **Script execution**: The tool executes Foundry from `active/evm`. Ensure your Foundry project or script context is available under the per-network config directory (`tasks/<task-name>/config/<network>/`); the tool will run the `cmd` specified in your validation config. Temporary outputs like `temp-script-output.txt` will be written there.
+- **Optional README parsing**: If `tasks/<task-name>/config/<network>/README.md` exists, the tool may parse it to display status and execution links.
 
 ### Task README structure
 
-When present, each task's `README.md` is parsed to populate the UI. Place it at `<network>/<YYYY-MM-DD-slug>/README.md` and follow these rules:
+When present, each task's `README.md` is parsed to populate the UI. Place it at `active/evm/tasks/<YYYY-MM-DD-slug>/config/<network>/README.md` and follow these rules:
 
 - **Status line (required for status display)**: Include a line containing `Status:` within the first 20 lines. Recognized values are `PENDING`, `READY TO SIGN`, and `EXECUTED` (case-insensitive). If `EXECUTED` is not present and `READY TO SIGN` is not present, the status is treated as `PENDING`. Supported formats:
   - **Single-line with link (any one of these)**:
@@ -156,7 +150,7 @@ Executed upgrade; links include both onchain transaction and governance proposal
 
 ### Validation file structure
 
-Validation configs live under each task directory at `<network>/<YYYY-MM-DD-slug>/validations/` and are selected by user type:
+Validation configs live under each task directory at `active/evm/tasks/<YYYY-MM-DD-slug>/config/<network>/validations/` and are selected by user type:
 
 - `base-sc.json` for **Base SC**
 - `coinbase.json` for **Coinbase**
@@ -196,7 +190,7 @@ Notes:
 
 - Sorting is not required; the tool sorts by address and storage slot for comparison.
 - The tool reads `rpcUrl` and `ledgerId` directly from this file.
-- When task origin validation is enabled, three signature files must exist in `<network>/signatures/<task-name>/` (see **Task Origin Signing** below).
+- When task origin validation is enabled, three signature files must exist in `tasks/<task-name>/signatures/<network>/` (see **Task Origin Signing** below).
 
 Minimal example (`validations/base-sc.json`):
 
@@ -274,9 +268,9 @@ General usage (tsx):
 npm ci
 npx tsx scripts/genValidationFile.ts \
   --rpc-url https://mainnet.example \
-  --workdir <network>/<YYYY-MM-DD-task> \
+  --workdir active/evm \
   --forge-cmd "forge script <path>:<Contract> --sig 'run()' --sender 0xabc..." \
-  --out <network>/<YYYY-MM-DD-task>/validations/<user-type>.json
+  --out active/evm/tasks/<YYYY-MM-DD-task>/config/<network>/validations/<user-type>.json
 ```
 
 Alternative (bun):
@@ -286,9 +280,9 @@ Alternative (bun):
 npm ci
 bun run scripts/genValidationFile.ts \
   --rpc-url https://mainnet.example \
-  --workdir <network>/<YYYY-MM-DD-task> \
+  --workdir active/evm \
   --forge-cmd "forge script <path>:<Contract> --sig 'run()' --sender 0xabc..." \
-  --out <network>/<YYYY-MM-DD-task>/validations/<user-type>.json
+  --out active/evm/tasks/<YYYY-MM-DD-task>/config/<network>/validations/<user-type>.json
 ```
 
 Example from a Makefile (variables expanded in your environment):
@@ -297,15 +291,15 @@ Example from a Makefile (variables expanded in your environment):
 cd "$SIGNER_TOOL_PATH" && \
   npm ci && \
   bun run scripts/genValidationFile.ts --rpc-url "$L1_RPC_URL" \
-    --workdir .. \
+    --workdir ../active/evm \
     --forge-cmd 'forge script --rpc-url "$L1_RPC_URL" SwapOwner --sig "sign()" --sender "$SENDER"' \
-    --out ../validations/test.json
+    --out ../active/evm/tasks/<YYYY-MM-DD-task>/config/<network>/validations/test.json
 ```
 
 Notes:
 
 - Quote the entire `--forge-cmd` so that inner quotes for `--sig` are preserved by your shell. On macOS/Linux, prefer single quotes around the whole command and double quotes inside for signatures/addresses.
-- `--workdir` typically points to the task directory (e.g., `mainnet/2025-06-04-upgrade-foo`). If you keep this repo inside the task repo root, `..` will refer to the task directory when running from `task-signing-tool/`.
+- `--workdir` points to the forge script root, `active/evm`. If you keep this repo inside the task repo root, `../active/evm` refers to it when running from `task-signing-tool/`.
 - If `--out` is omitted, the JSON is printed to stdout.
 
 ### Task Origin Signing
@@ -314,7 +308,7 @@ Use `scripts/genTaskOriginSig.ts` to sign task folders for origin validation. Ta
 
 #### Signature files
 
-When task origin validation is enabled, three signature files must exist in `<network>/signatures/<task-name>/`:
+When task origin validation is enabled, three signature files must exist in `tasks/<task-name>/signatures/<network>/`:
 
 - **Task Creator**: `creator-signature.json` — common name is the email of the task author (e.g., `alice@example.com`)
 - **Base Facilitator**: `base-facilitator-signature.json` — common name is `base-facilitators` (group)
@@ -322,7 +316,7 @@ When task origin validation is enabled, three signature files must exist in `<ne
 
 The **common name** is extracted from the signer's X.509 certificate Subject Alternative Name (SAN). For task creators, this is their email address. For facilitators, it is the group name they belong to.
 
-Signatures are stored separately from task directories to ensure the tarball content remains unchanged after signing.
+Signatures are stored under a per-network `signatures/<network>/` directory, separate from the `config/<network>/` directory that the tarball is signed over, to ensure the signed content remains unchanged after signing.
 
 #### Requirements
 
@@ -359,8 +353,8 @@ npx tsx scripts/genTaskOriginSig.ts --help
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
-  --task-folder <path>/<network>/<task> \
-  --signature-path <path>/<network>/signatures/<task>
+  --task-folder <path>/tasks/<task>/config/<network> \
+  --signature-path <path>/tasks/<task>/signatures/<network>
 ```
 
 **Sign as Base facilitator:**
@@ -368,8 +362,8 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts sign \
-  --task-folder <path>/<network>/<task> \
-  --signature-path <path>/<network>/signatures/<task> \
+  --task-folder <path>/tasks/<task>/config/<network> \
+  --signature-path <path>/tasks/<task>/signatures/<network> \
   --facilitator base
 ```
 
@@ -378,8 +372,8 @@ npx tsx scripts/genTaskOriginSig.ts sign \
 ```bash
 npm ci
 npx tsx scripts/genTaskOriginSig.ts verify \
-  --task-folder <path>/<network>/<task> \
-  --signature-path <path>/<network>/signatures/<task> \
+  --task-folder <path>/tasks/<task>/config/<network> \
+  --signature-path <path>/tasks/<task>/signatures/<network> \
   --common-name alice@example.com
 ```
 
@@ -423,12 +417,12 @@ When you enable `--estimate-l2-gas`:
 ```bash
 npx tsx scripts/genValidationFile.ts \
   --rpc-url https://mainnet.example \
-  --workdir mainnet/2025-06-04-my-l2-deposit \
+  --workdir active/evm \
   --forge-cmd "forge script script/MyDeposit.s.sol:MyDeposit --sig 'run()' --sender 0xabc --json" \
   --estimate-l2-gas \
   --l2-rpc-url https://base-mainnet.example \
   --l2-gas-buffer 25 \
-  --out validations/base-sc.json
+  --out active/evm/tasks/2025-06-04-my-l2-deposit/config/<network>/validations/base-sc.json
 ```
 
 #### Validation File Output

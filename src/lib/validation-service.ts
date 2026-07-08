@@ -83,7 +83,10 @@ async function getConfigData(opts: ValidationServiceOpts): Promise<{
     cfg: parsedConfig.config,
     scriptPath,
     networkConfigDir,
-    signatureDir: assertWithinDir(path.join(taskPath, 'signatures'), CONTRACT_DEPLOYMENTS_ROOT),
+    signatureDir: assertWithinDir(
+      path.join(taskPath, 'signatures', opts.network),
+      CONTRACT_DEPLOYMENTS_ROOT
+    ),
   };
 }
 
