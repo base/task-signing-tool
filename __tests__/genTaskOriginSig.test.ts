@@ -18,11 +18,12 @@ import {
   resolveSignatureHash,
   FacilitatorType,
 } from '../scripts/genTaskOriginSig';
+import { createDeterministicTarball } from '../src/lib/task-origin-validate';
 
 // Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
-const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task');
+const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task', 'config', 'chain1');
 const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
 const INVALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/invalid');
 const MISSING_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/missing');
@@ -295,13 +296,10 @@ describe('signTaskWithCert', () => {
     expect(bundle.messageSignature.messageDigest.algorithm).toBe('SHA2_256'); // RSA key -> SHA-256
     expect(bundle.verificationMaterial.x509CertificateChain.certificates[0].rawBytes).toBeTruthy();
 
-    const tarballPath = path.resolve(process.cwd(), 'task.tar');
-    const tarball = await fsp.readFile(tarballPath).catch(() => null);
-    if (tarball) {
-      const expectedDigest = createHash('sha256').update(new Uint8Array(tarball)).digest('base64');
-      expect(bundle.messageSignature.messageDigest.digest).toBe(expectedDigest);
-      await fsp.unlink(tarballPath).catch(() => {});
-    }
+    const tarballPath = await createDeterministicTarball(taskFolder);
+    const tarball = await fsp.readFile(tarballPath);
+    const expectedDigest = createHash('sha256').update(new Uint8Array(tarball)).digest('base64');
+    expect(bundle.messageSignature.messageDigest.digest).toBe(expectedDigest);
   });
 });
 

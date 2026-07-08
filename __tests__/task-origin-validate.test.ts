@@ -14,8 +14,10 @@ import type { TaskOriginRole } from '../src/lib/types';
 // Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
-const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task');
-const MODIFIED_TASK_FOLDER = path.join(FIXTURES_DIR, 'modified-task');
+// The tarball is scoped to a single network config dir; cache/ and out/ build
+// artifacts live at the task root, outside this leaf, so they are never signed.
+const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task', 'config', 'chain1');
+const MODIFIED_TASK_FOLDER = path.join(FIXTURES_DIR, 'modified-task', 'config', 'chain1');
 const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
 
 // Task creator email
@@ -78,32 +80,6 @@ describe('createDeterministicTarball', () => {
     // Verify it's a valid tar by listing entries
     const entries = await listTarEntries(tarballPath);
     expect(entries).toContain('test.txt');
-  });
-
-  it('excludes cache/, out/, and signer-tool/ directories', async () => {
-    // Create excluded directories with files
-    await fs.mkdir(path.join(tempDir, 'cache'), { recursive: true });
-    await fs.mkdir(path.join(tempDir, 'out'), { recursive: true });
-    await fs.mkdir(path.join(tempDir, 'signer-tool'), { recursive: true });
-    await fs.writeFile(path.join(tempDir, 'cache', 'cached.txt'), 'cached data');
-    await fs.writeFile(path.join(tempDir, 'out', 'output.txt'), 'output data');
-    await fs.writeFile(path.join(tempDir, 'signer-tool', 'tool.txt'), 'tool data');
-
-    // Create an included file
-    await fs.writeFile(path.join(tempDir, 'included.txt'), 'included data');
-
-    const tarballPath = await createDeterministicTarball(tempDir);
-    createdTarballs.push(tarballPath);
-
-    const entries = await listTarEntries(tarballPath);
-
-    // Verify included file is present
-    expect(entries).toContain('included.txt');
-
-    // Verify excluded directories' contents are not present
-    expect(entries.some(e => e.includes('cache'))).toBe(false);
-    expect(entries.some(e => e.includes('out'))).toBe(false);
-    expect(entries.some(e => e.includes('signer-tool'))).toBe(false);
   });
 
   it('produces deterministic output with identical hash', async () => {
@@ -170,39 +146,18 @@ describe('createDeterministicTarball', () => {
 });
 
 describe('buildAndValidateSignature', () => {
-  let createdTarballs: string[] = [];
-
   beforeEach(() => {
-    createdTarballs = [];
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
-  afterEach(async () => {
-    // Clean up any created tarballs
-    for (const tarball of createdTarballs) {
-      try {
-        await fs.unlink(tarball);
-      } catch {
-        // Ignore errors if file doesn't exist
-      }
-    }
-
+  afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  // Helper to track tarballs created during tests
-  const trackTarball = (taskFolder: string) => {
-    const folderName = taskFolder.split('/').pop();
-    const tarballPath = path.resolve(process.cwd(), `${folderName}.tar`);
-    createdTarballs.push(tarballPath);
-  };
-
   describe('valid signatures', () => {
     it('validates a valid signature with matching tarball', async () => {
-      trackTarball(VALID_TASK_FOLDER);
-
       await expect(
         buildAndValidateSignature({
           taskFolderPath: VALID_TASK_FOLDER,
@@ -216,8 +171,6 @@ describe('buildAndValidateSignature', () => {
 
   describe('tarball mismatch', () => {
     it('fails validation when signature does not match tarball content', async () => {
-      trackTarball(MODIFIED_TASK_FOLDER);
-
       // Use valid signature but with modified task folder
       await expect(
         buildAndValidateSignature({
@@ -232,8 +185,6 @@ describe('buildAndValidateSignature', () => {
 
   describe('SAN mismatch', () => {
     it('fails validation with wrong email for task creator', async () => {
-      trackTarball(VALID_TASK_FOLDER);
-
       await expect(
         buildAndValidateSignature({
           taskFolderPath: VALID_TASK_FOLDER,
@@ -245,8 +196,6 @@ describe('buildAndValidateSignature', () => {
     });
 
     it('fails validation with a common name that is a prefix of the real identity', async () => {
-      trackTarball(VALID_TASK_FOLDER);
-
       const commonName = TASK_CREATOR_EMAIL.replace(/\.com$/, ''); // alexis.williams.1@coinbase
       await expect(
         buildAndValidateSignature({
@@ -261,8 +210,6 @@ describe('buildAndValidateSignature', () => {
     });
 
     it('fails validation with a common name that uses a regex wildcard', async () => {
-      trackTarball(VALID_TASK_FOLDER);
-
       const commonName = TASK_CREATOR_EMAIL.replace('.1@', '..@'); // alexis.williams..@coinbase.com
       await expect(
         buildAndValidateSignature({
@@ -277,8 +224,6 @@ describe('buildAndValidateSignature', () => {
     });
 
     it('fails validation when task creator signature is verified as facilitator role', async () => {
-      trackTarball(VALID_TASK_FOLDER);
-
       // Try to verify a task creator signature with facilitator role
       // This should fail because SAN prefix is user:/// but we expect ldap:///
       await expect(
@@ -292,8 +237,6 @@ describe('buildAndValidateSignature', () => {
     });
 
     it('fails validation when facilitator signature is verified as task creator role', async () => {
-      trackTarball(VALID_TASK_FOLDER);
-
       // Try to verify a facilitator signature with task creator role
       // This should fail because SAN prefix is ldap:/// but we expect user:///
       await expect(

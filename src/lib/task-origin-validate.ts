@@ -34,16 +34,10 @@ async function getAllFilesRecursively(
 
   const entries = await fs.readdir(currentDir, { withFileTypes: true });
   const files: string[] = [];
-  // Exclude cache, out, and signer-tool folders from the tarball
-  const excludedFolders = ['cache', 'out', 'signer-tool'];
 
   for (const entry of entries) {
     const fullPath = path.join(currentDir, entry.name);
     if (entry.isDirectory()) {
-      // Skip excluded folders
-      if (excludedFolders.includes(entry.name)) {
-        continue;
-      }
       files.push(...(await getAllFilesRecursively(fullPath, baseDir, allowedDir)));
     } else if (entry.isFile()) {
       files.push(path.relative(baseDir, fullPath));
@@ -64,8 +58,7 @@ export async function createDeterministicTarball(
     assertWithinDir(resolvedTaskFolderPath, allowedDir);
   }
 
-  // Take the last '/' separate part of the folder path to be the tarfile name
-  const folderName = resolvedTaskFolderPath.split('/').pop();
+  const folderName = path.basename(resolvedTaskFolderPath);
   const tarballPath = path.resolve(process.cwd(), `${folderName}.tar`);
 
   // Check if lib/ folder exists for reproducibility
