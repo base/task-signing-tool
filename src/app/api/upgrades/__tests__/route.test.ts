@@ -54,6 +54,46 @@ describe('GET /api/upgrades', () => {
     expect(body[0].network).toBe(NetworkType.Zeronet);
   });
 
+  it('sorts aggregated ready-to-sign tasks newest-first across networks', async () => {
+    // Older task on an earlier network, newer task on a later network: without a final
+    // sort the aggregate would follow network order (older first).
+    mockGetUpgradeOptions.mockImplementation((network: NetworkType) => {
+      if (network === NetworkType.Mainnet) {
+        return [
+          {
+            id: '2025-01-01-upgrade-old',
+            name: 'Old',
+            description: '',
+            date: '2025-01-01',
+            network: NetworkType.Mainnet,
+            status: TaskStatus.ReadyToSign,
+          },
+        ];
+      }
+      if (network === NetworkType.Zeronet) {
+        return [
+          {
+            id: '2025-12-31-upgrade-new',
+            name: 'New',
+            description: '',
+            date: '2025-12-31',
+            network: NetworkType.Zeronet,
+            status: TaskStatus.ReadyToSign,
+          },
+        ];
+      }
+      return [];
+    });
+
+    const res = GET(createRequest({ readyToSign: 'true' }));
+    const body = await res.json();
+
+    expect(body.map((t: DeploymentInfo) => t.id)).toEqual([
+      '2025-12-31-upgrade-new',
+      '2025-01-01-upgrade-old',
+    ]);
+  });
+
   it('includes zeronet when aggregating ready-to-sign tasks', async () => {
     const res = GET(createRequest({ readyToSign: 'true' }));
 
