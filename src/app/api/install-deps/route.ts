@@ -5,6 +5,7 @@ import path from 'path';
 import { promisify } from 'util';
 import { findContractDeploymentsRoot } from '@/lib/deployments';
 import { assertWithinDir } from '@/lib/path-validation';
+import { rejectCrossOriginRequest } from '@/lib/request-origin';
 
 const execAsync = promisify(exec);
 const INSTALL_DEPS_TIMEOUT_MS = 20 * 60 * 1000;
@@ -19,6 +20,9 @@ const pathExists = async (targetPath: string) => {
 };
 
 export async function POST(req: NextRequest) {
+  const crossOriginResponse = rejectCrossOriginRequest(req);
+  if (crossOriginResponse) return crossOriginResponse;
+
   try {
     const json = await req.json();
     const { network, upgradeId, forceInstall } = json;
