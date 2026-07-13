@@ -136,10 +136,8 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
   const runtimeIntermediate = bundleCerts[1] ? { rawBytes: bundleCerts[1].rawBytes } : null;
   const rootCert = bundleCerts[3] ? { rawBytes: bundleCerts[3].rawBytes } : null;
 
-  // The pinning below assumes the bundle carries the full chain
-  // [leaf, runtime intermediate, static intermediate, root]. If the runtime
-  // intermediate or root is missing, that assumption is broken and we cannot build a
-  // chain that anchors to a configured CA, so reject rather than silently continuing.
+  // The pinning below assumes the bundle carries the full cert chain. Fails early if this
+  // assumption is not met.
   if (!runtimeIntermediate || !rootCert) {
     throw new Error(
       'Invalid signature bundle: certificate chain must contain a runtime intermediate and root'
@@ -162,25 +160,17 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
       }));
 
       // Build the certificate chain: base certs + runtime intermediate + root.
-      // The runtime intermediate and root come from an external source, so they are
-      // only injected after being pinned to the statically-configured intermediate.
       const staticInter = new X509Certificate(baseCerts[0].rawBytes);
       const certChain = [...baseCerts];
 
-      // Pin: the root must actually have signed our pinned static intermediate, so
-      // only the genuine root is trusted. A cert that is not part of the chain (e.g.
-      // a self-minted root) cannot have produced that signature and is rejected.
-      // A failed pin falls through to a base-only chain so other configured CAs can
-      // still be tried; verification rejects only if no CA yields a trusted path.
+      // Only inject bundle CAs if they verify against the pinned static intermediate.
       const root = new X509Certificate(new Uint8Array(rootCert.rawBytes));
       if (root.ca && staticInter.verify(root.publicKey)) {
-        // Pin: the runtime intermediate must be issued by our pinned static
-        // intermediate; this also rejects a self-signed intermediate injected here.
         const runtime = new X509Certificate(new Uint8Array(runtimeIntermediate.rawBytes));
         if (runtime.ca && runtime.verify(staticInter.publicKey)) {
           certChain.push(runtimeIntermediate);
+          certChain.push(rootCert);
         }
-        certChain.push(rootCert);
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
