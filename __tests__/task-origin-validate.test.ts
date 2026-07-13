@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 import fs from 'fs/promises';
 import crypto from 'crypto';
+import forge from 'node-forge';
 import * as tar from 'tar';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import {
@@ -247,6 +248,177 @@ describe('buildAndValidateSignature', () => {
           role: 'taskCreator' as TaskOriginRole,
         })
       ).rejects.toThrow();
+    });
+  });
+
+  describe('self-minted certificate chain', () => {
+    let tempDir: string;
+
+    beforeEach(async () => {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'forged-sig-'));
+    });
+
+    afterEach(async () => {
+      await fs.rm(tempDir, { recursive: true });
+    });
+
+    // Mints a completely self-signed chain (attacker's own root -> intermediate ->
+    // leaf) that never touches the real Coinbase hierarchy. The subject/issuer names
+    // mirror the genuine chain so that, absent the pins, it would build a valid path.
+    function mintSelfSignedChain(sanURI: string): {
+      leaf: string;
+      intermediate: string;
+      root: string;
+    } {
+      const notBefore = new Date('2020-01-01T00:00:00Z');
+      const notAfter = new Date('2050-01-01T00:00:00Z');
+
+      const derBase64 = (cert: forge.pki.Certificate): string =>
+        forge.util.encode64(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes());
+
+      const makeCert = (
+        subjectCN: string,
+        issuerCN: string,
+        subjectKey: forge.pki.rsa.PublicKey,
+        signingKey: forge.pki.rsa.PrivateKey,
+        serial: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        extensions: any[]
+      ): forge.pki.Certificate => {
+        const cert = forge.pki.createCertificate();
+        cert.publicKey = subjectKey;
+        cert.serialNumber = serial;
+        cert.validity.notBefore = notBefore;
+        cert.validity.notAfter = notAfter;
+        cert.setSubject([{ name: 'commonName', value: subjectCN }]);
+        cert.setIssuer([{ name: 'commonName', value: issuerCN }]);
+        cert.setExtensions(extensions);
+        cert.sign(signingKey, forge.md.sha256.create());
+        return cert;
+      };
+
+      const rootKeys = forge.pki.rsa.generateKeyPair(2048);
+      const intKeys = forge.pki.rsa.generateKeyPair(2048);
+      const leafKeys = forge.pki.rsa.generateKeyPair(2048);
+
+      // Self-signed root impersonating the real CB-ROOT-CORE.
+      const root = makeCert('CB-ROOT-CORE', 'CB-ROOT-CORE', rootKeys.publicKey, rootKeys.privateKey, '01', [
+        { name: 'basicConstraints', cA: true, critical: true },
+        { name: 'keyUsage', keyCertSign: true, cRLSign: true, critical: true },
+      ]);
+      // Intermediate impersonating the runtime intermediate, signed by the fake root.
+      const intermediate = makeCert(
+        'corporate.device.cbhq.net',
+        'CB-ROOT-CORE',
+        intKeys.publicKey,
+        rootKeys.privateKey,
+        '02',
+        [
+          { name: 'basicConstraints', cA: true, critical: true },
+          { name: 'keyUsage', keyCertSign: true, cRLSign: true, critical: true },
+        ]
+      );
+      // Leaf carrying a forged facilitator identity, signed by the fake intermediate.
+      const leaf = makeCert(
+        'forged',
+        'corporate.device.cbhq.net',
+        leafKeys.publicKey,
+        intKeys.privateKey,
+        '03',
+        [
+          { name: 'basicConstraints', cA: false },
+          { name: 'keyUsage', digitalSignature: true, critical: true },
+          { name: 'subjectAltName', altNames: [{ type: 6, value: sanURI }] },
+        ]
+      );
+
+      return { leaf: derBase64(leaf), intermediate: derBase64(intermediate), root: derBase64(root) };
+    }
+
+    it('rejects a bundle whose certificate chain is fully self-signed', async () => {
+      const chain = mintSelfSignedChain('ldap:///base-facilitators');
+
+      // Start from a genuine bundle and keep its real signature + TSA timestamp so
+      // verification reaches the certificate-chain stage; only the cert chain is
+      // swapped for the self-minted one, laid out as [leaf, runtime intermediate,
+      // static intermediate, root] to match the injection indices.
+      const bundle = JSON.parse(
+        await fs.readFile(path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json'), 'utf8')
+      );
+      bundle.verificationMaterial.x509CertificateChain.certificates = [
+        { rawBytes: chain.leaf },
+        { rawBytes: chain.intermediate },
+        { rawBytes: chain.intermediate },
+        { rawBytes: chain.root },
+      ];
+
+      const forgedSignatureFile = path.join(tempDir, 'base-facilitator-signature.json');
+      await fs.writeFile(forgedSignatureFile, JSON.stringify(bundle));
+
+      // The pins refuse to inject the self-minted root/intermediate as trust anchors,
+      // so no trusted certificate path can be built for the forged leaf.
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile: forgedSignatureFile,
+          commonName: 'base-facilitators',
+          role: 'baseFacilitator' as TaskOriginRole,
+        })
+      ).rejects.toThrow(/certificate chain/i);
+    }, 60000);
+  });
+
+  describe('malformed certificate chain', () => {
+    let tempDir: string;
+
+    beforeEach(async () => {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'malformed-sig-'));
+    });
+
+    afterEach(async () => {
+      await fs.rm(tempDir, { recursive: true });
+    });
+
+    // The pinning logic assumes the bundle carries the full chain
+    // [leaf, runtime intermediate, static intermediate, root]. A bundle missing the
+    // runtime intermediate ([1]) or root ([3]) must be rejected outright rather than
+    // silently falling through to a base-only chain.
+    async function writeBundleWithChain(certificateCount: number): Promise<string> {
+      const bundle = JSON.parse(
+        await fs.readFile(path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json'), 'utf8')
+      );
+      bundle.verificationMaterial.x509CertificateChain.certificates =
+        bundle.verificationMaterial.x509CertificateChain.certificates.slice(0, certificateCount);
+
+      const signatureFile = path.join(tempDir, 'base-facilitator-signature.json');
+      await fs.writeFile(signatureFile, JSON.stringify(bundle));
+      return signatureFile;
+    }
+
+    it('rejects a bundle missing the root certificate', async () => {
+      // Keep [leaf, runtime, static] but drop the root ([3]).
+      const signatureFile = await writeBundleWithChain(3);
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile,
+          commonName: 'base-facilitators',
+          role: 'baseFacilitator' as TaskOriginRole,
+        })
+      ).rejects.toThrow('certificate chain must contain a runtime intermediate and root');
+    });
+
+    it('rejects a bundle with only a leaf certificate', async () => {
+      // Only [leaf] present, so both the runtime intermediate ([1]) and root ([3]) are missing.
+      const signatureFile = await writeBundleWithChain(1);
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile,
+          commonName: 'base-facilitators',
+          role: 'baseFacilitator' as TaskOriginRole,
+        })
+      ).rejects.toThrow('certificate chain must contain a runtime intermediate and root');
     });
   });
 });
