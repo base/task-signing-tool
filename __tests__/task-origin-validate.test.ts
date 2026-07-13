@@ -302,10 +302,17 @@ describe('buildAndValidateSignature', () => {
       const leafKeys = forge.pki.rsa.generateKeyPair(2048);
 
       // Self-signed root impersonating the real CB-ROOT-CORE.
-      const root = makeCert('CB-ROOT-CORE', 'CB-ROOT-CORE', rootKeys.publicKey, rootKeys.privateKey, '01', [
-        { name: 'basicConstraints', cA: true, critical: true },
-        { name: 'keyUsage', keyCertSign: true, cRLSign: true, critical: true },
-      ]);
+      const root = makeCert(
+        'CB-ROOT-CORE',
+        'CB-ROOT-CORE',
+        rootKeys.publicKey,
+        rootKeys.privateKey,
+        '01',
+        [
+          { name: 'basicConstraints', cA: true, critical: true },
+          { name: 'keyUsage', keyCertSign: true, cRLSign: true, critical: true },
+        ]
+      );
       // Intermediate impersonating the runtime intermediate, signed by the fake root.
       const intermediate = makeCert(
         'corporate.device.cbhq.net',
@@ -332,7 +339,11 @@ describe('buildAndValidateSignature', () => {
         ]
       );
 
-      return { leaf: derBase64(leaf), intermediate: derBase64(intermediate), root: derBase64(root) };
+      return {
+        leaf: derBase64(leaf),
+        intermediate: derBase64(intermediate),
+        root: derBase64(root),
+      };
     }
 
     it('rejects a bundle whose certificate chain is fully self-signed', async () => {
@@ -343,7 +354,10 @@ describe('buildAndValidateSignature', () => {
       // swapped for the self-minted one, laid out as [leaf, runtime intermediate,
       // static intermediate, root] to match the injection indices.
       const bundle = JSON.parse(
-        await fs.readFile(path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json'), 'utf8')
+        await fs.readFile(
+          path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json'),
+          'utf8'
+        )
       );
       bundle.verificationMaterial.x509CertificateChain.certificates = [
         { rawBytes: chain.leaf },
@@ -385,7 +399,10 @@ describe('buildAndValidateSignature', () => {
     // silently falling through to a base-only chain.
     async function writeBundleWithChain(certificateCount: number): Promise<string> {
       const bundle = JSON.parse(
-        await fs.readFile(path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json'), 'utf8')
+        await fs.readFile(
+          path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json'),
+          'utf8'
+        )
       );
       bundle.verificationMaterial.x509CertificateChain.certificates =
         bundle.verificationMaterial.x509CertificateChain.certificates.slice(0, certificateCount);
