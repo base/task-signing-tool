@@ -19,6 +19,7 @@ const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
 const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task', 'config', 'chain1');
 const MODIFIED_TASK_FOLDER = path.join(FIXTURES_DIR, 'modified-task', 'config', 'chain1');
 const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
+const PINNING_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/pinning');
 
 // Task creator email
 const TASK_CREATOR_EMAIL = 'alexis.williams.1@coinbase.com';
@@ -247,6 +248,45 @@ describe('buildAndValidateSignature', () => {
           role: 'taskCreator' as TaskOriginRole,
         })
       ).rejects.toThrow();
+    });
+  });
+
+  describe('certificate chain pinning', () => {
+    it('rejects a bundle whose certificate chain is fully self-signed', async () => {
+      // The pins refuse to inject the self-minted root/intermediate as trust anchors,
+      // so no trusted certificate path can be built for the forged leaf.
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile: path.join(PINNING_SIGNATURES_DIR, 'self-signed-chain.json'),
+          commonName: 'base-facilitators',
+          role: 'baseFacilitator' as TaskOriginRole,
+        })
+      ).rejects.toThrow(/certificate chain/i);
+    });
+
+    it('rejects a bundle missing the root certificate', async () => {
+      // [leaf, runtime, static] with the root ([3]) dropped.
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile: path.join(PINNING_SIGNATURES_DIR, 'missing-root.json'),
+          commonName: 'base-facilitators',
+          role: 'baseFacilitator' as TaskOriginRole,
+        })
+      ).rejects.toThrow('certificate chain must contain a runtime intermediate and root');
+    });
+
+    it('rejects a bundle with only a leaf certificate', async () => {
+      // Only [leaf] present, so both the runtime intermediate ([1]) and root ([3]) are missing.
+      await expect(
+        buildAndValidateSignature({
+          taskFolderPath: VALID_TASK_FOLDER,
+          signatureFile: path.join(PINNING_SIGNATURES_DIR, 'leaf-only.json'),
+          commonName: 'base-facilitators',
+          role: 'baseFacilitator' as TaskOriginRole,
+        })
+      ).rejects.toThrow('certificate chain must contain a runtime intermediate and root');
     });
   });
 });
