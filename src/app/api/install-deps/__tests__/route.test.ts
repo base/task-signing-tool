@@ -2,7 +2,13 @@ import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
 
 const mockAccess = jest.fn<(path: string) => Promise<void>>();
-const mockExecAsync = jest.fn<() => Promise<{ stdout: string; stderr: string }>>();
+const mockExecAsync =
+  jest.fn<
+    (
+      command: string,
+      options: { cwd: string; timeout: number; env: NodeJS.ProcessEnv }
+    ) => Promise<{ stdout: string; stderr: string }>
+  >();
 const mockFindContractDeploymentsRoot = jest.fn<() => string>();
 
 jest.unstable_mockModule('fs', () => ({
