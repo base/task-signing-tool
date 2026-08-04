@@ -21,7 +21,7 @@ const pathExists = async (targetPath: string) => {
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { network, upgradeId } = json;
+    const { network, upgradeId, forceInstall } = json;
 
     if (!network || !upgradeId) {
       return NextResponse.json(
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     const actualNetwork = network.toLowerCase();
+    const shouldForceInstall = Boolean(forceInstall);
     const safePathPattern = /^[a-zA-Z0-9_-]+$/;
     if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
       return NextResponse.json(
@@ -70,11 +71,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const libExistsBeforeInstall = await pathExists(libPath);
+
+    if (!shouldForceInstall && libExistsBeforeInstall) {
+      console.log(`Deps already installed for ${actualNetwork}/${upgradeId}; skipping.`);
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
+          libExists: true,
+          installed: false,
+          depsInstalled: false,
+          stdout: '',
+          stderr: '',
+        },
+        { status: 200 }
+      );
+    }
+
     console.log(
       `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
     );
-
-    await fs.rm(libPath, { recursive: true, force: true });
 
     const { stdout, stderr } = await execAsync(`make -f tasks/${upgradeId}/Makefile deps`, {
       cwd: resolvedUpgradePath,
