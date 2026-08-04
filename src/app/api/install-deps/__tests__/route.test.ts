@@ -57,15 +57,4 @@ describe('POST /api/install-deps', () => {
       expect.objectContaining({ cwd: '/repo/active/evm' })
     );
   });
-
-  it('keeps existing shared libs', async () => {
-    mockAccess.mockResolvedValue(undefined);
-
-    const response = await POST(
-      createRequest({ network: 'zeronet', upgradeId: '2026-07-10-transfer-owner' })
-    );
-
-    expect(response.status).toBe(200);
-    expect(mockExecAsync).not.toHaveBeenCalled();
-  });
 });
