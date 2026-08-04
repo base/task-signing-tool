@@ -21,7 +21,7 @@ const pathExists = async (targetPath: string) => {
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
-    const { network, upgradeId, forceInstall } = json;
+    const { network, upgradeId } = json;
 
     if (!network || !upgradeId) {
       return NextResponse.json(
@@ -31,8 +31,6 @@ export async function POST(req: NextRequest) {
     }
 
     const actualNetwork = network.toLowerCase();
-    const shouldForceInstall = Boolean(forceInstall);
-
     const safePathPattern = /^[a-zA-Z0-9_-]+$/;
     if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
       return NextResponse.json(
@@ -58,30 +56,17 @@ export async function POST(req: NextRequest) {
 
     const libPath = path.join(resolvedUpgradePath, 'lib');
     const resolvedTaskPath = assertWithinDir(taskPath, contractDeploymentsPath);
+    const taskMakefilePath = assertWithinDir(
+      path.join(resolvedTaskPath, 'Makefile'),
+      resolvedTaskPath
+    );
 
-    const taskPathExists = await pathExists(resolvedTaskPath);
-    if (!taskPathExists) {
-      return NextResponse.json(
-        { error: `Task folder not found: ${path.relative(contractDeploymentsPath, taskPath)}` },
-        { status: 404 }
-      );
-    }
-
-    const libExistsBeforeInstall = await pathExists(libPath);
-
-    if (!shouldForceInstall && libExistsBeforeInstall) {
-      console.log(`Deps already installed for ${actualNetwork}/${upgradeId}; skipping.`);
+    if (!(await pathExists(taskMakefilePath))) {
       return NextResponse.json(
         {
-          success: true,
-          message: `Dependencies already installed for ${actualNetwork}/${upgradeId}`,
-          libExists: true,
-          installed: false,
-          depsInstalled: false,
-          stdout: '',
-          stderr: '',
+          error: `Task Makefile not found: ${path.relative(contractDeploymentsPath, taskMakefilePath)}`,
         },
-        { status: 200 }
+        { status: 404 }
       );
     }
 
@@ -89,7 +74,9 @@ export async function POST(req: NextRequest) {
       `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
     );
 
-    const { stdout, stderr } = await execAsync('make deps', {
+    await fs.rm(libPath, { recursive: true, force: true });
+
+    const { stdout, stderr } = await execAsync(`make -f tasks/${upgradeId}/Makefile deps`, {
       cwd: resolvedUpgradePath,
       timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
