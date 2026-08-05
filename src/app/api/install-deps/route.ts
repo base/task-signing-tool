@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     );
 
     const { stdout, stderr } = await execAsync('make deps', {
-      cwd: resolvedUpgradePath,
+      cwd: resolvedTaskPath,
       timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
     });
