@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
 
     const actualNetwork = network.toLowerCase();
     const shouldForceInstall = Boolean(forceInstall);
+
     const safePathPattern = /^[a-zA-Z0-9_-]+$/;
     if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
       return NextResponse.json(
@@ -57,16 +58,11 @@ export async function POST(req: NextRequest) {
 
     const libPath = path.join(resolvedUpgradePath, 'lib');
     const resolvedTaskPath = assertWithinDir(taskPath, contractDeploymentsPath);
-    const taskMakefilePath = assertWithinDir(
-      path.join(resolvedTaskPath, 'Makefile'),
-      resolvedTaskPath
-    );
 
-    if (!(await pathExists(taskMakefilePath))) {
+    const taskPathExists = await pathExists(resolvedTaskPath);
+    if (!taskPathExists) {
       return NextResponse.json(
-        {
-          error: `Task Makefile not found: ${path.relative(contractDeploymentsPath, taskMakefilePath)}`,
-        },
+        { error: `Task folder not found: ${path.relative(contractDeploymentsPath, taskPath)}` },
         { status: 404 }
       );
     }
@@ -93,8 +89,8 @@ export async function POST(req: NextRequest) {
       `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
     );
 
-    const { stdout, stderr } = await execAsync(`make -f tasks/${upgradeId}/Makefile deps`, {
-      cwd: resolvedUpgradePath,
+    const { stdout, stderr } = await execAsync('make deps', {
+      cwd: resolvedTaskPath,
       timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
     });
