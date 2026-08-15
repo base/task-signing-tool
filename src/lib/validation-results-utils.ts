@@ -255,6 +255,19 @@ const buildSigningComparisons = (
   ];
 };
 
+// Both buildOverrideComparisons and buildChangeComparisons pair an expected
+// entry for a contract with the matching actual entry for that same
+// contract. The state-diff pipeline (state-diff.ts) always returns a
+// contract's overrides/changes sorted by key ascending, but the expected
+// side comes straight from the task's config JSON with no such ordering
+// applied (see getExpectedData in validation-service.ts) -- a config author
+// is free to list changes in whatever order makes sense narratively. Two
+// arrays with the same *contents* in a different *order* are still the same
+// data, so contracts (and, within a contract, individual keys) must be
+// matched by identity, not by raw array position.
+const findByAddress = <T extends { address: string }>(list: T[], address: string): T | undefined =>
+  list.find(entry => entry.address.toLowerCase() === address.toLowerCase());
+
 const buildOverrideComparisons = (
   validationResult: ValidationData | null
 ): OverrideComparison[] => {
@@ -263,14 +276,19 @@ const buildOverrideComparisons = (
   const expectedOverrides = validationResult.expected.stateOverrides ?? [];
   const actualOverrides = validationResult.actual.stateOverrides ?? [];
 
-  return expectedOverrides.flatMap((stateOverride, soIndex) =>
-    stateOverride.overrides.map((override, oIndex) => ({
+  return expectedOverrides.flatMap(stateOverride => {
+    const actualStateOverride = findByAddress(actualOverrides, stateOverride.address);
+    const actualByKey = new Map(
+      (actualStateOverride?.overrides ?? []).map(override => [override.key, override])
+    );
+
+    return stateOverride.overrides.map(override => ({
       contractName: stateOverride.name,
       contractAddress: stateOverride.address,
       expected: override,
-      actual: actualOverrides[soIndex]?.overrides?.[oIndex],
-    }))
-  );
+      actual: actualByKey.get(override.key),
+    }));
+  });
 };
 
 const buildChangeComparisons = (
@@ -281,14 +299,19 @@ const buildChangeComparisons = (
   const expectedChanges = validationResult.expected.stateChanges ?? [];
   const actualChanges = validationResult.actual.stateChanges ?? [];
 
-  return expectedChanges.flatMap((stateChange, scIndex) =>
-    stateChange.changes.map((change, cIndex) => ({
+  return expectedChanges.flatMap(stateChange => {
+    const actualStateChange = findByAddress(actualChanges, stateChange.address);
+    const actualByKey = new Map(
+      (actualStateChange?.changes ?? []).map(change => [change.key, change])
+    );
+
+    return stateChange.changes.map(change => ({
       contractName: stateChange.name,
       contractAddress: stateChange.address,
       expected: change,
-      actual: actualChanges[scIndex]?.changes?.[cIndex],
-    }))
-  );
+      actual: actualByKey.get(change.key),
+    }));
+  });
 };
 
 const buildBalanceComparisons = (
@@ -299,12 +322,20 @@ const buildBalanceComparisons = (
   const expectedBalances = validationResult.expected.balanceChanges ?? [];
   const actualBalances = validationResult.actual.balanceChanges ?? [];
 
-  return expectedBalances.map((balanceChange, bcIndex) => ({
-    contractName: balanceChange.name,
-    contractAddress: balanceChange.address,
-    expected: balanceChange,
-    actual: actualBalances[bcIndex],
-  }));
+  return expectedBalances.map(balanceChange => {
+    const actual = actualBalances.find(
+      candidate =>
+        candidate.address.toLowerCase() === balanceChange.address.toLowerCase() &&
+        candidate.field === balanceChange.field
+    );
+
+    return {
+      contractName: balanceChange.name,
+      contractAddress: balanceChange.address,
+      expected: balanceChange,
+      actual,
+    };
+  });
 };
 
 export const buildValidationItems = (
