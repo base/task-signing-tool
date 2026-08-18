@@ -19,7 +19,11 @@ import {
   TaskOriginSignerResult,
   TaskOriginValidation,
 } from './types/index';
-import { TASK_ORIGIN_ROLE_LABELS } from './validation-results-utils';
+import {
+  buildValidationItems,
+  listUndeclaredResults,
+  TASK_ORIGIN_ROLE_LABELS,
+} from './validation-results-utils';
 
 export type ValidationServiceOpts = {
   upgradeId: string;
@@ -303,6 +307,14 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
   // Run the task simulation
   const expected = getExpectedData(cfg);
   const actual = await runStateDiffSimulation(scriptPath, cfg);
+  const undeclared = listUndeclaredResults(
+    buildValidationItems({ expected, actual, taskOriginValidation })
+  );
+  if (undeclared.length > 0) {
+    throw new Error(
+      `ValidationService::validateUpgrade: simulation produced undeclared results: ${undeclared.join('; ')}`
+    );
+  }
 
   return {
     expected,
