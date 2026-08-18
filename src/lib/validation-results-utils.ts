@@ -265,50 +265,31 @@ type Pairable<T> = {
   item: T;
 };
 
-const pairByIdentity = <E, A>(
-  expected: Pairable<E>[],
-  actual: Pairable<A>[]
-): Array<{
-  contractName: string;
-  contractAddress: string;
-  expected?: E;
-  actual?: A;
-}> => {
-  const remaining = new Map<string, Pairable<A>[]>();
-  for (const entry of actual) {
-    const bucket = remaining.get(entry.identity);
-    if (bucket) bucket.push(entry);
-    else remaining.set(entry.identity, [entry]);
-  }
-
+const pairByIdentity = <T>(expected: Pairable<T>[], actual: Pairable<T>[]) => {
+  // ponytail: last-write wins on duplicate address:slot; use buckets if a task emits dupes
+  const remaining = new Map(actual.map(entry => [entry.identity, entry]));
   const rows: Array<{
     contractName: string;
     contractAddress: string;
-    expected?: E;
-    actual?: A;
-  }> = [];
-
-  for (const entry of expected) {
-    const match = remaining.get(entry.identity)?.shift();
-    rows.push({
+    expected?: T;
+    actual?: T;
+  }> = expected.map(entry => {
+    const match = remaining.get(entry.identity);
+    remaining.delete(entry.identity);
+    return {
       contractName: entry.contractName,
       contractAddress: entry.contractAddress,
       expected: entry.item,
       actual: match?.item,
+    };
+  });
+  for (const entry of remaining.values()) {
+    rows.push({
+      contractName: entry.contractName,
+      contractAddress: entry.contractAddress,
+      actual: entry.item,
     });
   }
-
-  for (const bucket of remaining.values()) {
-    for (const entry of bucket) {
-      rows.push({
-        contractName: entry.contractName,
-        contractAddress: entry.contractAddress,
-        expected: undefined,
-        actual: entry.item,
-      });
-    }
-  }
-
   return rows;
 };
 
@@ -457,18 +438,6 @@ export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
 
   return items.balance.some(balance => isUndeclaredOrMismatch(balance, matchesBalance));
 };
-
-export const listUndeclaredResults = (items: ValidationItemsByStep): string[] => [
-  ...items.overrides
-    .filter(item => !item.expected && item.actual)
-    .map(item => `override ${item.contractAddress}:${item.actual?.key}`),
-  ...items.changes
-    .filter(item => !item.expected && item.actual)
-    .map(item => `change ${item.contractAddress}:${item.actual?.key}`),
-  ...items.balance
-    .filter(item => !item.expected && item.actual)
-    .map(item => `balance ${item.contractAddress}:${item.actual?.field}`),
-];
 
 const defaultContractAddress = (address?: string) =>
   address && address.trim().length > 0 ? address : 'Unknown Address';

@@ -11,7 +11,6 @@ import {
   buildValidationItems,
   evaluateValidationEntry,
   hasBlockingErrors,
-  listUndeclaredResults,
 } from '@/lib/validation-results-utils';
 
 const hash = (nibble: string): `0x${string}` => `0x${nibble.repeat(64)}`;
@@ -134,11 +133,6 @@ describe('state-diff comparison pairing', () => {
     expect(unexpectedBalances).toHaveLength(1);
     expect(unexpectedBalances[0]?.contractAddress).toBe(ADDR_B);
     expect(hasBlockingErrors(items)).toBe(true);
-    expect(listUndeclaredResults(items)).toEqual([
-      `override ${ADDR_B}:${KEY_B}`,
-      `change ${ADDR_B}:${KEY_B}`,
-      `balance ${ADDR_B}:ETH Balance (wei)`,
-    ]);
   });
 
   it('pairs expected and actual by address and slot, not array index', () => {
