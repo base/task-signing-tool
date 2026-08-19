@@ -64,4 +64,26 @@ describe('state-diff comparison pairing', () => {
     expect(items.changes.every(row => row.expected && row.actual)).toBe(true);
     expect(hasBlockingErrors(items)).toBe(false);
   });
+
+  it('throws when two actual changes share an address and slot', () => {
+    expect(() =>
+      buildValidationItems(
+        validation(
+          [stateChange(ADDR_A, [change(KEY_A, VAL_A, VAL_B)])],
+          [stateChange(ADDR_A, [change(KEY_A, VAL_A, VAL_B), change(KEY_A, VAL_A, VAL_C)])]
+        )
+      )
+    ).toThrow(/Duplicate state-diff identity/);
+  });
+
+  it('pairs storage keys case-insensitively', () => {
+    const items = buildValidationItems(
+      validation(
+        [stateChange(ADDR_A, [change(`0x${'a'.repeat(64)}`, VAL_A, VAL_B)])],
+        [stateChange(ADDR_A, [change(`0x${'A'.repeat(64)}`, VAL_A, VAL_B)])]
+      )
+    );
+    expect(items.changes).toHaveLength(1);
+    expect(hasBlockingErrors(items)).toBe(false);
+  });
 });

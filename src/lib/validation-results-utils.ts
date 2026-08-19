@@ -266,14 +266,24 @@ type Pairable<T> = {
 };
 
 const pairByIdentity = <T>(expected: Pairable<T>[], actual: Pairable<T>[]) => {
-  // ponytail: last-write wins on duplicate address:slot; use buckets if a task emits dupes
-  const remaining = new Map(actual.map(entry => [entry.identity, entry]));
+  const remaining = new Map<string, Pairable<T>>();
+  for (const entry of actual) {
+    if (remaining.has(entry.identity)) {
+      throw new Error(`Duplicate state-diff identity: ${entry.identity}`);
+    }
+    remaining.set(entry.identity, entry);
+  }
+  const seenExpected = new Set<string>();
   const rows: Array<{
     contractName: string;
     contractAddress: string;
     expected?: T;
     actual?: T;
   }> = expected.map(entry => {
+    if (seenExpected.has(entry.identity)) {
+      throw new Error(`Duplicate state-diff identity: ${entry.identity}`);
+    }
+    seenExpected.add(entry.identity);
     const match = remaining.get(entry.identity);
     remaining.delete(entry.identity);
     return {
@@ -385,11 +395,13 @@ export const getStepCounts = (items: ValidationItemsByStep): StepCounts =>
     { taskOrigin: 0, signing: 0, overrides: 0, changes: 0, balance: 0 } satisfies StepCounts
   );
 
+const sameHex = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
+
 const matchesOverride = (comparison: OverrideComparison) =>
   Boolean(
     comparison.expected &&
     comparison.actual &&
-    comparison.expected.key === comparison.actual.key &&
+    sameHex(comparison.expected.key, comparison.actual.key) &&
     comparison.expected.value === comparison.actual.value
   );
 
@@ -397,7 +409,7 @@ const matchesChange = (comparison: StateChangeComparison) =>
   Boolean(
     comparison.expected &&
     comparison.actual &&
-    comparison.expected.key === comparison.actual.key &&
+    sameHex(comparison.expected.key, comparison.actual.key) &&
     comparison.expected.before === comparison.actual.before &&
     comparison.expected.after === comparison.actual.after
   );

@@ -138,38 +138,6 @@ async function runStateDiffSimulation(
   }
 }
 
-const slotId = (address: string, slot: string) => `${address.toLowerCase()}:${slot.toLowerCase()}`;
-
-function undeclaredIds(declared: string[], actual: string[]): string[] {
-  const expected = new Set(declared);
-  return actual.filter(id => !expected.has(id));
-}
-
-function assertNoUndeclaredResults(
-  expected: ValidationData['expected'],
-  actual: ValidationData['actual']
-): void {
-  const undeclared = [
-    ...undeclaredIds(
-      expected.stateOverrides.flatMap(g => g.overrides.map(o => slotId(g.address, o.key))),
-      actual.stateOverrides.flatMap(g => g.overrides.map(o => slotId(g.address, o.key)))
-    ),
-    ...undeclaredIds(
-      expected.stateChanges.flatMap(g => g.changes.map(c => slotId(g.address, c.key))),
-      actual.stateChanges.flatMap(g => g.changes.map(c => slotId(g.address, c.key)))
-    ),
-    ...undeclaredIds(
-      (expected.balanceChanges ?? []).map(b => slotId(b.address, b.field)),
-      (actual.balanceChanges ?? []).map(b => slotId(b.address, b.field))
-    ),
-  ];
-  if (undeclared.length > 0) {
-    throw new Error(
-      `ValidationService::validateUpgrade: simulation produced undeclared results: ${undeclared.join('; ')}`
-    );
-  }
-}
-
 async function validateSigner(
   taskOriginDir: string,
   signatureDir: string,
@@ -335,7 +303,6 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
   // Run the task simulation
   const expected = getExpectedData(cfg);
   const actual = await runStateDiffSimulation(scriptPath, cfg);
-  assertNoUndeclaredResults(expected, actual);
 
   return {
     expected,
