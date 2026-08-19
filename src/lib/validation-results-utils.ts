@@ -266,26 +266,20 @@ type Pairable<T> = {
 };
 
 const pairByIdentity = <T>(expected: Pairable<T>[], actual: Pairable<T>[]) => {
-  const remaining = new Map<string, Pairable<T>>();
+  const remaining = new Map<string, Pairable<T>[]>();
   for (const entry of actual) {
-    if (remaining.has(entry.identity)) {
-      throw new Error(`Duplicate state-diff identity: ${entry.identity}`);
-    }
-    remaining.set(entry.identity, entry);
+    const bucket = remaining.get(entry.identity);
+    if (bucket) bucket.push(entry);
+    else remaining.set(entry.identity, [entry]);
   }
-  const seenExpected = new Set<string>();
+
   const rows: Array<{
     contractName: string;
     contractAddress: string;
     expected?: T;
     actual?: T;
   }> = expected.map(entry => {
-    if (seenExpected.has(entry.identity)) {
-      throw new Error(`Duplicate state-diff identity: ${entry.identity}`);
-    }
-    seenExpected.add(entry.identity);
-    const match = remaining.get(entry.identity);
-    remaining.delete(entry.identity);
+    const match = remaining.get(entry.identity)?.shift();
     return {
       contractName: entry.contractName,
       contractAddress: entry.contractAddress,
@@ -293,12 +287,14 @@ const pairByIdentity = <T>(expected: Pairable<T>[], actual: Pairable<T>[]) => {
       actual: match?.item,
     };
   });
-  for (const entry of remaining.values()) {
-    rows.push({
-      contractName: entry.contractName,
-      contractAddress: entry.contractAddress,
-      actual: entry.item,
-    });
+  for (const bucket of remaining.values()) {
+    for (const entry of bucket) {
+      rows.push({
+        contractName: entry.contractName,
+        contractAddress: entry.contractAddress,
+        actual: entry.item,
+      });
+    }
   }
   return rows;
 };
@@ -402,7 +398,7 @@ const matchesOverride = (comparison: OverrideComparison) =>
     comparison.expected &&
     comparison.actual &&
     sameHex(comparison.expected.key, comparison.actual.key) &&
-    comparison.expected.value === comparison.actual.value
+    sameHex(comparison.expected.value, comparison.actual.value)
   );
 
 const matchesChange = (comparison: StateChangeComparison) =>
@@ -410,17 +406,17 @@ const matchesChange = (comparison: StateChangeComparison) =>
     comparison.expected &&
     comparison.actual &&
     sameHex(comparison.expected.key, comparison.actual.key) &&
-    comparison.expected.before === comparison.actual.before &&
-    comparison.expected.after === comparison.actual.after
+    sameHex(comparison.expected.before, comparison.actual.before) &&
+    sameHex(comparison.expected.after, comparison.actual.after)
   );
 
 const matchesBalance = (comparison: BalanceChangeComparison) =>
   Boolean(
     comparison.expected &&
     comparison.actual &&
-    comparison.expected.field === comparison.actual.field &&
-    comparison.expected.before === comparison.actual.before &&
-    comparison.expected.after === comparison.actual.after
+    comparison.expected.field.toLowerCase() === comparison.actual.field.toLowerCase() &&
+    sameHex(comparison.expected.before, comparison.actual.before) &&
+    sameHex(comparison.expected.after, comparison.actual.after)
   );
 
 const isUndeclaredOrMismatch = <
