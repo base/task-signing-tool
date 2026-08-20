@@ -29,21 +29,21 @@ export interface SigningDataComparison {
 export interface OverrideComparison {
   contractName: string;
   contractAddress?: string;
-  expected: Override;
+  expected?: Override;
   actual?: Override;
 }
 
 export interface StateChangeComparison {
   contractName: string;
   contractAddress?: string;
-  expected: Change;
+  expected?: Change;
   actual?: Change;
 }
 
 export interface BalanceChangeComparison {
   contractName: string;
   contractAddress?: string;
-  expected: BalanceChange;
+  expected?: BalanceChange;
   actual?: BalanceChange;
 }
 

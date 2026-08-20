@@ -197,6 +197,9 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
   return diffs;
 };
 
+const displayDiffs = (expected: string, actual: string, match: boolean) =>
+  match ? undefined : getFieldDiffs(expected, actual);
+
 const buildTaskOriginComparisons = (
   validationResult: ValidationData | null
 ): TaskOriginComparison[] => {
@@ -255,21 +258,78 @@ const buildSigningComparisons = (
   ];
 };
 
+const identityKey = (address: string, slot: string): string =>
+  `${address.toLowerCase()}:${slot.toLowerCase()}`;
+
+type Pairable<T> = {
+  contractName: string;
+  contractAddress: string;
+  identity: string;
+  item: T;
+};
+
+const pairByIdentity = <T>(expected: Pairable<T>[], actual: Pairable<T>[]) => {
+  const remaining = new Map<string, Pairable<T>[]>();
+  for (const entry of actual) {
+    const bucket = remaining.get(entry.identity);
+    if (bucket) bucket.push(entry);
+    else remaining.set(entry.identity, [entry]);
+  }
+
+  const rows: Array<{
+    contractName: string;
+    contractAddress: string;
+    expected?: T;
+    actual?: T;
+  }> = expected.map(entry => {
+    const match = remaining.get(entry.identity)?.shift();
+    return {
+      contractName: entry.contractName,
+      contractAddress: entry.contractAddress,
+      expected: entry.item,
+      actual: match?.item,
+    };
+  });
+  for (const bucket of remaining.values()) {
+    for (const entry of bucket) {
+      rows.push({
+        contractName: entry.contractName,
+        contractAddress: entry.contractAddress,
+        actual: entry.item,
+      });
+    }
+  }
+  return rows;
+};
+
+const flattenOverrides = (groups: NonNullable<ValidationData['expected']['stateOverrides']>) =>
+  groups.flatMap(group =>
+    group.overrides.map(item => ({
+      contractName: group.name,
+      contractAddress: group.address,
+      identity: identityKey(group.address, item.key),
+      item,
+    }))
+  );
+
+const flattenChanges = (groups: NonNullable<ValidationData['expected']['stateChanges']>) =>
+  groups.flatMap(group =>
+    group.changes.map(item => ({
+      contractName: group.name,
+      contractAddress: group.address,
+      identity: identityKey(group.address, item.key),
+      item,
+    }))
+  );
+
 const buildOverrideComparisons = (
   validationResult: ValidationData | null
 ): OverrideComparison[] => {
   if (!validationResult) return [];
 
-  const expectedOverrides = validationResult.expected.stateOverrides ?? [];
-  const actualOverrides = validationResult.actual.stateOverrides ?? [];
-
-  return expectedOverrides.flatMap((stateOverride, soIndex) =>
-    stateOverride.overrides.map((override, oIndex) => ({
-      contractName: stateOverride.name,
-      contractAddress: stateOverride.address,
-      expected: override,
-      actual: actualOverrides[soIndex]?.overrides?.[oIndex],
-    }))
+  return pairByIdentity(
+    flattenOverrides(validationResult.expected.stateOverrides ?? []),
+    flattenOverrides(validationResult.actual.stateOverrides ?? [])
   );
 };
 
@@ -278,16 +338,9 @@ const buildChangeComparisons = (
 ): StateChangeComparison[] => {
   if (!validationResult) return [];
 
-  const expectedChanges = validationResult.expected.stateChanges ?? [];
-  const actualChanges = validationResult.actual.stateChanges ?? [];
-
-  return expectedChanges.flatMap((stateChange, scIndex) =>
-    stateChange.changes.map((change, cIndex) => ({
-      contractName: stateChange.name,
-      contractAddress: stateChange.address,
-      expected: change,
-      actual: actualChanges[scIndex]?.changes?.[cIndex],
-    }))
+  return pairByIdentity(
+    flattenChanges(validationResult.expected.stateChanges ?? []),
+    flattenChanges(validationResult.actual.stateChanges ?? [])
   );
 };
 
@@ -299,12 +352,20 @@ const buildBalanceComparisons = (
   const expectedBalances = validationResult.expected.balanceChanges ?? [];
   const actualBalances = validationResult.actual.balanceChanges ?? [];
 
-  return expectedBalances.map((balanceChange, bcIndex) => ({
-    contractName: balanceChange.name,
-    contractAddress: balanceChange.address,
-    expected: balanceChange,
-    actual: actualBalances[bcIndex],
-  }));
+  return pairByIdentity(
+    expectedBalances.map(balance => ({
+      contractName: balance.name,
+      contractAddress: balance.address,
+      identity: identityKey(balance.address, balance.field),
+      item: balance,
+    })),
+    actualBalances.map(balance => ({
+      contractName: balance.name,
+      contractAddress: balance.address,
+      identity: identityKey(balance.address, balance.field),
+      item: balance,
+    }))
+  );
 };
 
 export const buildValidationItems = (
@@ -333,22 +394,40 @@ export const getStepCounts = (items: ValidationItemsByStep): StepCounts =>
     { taskOrigin: 0, signing: 0, overrides: 0, changes: 0, balance: 0 } satisfies StepCounts
   );
 
+const sameHex = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
+
 const matchesOverride = (comparison: OverrideComparison) =>
-  comparison.actual &&
-  comparison.expected.key === comparison.actual.key &&
-  comparison.expected.value === comparison.actual.value;
+  Boolean(
+    comparison.expected &&
+    comparison.actual &&
+    sameHex(comparison.expected.key, comparison.actual.key) &&
+    sameHex(comparison.expected.value, comparison.actual.value)
+  );
 
 const matchesChange = (comparison: StateChangeComparison) =>
-  comparison.actual &&
-  comparison.expected.key === comparison.actual.key &&
-  comparison.expected.before === comparison.actual.before &&
-  comparison.expected.after === comparison.actual.after;
+  Boolean(
+    comparison.expected &&
+    comparison.actual &&
+    sameHex(comparison.expected.key, comparison.actual.key) &&
+    sameHex(comparison.expected.before, comparison.actual.before) &&
+    sameHex(comparison.expected.after, comparison.actual.after)
+  );
 
 const matchesBalance = (comparison: BalanceChangeComparison) =>
-  comparison.actual &&
-  comparison.expected.field === comparison.actual.field &&
-  comparison.expected.before === comparison.actual.before &&
-  comparison.expected.after === comparison.actual.after;
+  Boolean(
+    comparison.expected &&
+    comparison.actual &&
+    comparison.expected.field.toLowerCase() === comparison.actual.field.toLowerCase() &&
+    sameHex(comparison.expected.before, comparison.actual.before) &&
+    sameHex(comparison.expected.after, comparison.actual.after)
+  );
+
+const isUndeclaredOrMismatch = <
+  T extends { expected?: { allowDifference?: boolean }; actual?: unknown },
+>(
+  item: T,
+  matches: (item: T) => boolean
+): boolean => !item.expected || !item.actual || (!matches(item) && !item.expected.allowDifference);
 
 export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
   // Task origin validation failures are blocking (but disabled validation is not a blocking error)
@@ -360,21 +439,15 @@ export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
   );
   if (signingMismatch) return true;
 
-  const overrideMismatch = items.overrides.some(
-    override =>
-      !override.actual || (!matchesOverride(override) && !override.expected.allowDifference)
-  );
-  if (overrideMismatch) return true;
+  if (items.overrides.some(override => isUndeclaredOrMismatch(override, matchesOverride))) {
+    return true;
+  }
 
-  const changeMismatch = items.changes.some(
-    change => !change.actual || (!matchesChange(change) && !change.expected.allowDifference)
-  );
-  if (changeMismatch) return true;
+  if (items.changes.some(change => isUndeclaredOrMismatch(change, matchesChange))) {
+    return true;
+  }
 
-  const balanceMismatch = items.balance.some(
-    balance => !balance.actual || (!matchesBalance(balance) && !balance.expected.allowDifference)
-  );
-  return balanceMismatch;
+  return items.balance.some(balance => isUndeclaredOrMismatch(balance, matchesBalance));
 };
 
 const defaultContractAddress = (address?: string) =>
@@ -399,6 +472,51 @@ const createMatchStatus = (
 const assertNever = (value: never): never => {
   throw new Error(`Unhandled entry kind: ${(value as ValidationNavEntry).kind}`);
 };
+
+const UNDECLARED_DESCRIPTION: ValidationDescription = {
+  variant: 'error',
+  icon: 'x',
+  title: 'Undeclared Change',
+  text: 'The simulation produced this result, but it was not listed in the task config. Signing is blocked until it is declared or removed.',
+};
+
+const evaluateUndeclaredEntry = (
+  stepLabel: string,
+  contractName: string,
+  contractAddress: string,
+  storageKey: string,
+  afterValue: string,
+  beforeValue?: string
+): ValidationEntryEvaluation => ({
+  matchStatus: createMatchStatus(
+    'mismatch',
+    'Unexpected - This result was not declared in the expected config'
+  ),
+  description: UNDECLARED_DESCRIPTION,
+  stepLabel,
+  contractName,
+  cards: {
+    expected: {
+      contractName,
+      contractAddress,
+      storageKey: NOT_FOUND_TEXT,
+      beforeValue: beforeValue === undefined ? undefined : NOT_FOUND_TEXT,
+      afterValue: NOT_FOUND_TEXT,
+    },
+    actual: {
+      contractName,
+      contractAddress,
+      storageKey,
+      storageKeyDiffs: getFieldDiffs(NOT_FOUND_TEXT, storageKey),
+      beforeValue,
+      beforeValueDiffs:
+        beforeValue === undefined ? undefined : getFieldDiffs(NOT_FOUND_TEXT, beforeValue),
+      afterValue,
+      afterValueDiffs: getFieldDiffs(NOT_FOUND_TEXT, afterValue),
+      shouldWrap: true,
+    },
+  },
+});
 
 export const evaluateValidationEntry = (
   entry: ValidationNavEntry,
@@ -526,6 +644,15 @@ export const evaluateValidationEntry = (
     }
     case 'override': {
       const item = items.overrides[entry.index]!;
+      if (!item.expected) {
+        return evaluateUndeclaredEntry(
+          STEP_DEFINITION_MAP.override.label,
+          item.contractName,
+          defaultContractAddress(item.contractAddress),
+          item.actual?.key ?? NOT_FOUND_TEXT,
+          item.actual?.value ?? NOT_FOUND_TEXT
+        );
+      }
       const actualKey = item.actual?.key ?? NOT_FOUND_TEXT;
       const actualValue = item.actual?.value ?? NOT_FOUND_TEXT;
       const match = matchesOverride(item);
@@ -574,9 +701,9 @@ export const evaluateValidationEntry = (
             contractName: item.contractName,
             contractAddress: defaultContractAddress(item.contractAddress),
             storageKey: actualKey,
-            storageKeyDiffs: getFieldDiffs(item.expected.key, actualKey),
+            storageKeyDiffs: displayDiffs(item.expected.key, actualKey, match),
             afterValue: actualValue,
-            afterValueDiffs: getFieldDiffs(item.expected.value, actualValue),
+            afterValueDiffs: displayDiffs(item.expected.value, actualValue, match),
             shouldWrap: !match,
           },
         },
@@ -584,6 +711,16 @@ export const evaluateValidationEntry = (
     }
     case 'change': {
       const item = items.changes[entry.index]!;
+      if (!item.expected) {
+        return evaluateUndeclaredEntry(
+          STEP_DEFINITION_MAP.change.label,
+          item.contractName,
+          defaultContractAddress(item.contractAddress),
+          item.actual?.key ?? NOT_FOUND_TEXT,
+          item.actual?.after ?? NOT_FOUND_TEXT,
+          item.actual?.before ?? NOT_FOUND_TEXT
+        );
+      }
       const actualKey = item.actual?.key ?? NOT_FOUND_TEXT;
       const actualBefore = item.actual?.before ?? NOT_FOUND_TEXT;
       const actualAfter = item.actual?.after ?? NOT_FOUND_TEXT;
@@ -634,11 +771,11 @@ export const evaluateValidationEntry = (
             contractName: item.contractName,
             contractAddress: defaultContractAddress(item.contractAddress),
             storageKey: actualKey,
-            storageKeyDiffs: getFieldDiffs(item.expected.key, actualKey),
+            storageKeyDiffs: displayDiffs(item.expected.key, actualKey, match),
             beforeValue: actualBefore,
-            beforeValueDiffs: getFieldDiffs(item.expected.before, actualBefore),
+            beforeValueDiffs: displayDiffs(item.expected.before, actualBefore, match),
             afterValue: actualAfter,
-            afterValueDiffs: getFieldDiffs(item.expected.after, actualAfter),
+            afterValueDiffs: displayDiffs(item.expected.after, actualAfter, match),
             shouldWrap: !match,
           },
         },
@@ -646,6 +783,18 @@ export const evaluateValidationEntry = (
     }
     case 'balance': {
       const item = items.balance[entry.index]!;
+      if (!item.expected) {
+        const actualBefore = item.actual ? formatBalanceValue(item.actual.before) : NOT_FOUND_TEXT;
+        const actualAfter = item.actual ? formatBalanceValue(item.actual.after) : NOT_FOUND_TEXT;
+        return evaluateUndeclaredEntry(
+          STEP_DEFINITION_MAP.balance.label,
+          item.contractName,
+          defaultContractAddress(item.contractAddress),
+          item.actual?.field ?? NOT_FOUND_TEXT,
+          actualAfter,
+          actualBefore
+        );
+      }
       const actualField = item.actual?.field ?? NOT_FOUND_TEXT;
       const match = matchesBalance(item);
       const expectedDifference = item.expected.allowDifference;
@@ -714,11 +863,11 @@ export const evaluateValidationEntry = (
             contractName: item.contractName,
             contractAddress: defaultContractAddress(item.contractAddress),
             storageKey: actualField,
-            storageKeyDiffs: getFieldDiffs(item.expected.field, actualField),
+            storageKeyDiffs: displayDiffs(item.expected.field, actualField, match),
             beforeValue: actualBefore,
-            beforeValueDiffs: getFieldDiffs(expectedBefore, actualBefore),
+            beforeValueDiffs: displayDiffs(expectedBefore, actualBefore, match),
             afterValue: actualAfter,
-            afterValueDiffs: getFieldDiffs(expectedAfter, actualAfter),
+            afterValueDiffs: displayDiffs(expectedAfter, actualAfter, match),
             shouldWrap: !match,
           },
         },
