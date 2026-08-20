@@ -197,6 +197,9 @@ export const getFieldDiffs = (expected: string, actual: string): StringDiff[] =>
   return diffs;
 };
 
+const displayDiffs = (expected: string, actual: string, match: boolean) =>
+  match ? undefined : getFieldDiffs(expected, actual);
+
 const buildTaskOriginComparisons = (
   validationResult: ValidationData | null
 ): TaskOriginComparison[] => {
@@ -698,9 +701,9 @@ export const evaluateValidationEntry = (
             contractName: item.contractName,
             contractAddress: defaultContractAddress(item.contractAddress),
             storageKey: actualKey,
-            storageKeyDiffs: getFieldDiffs(item.expected.key, actualKey),
+            storageKeyDiffs: displayDiffs(item.expected.key, actualKey, match),
             afterValue: actualValue,
-            afterValueDiffs: getFieldDiffs(item.expected.value, actualValue),
+            afterValueDiffs: displayDiffs(item.expected.value, actualValue, match),
             shouldWrap: !match,
           },
         },
@@ -768,11 +771,11 @@ export const evaluateValidationEntry = (
             contractName: item.contractName,
             contractAddress: defaultContractAddress(item.contractAddress),
             storageKey: actualKey,
-            storageKeyDiffs: getFieldDiffs(item.expected.key, actualKey),
+            storageKeyDiffs: displayDiffs(item.expected.key, actualKey, match),
             beforeValue: actualBefore,
-            beforeValueDiffs: getFieldDiffs(item.expected.before, actualBefore),
+            beforeValueDiffs: displayDiffs(item.expected.before, actualBefore, match),
             afterValue: actualAfter,
-            afterValueDiffs: getFieldDiffs(item.expected.after, actualAfter),
+            afterValueDiffs: displayDiffs(item.expected.after, actualAfter, match),
             shouldWrap: !match,
           },
         },
@@ -860,11 +863,11 @@ export const evaluateValidationEntry = (
             contractName: item.contractName,
             contractAddress: defaultContractAddress(item.contractAddress),
             storageKey: actualField,
-            storageKeyDiffs: getFieldDiffs(item.expected.field, actualField),
+            storageKeyDiffs: displayDiffs(item.expected.field, actualField, match),
             beforeValue: actualBefore,
-            beforeValueDiffs: getFieldDiffs(expectedBefore, actualBefore),
+            beforeValueDiffs: displayDiffs(expectedBefore, actualBefore, match),
             afterValue: actualAfter,
-            afterValueDiffs: getFieldDiffs(expectedAfter, actualAfter),
+            afterValueDiffs: displayDiffs(expectedAfter, actualAfter, match),
             shouldWrap: !match,
           },
         },

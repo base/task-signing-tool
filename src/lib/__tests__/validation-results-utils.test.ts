@@ -7,7 +7,11 @@ import type {
   StateOverride,
   ValidationData,
 } from '@/lib/types';
-import { buildValidationItems, hasBlockingErrors } from '@/lib/validation-results-utils';
+import {
+  buildValidationItems,
+  evaluateValidationEntry,
+  hasBlockingErrors,
+} from '@/lib/validation-results-utils';
 
 const hash = (nibble: string): `0x${string}` => `0x${nibble.repeat(64)}`;
 const ADDR_A = '0x1111111111111111111111111111111111111111' as `0x${string}`;
@@ -192,5 +196,11 @@ describe('state-diff comparison pairing', () => {
       )
     );
     expect(hasBlockingErrors(items)).toBe(false);
+
+    const changeEval = evaluateValidationEntry({ kind: 'change', index: 0 }, items);
+    expect(changeEval.matchStatus.status).toBe('match');
+    expect(changeEval.cards.actual.storageKeyDiffs).toBeUndefined();
+    expect(changeEval.cards.actual.beforeValueDiffs).toBeUndefined();
+    expect(changeEval.cards.actual.afterValueDiffs).toBeUndefined();
   });
 });
