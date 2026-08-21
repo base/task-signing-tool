@@ -11,11 +11,14 @@ jest.unstable_mockModule('@/lib/validation-service', () => ({
 
 const { POST } = await import('../route');
 
-function createRequest(body: Record<string, unknown>): NextRequest {
+function createRequest(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {}
+): NextRequest {
   return new NextRequest('http://localhost/api/validate', {
     method: 'POST',
     body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
 }
 
@@ -28,6 +31,38 @@ describe('POST /api/validate', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it('rejects requests with a mismatched Origin header', async () => {
+    const res = await POST(
+      createRequest(
+        {
+          upgradeId: '2025-08-01-upgrade-qux',
+          network: 'zeronet',
+          userType: 'base-sc',
+        },
+        { Origin: 'https://example.com' }
+      )
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockValidateUpgrade).not.toHaveBeenCalled();
+  });
+
+  it('rejects browser requests marked as cross-site', async () => {
+    const res = await POST(
+      createRequest(
+        {
+          upgradeId: '2025-08-01-upgrade-qux',
+          network: 'zeronet',
+          userType: 'base-sc',
+        },
+        { 'Sec-Fetch-Site': 'cross-site' }
+      )
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockValidateUpgrade).not.toHaveBeenCalled();
   });
 
   it('accepts zeronet as a supported network', async () => {
