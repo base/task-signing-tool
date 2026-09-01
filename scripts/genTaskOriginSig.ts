@@ -124,9 +124,9 @@ export async function generateDeviceCertificate(
     'us-east-1',
     '--extended-key-usage=CodeSigningCertificate',
     '--certificate-path',
-    DEVICE_CERT,
+    path.join(CERT_PATH, DEVICE_CERT),
     '--private-key-path',
-    DEVICE_CERT_KEY,
+    path.join(CERT_PATH, DEVICE_CERT_KEY),
   ];
 
   // Add group flag for facilitators
