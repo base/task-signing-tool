@@ -109,35 +109,39 @@
         "name": "Security Council Safe - Zeronet",
         "slots": "{{storageLayouts.gnosisSafe}}"
       },
-      "0x154972ab98a5e321a9c7ab7677973f1f501a8090": {
+      "0xd930e0cebd52d7c77b8f900de242e818506c5474": {
         "name": "DisputeGameFactory Proxy - Zeronet",
         "slots": "{{storageLayouts.disputeGameFactory}}"
       },
-      "0x60a6c389f0bc5ce4269a40d9695927bc58700328": {
+      "0xbfb20170b82c474b136bc5a062aca47a3cb8cf68": {
         "name": "AnchorStateRegistry - Zeronet",
         "slots": "{{storageLayouts.anchorStateRegistry}}"
       },
-      "0x4e69116d5c578faad6608ddd35357b15d7011a84": {
+      "0xe6a0d1ec2719dddb9a36d8eaf1b7ee5d4002d50b": {
         "name": "OptimismMintableERC20Factory - Zeronet",
         "slots": "{{storageLayouts.optimismMintableErc20Factory}}"
       },
-      "0x98be91ac4c84fcb1837fd75e8dee4992f35dbf35": {
+      "0x84bb76e6b7a59ccd88063788c6d68050cc9445d1": {
         "name": "L1StandardBridge - Zeronet",
         "slots": "{{storageLayouts.l1StandardBridge}}"
       },
-      "0x7b9fb81a8e041814903c9385b22d88ac303df699": {
+      "0x7e3b97c95c823f385ff6770411f6e12f8e09ac9b": {
         "name": "OptimismPortal - Zeronet",
         "slots": "{{storageLayouts.optimismPortal}}"
       },
-      "0xcc7c76564bea74a963a0bd75e0bc9bce3ff0ea80": {
+      "0x0a111c7980152bde41d71f48e2e1d8184f5f6187": {
         "name": "System Config - Zeronet",
         "slots": "{{storageLayouts.systemConfig}}"
       },
-      "0x5ed42a8eb9e1f0b466047c02156d894968d42ff9": {
+      "0x30e172aac675c9fe5a64792f92c9fd4d3e7ca9da": {
+        "name": "ProtocolVersions - Zeronet",
+        "slots": "{{storageLayouts.protocolVersions}}"
+      },
+      "0xdc06089b0224e59baaa9b59c3c5aaf9ff105997c": {
         "name": "NitroEnclaveVerifier - Zeronet",
         "slots": {}
       },
-      "0xf1d1441b7d98f191f5cfbe4660d3684fea004afc": {
+      "0xc5555440aca82225e98c2e9cd9c3921c96f42205": {
         "name": "TEE Prover Registry Proxy - Zeronet",
         "slots": {
           "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
@@ -149,7 +153,7 @@
           }
         }
       },
-      "0x8ff945fcad2ca8d66fa1ba63c70440328bb14ff3": {
+      "0x5af90fde02b46e202f6232b3ede25b3f602ac673": {
         "name": "DelayedWETH Proxy - Zeronet",
         "slots": {
           "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
@@ -181,7 +185,7 @@
     "disputeGameFactory": {
       "0x0000000000000000000000000000000000000000000000000000000000000065": {
         "type": "address",
-        "summary": "Updates the `X` implementation address.",
+        "summary": "Updates the dispute game implementation registered for this game type (gameImpls).",
         "overrideMeaning": "",
         "allowDifference": false,
         "allowOverrideDifference": false
@@ -286,6 +290,63 @@
       "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
         "type": "address",
         "summary": "Update address of SystemConfig to new implementation.",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      }
+    },
+    "protocolVersions": {
+      "0x0000000000000000000000000000000000000000000000000000000000000000": {
+        "type": "uint8",
+        "summary": "Marks the ProtocolVersions proxy as initialized (Initializable._initialized).",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      },
+      "0x0000000000000000000000000000000000000000000000000000000000000001": {
+        "type": "uint64[]",
+        "summary": "Updates the number of registered upgrades (_timestamps length). Element slots pack four uint64 timestamps each, lowest upgrade id in the low-order bytes.",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false,
+        "elements": {
+          "label": "_timestamps",
+          "summary": "L2 activation timestamp per upgrade id, 0 when an id is registered but not yet scheduled.",
+          "type": "uint64",
+          "perSlot": 4,
+          "maxSlots": 32
+        }
+      },
+      "0x0000000000000000000000000000000000000000000000000000000000000002": {
+        "type": "bytes32[]",
+        "summary": "Updates the length of the schedule commitment hash chain (_upgradeScheduleId length). Index 0 is the bytes32(0) seed, index i+1 is keccak256(abi.encode(link[i], i, _timestamps[i])), and the final link is what scheduleId() returns.",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false,
+        "elements": {
+          "label": "_upgradeScheduleId",
+          "summary": "cumulative schedule commitment hash-chain link.",
+          "type": "bytes32",
+          "maxSlots": 128
+        }
+      },
+      "0x0000000000000000000000000000000000000000000000000000000000000003": {
+        "type": "uint256",
+        "summary": "Updates the minimum protocol version clients must run. The low 16 bytes pack major || minor || patch || pre-release, four bytes each.",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      },
+      "0x0000000000000000000000000000000000000000000000000000000000000004": {
+        "type": "address",
+        "summary": "Updates the incidentResponder, the restricted role that can only push an already-scheduled activation further into the future.",
+        "overrideMeaning": "",
+        "allowDifference": false,
+        "allowOverrideDifference": false
+      },
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc": {
+        "type": "address",
+        "summary": "Update address of ProtocolVersions to new implementation.",
         "overrideMeaning": "",
         "allowDifference": false,
         "allowOverrideDifference": false

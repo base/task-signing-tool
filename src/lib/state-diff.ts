@@ -1,7 +1,16 @@
 import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { createPublicClient, http, decodeAbiParameters, Hex, Address, getAddress } from 'viem';
+import {
+  createPublicClient,
+  http,
+  decodeAbiParameters,
+  encodeAbiParameters,
+  keccak256,
+  Hex,
+  Address,
+  getAddress,
+} from 'viem';
 import { BalanceChange, StateChange, StateOverride, TaskConfig } from './types/index';
 import contractsCfg from './config/contracts.json';
 import { assertWithinDir } from './path-validation';
@@ -55,15 +64,39 @@ type VmSafeAccountAccess = {
 
 type ParentPreimage = { slot: Hex; parent: Hex; key: Hex };
 
-type SlotCfg = {
+// Elements of a dynamic array, declared on the slot holding the array's length. Foundry only
+// records mapping preimages, so element slots never appear in `parentMap` and are derived from
+// the base slot instead.
+export type SlotElementsCfg = {
+  // Variable name used to label the resolved index, e.g. `_timestamps[3]`.
+  label: string;
+  // Clause appended after the label to describe what an element holds.
+  summary: string;
+  // Number of element slots to recognise, starting at `keccak256(baseSlot)`.
+  maxSlots: number;
+  // Elements packed into each 32-byte slot. Defaults to one element per slot.
+  perSlot?: number;
+  type?: string;
+  allowDifference?: boolean;
+};
+export type SlotCfg = {
   type: string;
   summary: string;
   overrideMeaning: string;
   allowDifference: boolean;
   allowOverrideDifference: boolean;
+  elements?: SlotElementsCfg;
 };
-type ContractCfg = { name: string; slots: Record<string, SlotCfg> };
+export type ContractCfg = { name: string; slots: Record<string, SlotCfg> };
 type RawContractCfg = { name: string; slots?: string | Record<string, SlotCfg> };
+
+// Extra context used to resolve slots that are derived rather than declared.
+export type SlotResolutionCtx = {
+  // Candidate keys for an address-keyed mapping whose preimage Foundry did not record.
+  mappingKeys?: readonly Address[];
+  // Post-state value of each changed slot on the same contract, used to bound array indices.
+  slotValues?: Map<Hex, Hex>;
+};
 
 export class StateDiffClient {
   private readonly ledgerId: number;
@@ -456,7 +489,8 @@ export class StateDiffClient {
     cfg: { contracts: Record<string, Record<string, ContractCfg>> },
     chainId: string,
     overrides: readonly StateOverrideDecoded[],
-    parentMap: Map<Hex, Hex>
+    parentMap: Map<Hex, Hex>,
+    mappingKeys: readonly Address[] = []
   ): StateOverride[] {
     const result: StateOverride[] = [];
     const chainContracts = cfg.contracts[chainId] || {};
@@ -492,8 +526,9 @@ export class StateDiffClient {
       const sortedStorage = Array.from(storageMap.values()).sort((a, b) =>
         a.key.localeCompare(b.key)
       );
+      const slotValues = new Map(sortedStorage.map(s => [s.key, s.value]));
       const jsonOverrides = sortedStorage.map(s => {
-        const slotCfg = this.getSlot(contract, s.key, parentMap);
+        const slotCfg = resolveSlot(contract, s.key, parentMap, { mappingKeys, slotValues });
         return {
           key: s.key,
           value: s.value,
@@ -513,7 +548,8 @@ export class StateDiffClient {
       address: string;
       storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }>;
     }>,
-    parentMap: Map<Hex, Hex>
+    parentMap: Map<Hex, Hex>,
+    mappingKeys: readonly Address[] = []
   ): StateChange[] {
     const result: StateChange[] = [];
     const chainContracts = cfg.contracts[chainId] || {};
@@ -523,8 +559,9 @@ export class StateDiffClient {
       const name = contract?.name ?? '<<ContractName>>';
       const storageArray = Array.from(d.storageDiffs.values());
       storageArray.sort((a, b) => a.key.localeCompare(b.key));
+      const slotValues = new Map(storageArray.map(s => [s.key, s.after]));
       const changes = storageArray.map(s => {
-        const slotCfg = this.getSlot(contract, s.key, parentMap);
+        const slotCfg = resolveSlot(contract, s.key, parentMap, { mappingKeys, slotValues });
         return {
           key: s.key,
           before: this.n(s.before),
@@ -592,24 +629,6 @@ export class StateDiffClient {
     return result;
   }
 
-  private getSlot(contract: ContractCfg | undefined, slot: Hex, parentMap: Map<Hex, Hex>): SlotCfg {
-    const DEFAULT: SlotCfg = {
-      type: '<<DecodedKind>>',
-      summary: '<<Summary>>',
-      overrideMeaning: '<<OverrideMeaning>>',
-      allowDifference: false,
-      allowOverrideDifference: false,
-    };
-    let current = slot;
-    while (true) {
-      const found = contract?.slots?.[current];
-      if (found) return found;
-      const parent = parentMap.get(current);
-      if (!parent) return DEFAULT;
-      current = parent;
-    }
-  }
-
   private n(hex: string): Hex {
     const h = (hex || '').toLowerCase();
     if (!h.startsWith('0x')) return ('0x' + h) as Hex;
@@ -654,6 +673,8 @@ export class StateDiffClient {
       parentMap,
     } = params;
 
+    const mappingKeys = collectMappingKeys(payload, diffs);
+
     return {
       cmd,
       ledgerId: this.ledgerId,
@@ -667,9 +688,10 @@ export class StateDiffClient {
         config,
         chainIdStr,
         payload.stateOverrides,
-        parentMap
+        parentMap,
+        mappingKeys
       ),
-      stateChanges: this.convertDiffsToJSON(config, chainIdStr, diffs, parentMap),
+      stateChanges: this.convertDiffsToJSON(config, chainIdStr, diffs, parentMap, mappingKeys),
       balanceChanges,
     };
   }
@@ -685,6 +707,132 @@ function normalize32(h: string): Hex {
   const v = (h || '').toLowerCase();
   const body = v.startsWith('0x') ? v.slice(2) : v;
   return ('0x' + body.padStart(64, '0')) as Hex;
+}
+
+// Slot holding element 0 of the dynamic array whose length lives at `baseSlot`. Solidity
+// stores element `i` at this value plus `i`.
+export function arrayDataSlot(baseSlot: Hex): Hex {
+  return keccak256(normalize32(baseSlot));
+}
+
+// Slot holding `mapping[key]` for a mapping declared at `baseSlot`, matching Solidity's
+// `keccak256(abi.encode(key, baseSlot))`.
+export function addressMappingSlot(key: Address, baseSlot: Hex): Hex {
+  return keccak256(
+    encodeAbiParameters([{ type: 'address' }, { type: 'bytes32' }], [key, normalize32(baseSlot)])
+  );
+}
+
+// Recovers the parent of an intermediate mapping slot that Foundry did not record.
+//
+// `vm.getMappingKeyAndParentOf` only reports preimages for slots the simulation actually touched.
+// In a nested mapping such as a Safe's `approvedHashes[owner][hash]`, only the fully derived slot
+// is accessed, so the `keccak256(owner . baseSlot)` link joining it to the declared base slot is
+// never recorded and the walk stops one hop short. Each candidate here is confirmed by an exact
+// hash match, so a hit is a proof rather than a guess.
+function deriveMappingParent(
+  contract: ContractCfg | undefined,
+  slot: Hex,
+  mappingKeys: readonly Address[] | undefined
+): Hex | undefined {
+  if (!contract || !mappingKeys?.length) return undefined;
+  for (const base of Object.keys(contract.slots) as Hex[]) {
+    for (const key of mappingKeys) {
+      if (addressMappingSlot(key, base) === slot) return base;
+    }
+  }
+  return undefined;
+}
+
+// Resolves a dynamic array element slot against the `elements` descriptor on its base slot.
+//
+// Element `i` of an array whose length lives at slot `p` sits at `keccak256(p) + i`, an offset
+// from a hash rather than the hash of a preimage, so Foundry cannot report it and `parentMap`
+// never contains it. A known length bounds the index range, which matters for a packed array
+// whose final slot is only partly filled.
+function resolveArrayElement(
+  contract: ContractCfg | undefined,
+  slot: Hex,
+  slotValues: Map<Hex, Hex> | undefined
+): SlotCfg | undefined {
+  if (!contract) return undefined;
+  const target = BigInt(slot);
+
+  for (const [base, cfg] of Object.entries(contract.slots) as Array<[Hex, SlotCfg]>) {
+    const elements = cfg.elements;
+    if (!elements) continue;
+
+    const offset = target - BigInt(arrayDataSlot(base));
+    if (offset < BigInt(0) || offset >= BigInt(elements.maxSlots)) continue;
+
+    const perSlot = BigInt(elements.perSlot ?? 1);
+    const first = offset * perSlot;
+    let last = first + perSlot - BigInt(1);
+
+    const declaredLength = slotValues?.get(base);
+    if (declaredLength !== undefined) {
+      const length = BigInt(declaredLength);
+      if (first >= length) continue;
+      if (last >= length) last = length - BigInt(1);
+    }
+
+    const index = first === last ? `${first}` : `${first}..${last}`;
+    return {
+      type: elements.type ?? cfg.type,
+      summary: `${elements.label}[${index}]: ${elements.summary}`,
+      overrideMeaning: '',
+      allowDifference: elements.allowDifference ?? false,
+      allowOverrideDifference: false,
+    };
+  }
+  return undefined;
+}
+
+// Resolves the config describing `slot`: declared directly, reached by walking mapping
+// preimages, or derived as a dynamic array element. Falls back to placeholders the task author
+// is expected to fill in.
+export function resolveSlot(
+  contract: ContractCfg | undefined,
+  slot: Hex,
+  parentMap: Map<Hex, Hex>,
+  ctx: SlotResolutionCtx = {}
+): SlotCfg {
+  // `seen` guards against a preimage list describing a cycle; preimages come from the
+  // simulated task and are not trusted input.
+  let current = slot;
+  const seen = new Set<Hex>();
+  while (!seen.has(current)) {
+    seen.add(current);
+    const found = contract?.slots?.[current];
+    if (found) return found;
+    const parent =
+      parentMap.get(current) ?? deriveMappingParent(contract, current, ctx.mappingKeys);
+    if (!parent) break;
+    current = parent;
+  }
+
+  return (
+    resolveArrayElement(contract, slot, ctx.slotValues) ?? {
+      type: '<<DecodedKind>>',
+      summary: '<<Summary>>',
+      overrideMeaning: '<<OverrideMeaning>>',
+      allowDifference: false,
+      allowOverrideDifference: false,
+    }
+  );
+}
+
+// Addresses in this simulation that may be keys of an address-keyed mapping.
+export function collectMappingKeys(
+  payload: Pick<PayloadDecoded, 'from' | 'to' | 'stateOverrides'>,
+  diffs: Array<{ address: string }>
+): Address[] {
+  const keys = new Set<Address>();
+  keys.add(getAddress(payload.from));
+  keys.add(getAddress(payload.to));
+  for (const d of diffs) keys.add(getAddress(d.address));
+  for (const o of payload.stateOverrides) keys.add(getAddress(o.contractAddress));
+  return Array.from(keys);
 }
 
 function bigintToHex(value: bigint): Hex {
