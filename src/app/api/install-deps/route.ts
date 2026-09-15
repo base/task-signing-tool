@@ -70,7 +70,11 @@ export async function POST(req: NextRequest) {
       `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
     );
 
-    const { stdout, stderr } = await execAsync('make deps', {
+    // A task that holds several network configurations resolves its per-network
+    // .env, and any network-specific dependency steps, from TASK_NETWORK, and
+    // refuses to run without it. actualNetwork is checked against
+    // safePathPattern above, so it is safe to interpolate into the command.
+    const { stdout, stderr } = await execAsync(`make TASK_NETWORK=${actualNetwork} deps`, {
       cwd: resolvedTaskPath,
       timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
