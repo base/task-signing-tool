@@ -63,6 +63,11 @@ type VmSafeAccountAccess = {
 };
 
 type ParentPreimage = { slot: Hex; parent: Hex; key: Hex };
+type AccountStorageDiff = {
+  address: string;
+  storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }>;
+  slotValues: Map<Hex, Hex>;
+};
 
 // Elements of a dynamic array, declared on the slot holding the array's length. Foundry only
 // records mapping preimages, so element slots never appear in `parentMap` and are derived from
@@ -449,25 +454,27 @@ export class StateDiffClient {
   }
 
   private buildDiffsMap(
-    decoded: readonly VmSafeAccountAccess[]
-  ): Map<
-    string,
-    { address: string; storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }> }
-  > {
-    const diffs = new Map<
-      string,
-      { address: string; storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }> }
-    >();
+    decoded: readonly Pick<VmSafeAccountAccess, 'storageAccesses'>[]
+  ): Map<string, AccountStorageDiff> {
+    const diffs = new Map<string, AccountStorageDiff>();
+    const observedSlotValues = new Map<string, Map<Hex, Hex>>();
     for (const d of decoded) {
       for (const a of d.storageAccesses) {
-        if (!a.isWrite) continue;
         const addr = a.account.toLowerCase();
+        const slot = this.n(a.slot);
+        let slotValues = observedSlotValues.get(addr);
+        if (!slotValues) {
+          slotValues = new Map();
+          observedSlotValues.set(addr, slotValues);
+        }
+        slotValues.set(slot, this.n(a.newValue));
+        if (!a.isWrite) continue;
+
         let acct = diffs.get(addr);
         if (!acct) {
-          acct = { address: addr, storageDiffs: new Map() };
+          acct = { address: addr, storageDiffs: new Map(), slotValues };
           diffs.set(addr, acct);
         }
-        const slot = this.n(a.slot);
         const existing = acct.storageDiffs.get(slot) || {
           key: slot,
           before: this.n(a.previousValue),
@@ -544,10 +551,7 @@ export class StateDiffClient {
   private convertDiffsToJSON(
     cfg: { contracts: Record<string, Record<string, ContractCfg>> },
     chainId: string,
-    diffs: Array<{
-      address: string;
-      storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }>;
-    }>,
+    diffs: AccountStorageDiff[],
     parentMap: Map<Hex, Hex>,
     mappingKeys: readonly Address[] = []
   ): StateChange[] {
@@ -559,9 +563,11 @@ export class StateDiffClient {
       const name = contract?.name ?? '<<ContractName>>';
       const storageArray = Array.from(d.storageDiffs.values());
       storageArray.sort((a, b) => a.key.localeCompare(b.key));
-      const slotValues = new Map(storageArray.map(s => [s.key, s.after]));
       const changes = storageArray.map(s => {
-        const slotCfg = resolveSlot(contract, s.key, parentMap, { mappingKeys, slotValues });
+        const slotCfg = resolveSlot(contract, s.key, parentMap, {
+          mappingKeys,
+          slotValues: d.slotValues,
+        });
         return {
           key: s.key,
           before: this.n(s.before),
@@ -652,10 +658,7 @@ export class StateDiffClient {
     config: { contracts: Record<string, Record<string, ContractCfg>> };
     chainIdStr: string;
     payload: PayloadDecoded;
-    diffs: Array<{
-      address: string;
-      storageDiffs: Map<string, { key: Hex; before: Hex; after: Hex }>;
-    }>;
+    diffs: AccountStorageDiff[];
     balanceChanges: BalanceChange[];
     parentMap: Map<Hex, Hex>;
   }): TaskConfig {

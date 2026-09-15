@@ -7,6 +7,7 @@ import {
   ContractCfg,
   resolveSlot,
   SlotCfg,
+  StateDiffClient,
 } from '../state-diff';
 
 const slot = (n: number): Hex => `0x${n.toString(16).padStart(64, '0')}` as Hex;
@@ -174,6 +175,48 @@ describe('resolveSlot', () => {
     expect(
       resolveSlot(protocolVersions, offsetSlot(SCHEDULE_ID_BASE, 1), new Map()).allowDifference
     ).toBe(false);
+  });
+});
+
+describe('state diff descriptions', () => {
+  it('uses unchanged array lengths observed during the simulation', () => {
+    const address = '0x0000000000000000000000000000000000000001';
+    const client = new StateDiffClient();
+    const diffs = Array.from(
+      client['buildDiffsMap']([
+        {
+          storageAccesses: [
+            {
+              account: address,
+              slot: slot(1),
+              isWrite: false,
+              previousValue: slot(13),
+              newValue: slot(13),
+              reverted: false,
+            },
+            {
+              account: address,
+              slot: offsetSlot(TIMESTAMPS_BASE, 3),
+              isWrite: true,
+              previousValue: slot(0),
+              newValue: slot(1),
+              reverted: false,
+            },
+          ],
+        },
+      ]).values()
+    );
+
+    const [stateChange] = client['convertDiffsToJSON'](
+      { contracts: { '1': { [address]: protocolVersions } } },
+      '1',
+      diffs,
+      new Map()
+    );
+
+    expect(stateChange.changes[0].description).toBe(
+      '_timestamps[12]: L2 activation timestamps for these upgrade ids.'
+    );
   });
 });
 
