@@ -16,11 +16,14 @@ const { POST } = await import('../route');
 const VALID_DOMAIN_HASH = '0x' + 'a'.repeat(64);
 const VALID_MESSAGE_HASH = '0x' + 'b'.repeat(64);
 
-function createRequest(body: Record<string, unknown>): NextRequest {
+function createRequest(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {}
+): NextRequest {
   return new NextRequest('http://localhost/api/sign', {
     method: 'POST',
     body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
 }
 
@@ -38,6 +41,55 @@ describe('POST /api/sign', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  describe('request origin checks', () => {
+    it('rejects requests with a mismatched Origin header', async () => {
+      const res = await POST(
+        createRequest(
+          {
+            domainHash: VALID_DOMAIN_HASH,
+            messageHash: VALID_MESSAGE_HASH,
+          },
+          { Origin: 'https://example.com' }
+        )
+      );
+
+      expect(res.status).toBe(403);
+      expect(mockCheckLedgerAvailability).not.toHaveBeenCalled();
+      expect(mockSignDomainAndMessageHash).not.toHaveBeenCalled();
+    });
+
+    it('rejects browser requests marked as cross-site', async () => {
+      const res = await POST(
+        createRequest(
+          {
+            domainHash: VALID_DOMAIN_HASH,
+            messageHash: VALID_MESSAGE_HASH,
+          },
+          { 'Sec-Fetch-Site': 'cross-site' }
+        )
+      );
+
+      expect(res.status).toBe(403);
+      expect(mockCheckLedgerAvailability).not.toHaveBeenCalled();
+      expect(mockSignDomainAndMessageHash).not.toHaveBeenCalled();
+    });
+
+    it('allows same-origin browser requests', async () => {
+      const res = await POST(
+        createRequest(
+          {
+            domainHash: VALID_DOMAIN_HASH,
+            messageHash: VALID_MESSAGE_HASH,
+          },
+          { Origin: 'http://localhost', 'Sec-Fetch-Site': 'same-origin' }
+        )
+      );
+
+      expect(res.status).toBe(200);
+      expect(mockSignDomainAndMessageHash).toHaveBeenCalled();
+    });
   });
 
   describe('missing required fields', () => {

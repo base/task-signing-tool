@@ -4,9 +4,13 @@ import {
   signDomainAndMessageHash,
 } from '@/lib/ledger-signing';
 import { HashSchema } from '@/lib/config-schemas';
+import { rejectCrossOriginRequest } from '@/lib/request-origin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
+  const crossOriginResponse = rejectCrossOriginRequest(req);
+  if (crossOriginResponse) return crossOriginResponse;
+
   try {
     const {
       domainHash,
