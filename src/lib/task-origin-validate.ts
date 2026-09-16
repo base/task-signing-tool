@@ -110,8 +110,11 @@ export async function buildAndValidateSignature(options: TaskOriginVerifyOptions
 
   // Validate paths are within the allowed directory if specified
   if (allowedDir) {
-    assertWithinDir(taskFolderPath, allowedDir);
-    assertWithinDir(signatureFile, allowedDir);
+    const resolvedTaskFolderPath = await fs.realpath(taskFolderPath);
+    const resolvedSignatureFile = await fs.realpath(signatureFile);
+
+    assertWithinDir(resolvedTaskFolderPath, allowedDir);
+    assertWithinDir(resolvedSignatureFile, allowedDir);
   }
 
   // Extract the bundle containing both the signature and certificate chain
@@ -265,8 +268,11 @@ export async function verifyTaskOrigin(options: TaskOriginVerifyOptions): Promis
 
   // Validate paths are within the allowed directory if specified
   if (allowedDir) {
-    assertWithinDir(taskFolderPath, allowedDir);
-    assertWithinDir(signatureFile, allowedDir);
+    const resolvedTaskFolderPath = await fs.realpath(taskFolderPath);
+    const resolvedSignatureFile = await fs.realpath(signatureFile);
+
+    assertWithinDir(resolvedTaskFolderPath, allowedDir);
+    assertWithinDir(resolvedSignatureFile, allowedDir);
   }
 
   // Make sure that the task folder path and signature file exist
