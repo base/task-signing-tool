@@ -22,6 +22,95 @@ bun dev
 
 3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Command Reference
+
+The repository includes scripts for generating validation files and signing task
+origins. Run commands from the `task-signing-tool` directory after installing
+dependencies with `npm ci`.
+
+### Generate a validation file
+
+`genValidationFile.ts` runs a Foundry command, reads the resulting
+`stateDiff.json`, and writes the validation JSON used by the signing UI:
+
+```bash
+npx tsx scripts/genValidationFile.ts \
+  --rpc-url https://mainnet.example \
+  --workdir ../active/evm \
+  --forge-cmd "forge script script/Upgrade.s.sol:Upgrade --sig 'run()' --sender 0xabc... --json" \
+  --ledger-id 0 \
+  --out ../active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet/validations/base-sc.json
+```
+
+Important options:
+
+- `--rpc-url` / `-r`: HTTPS L1 RPC used to resolve the chain ID.
+- `--workdir` / `-w`: Forge project directory and location of `stateDiff.json`.
+- `--forge-cmd` / `-f`: The complete Forge command, passed as one quoted value.
+- `--ledger-id` / `-l`: Ledger account index; defaults to `0`.
+- `--out` / `-o`: Validation JSON output path; stdout is used when omitted.
+- `--estimate-l2-gas`: Enables deposit-transaction gas estimation.
+- `--l2-rpc-url`: Required with `--estimate-l2-gas`.
+- `--l2-gas-buffer`: Integer buffer percentage from `0` to `100`; defaults to `20`.
+
+For a deposit transaction, include the L2 options:
+
+```bash
+npx tsx scripts/genValidationFile.ts \
+  --rpc-url https://mainnet.example \
+  --workdir ../active/evm \
+  --forge-cmd "forge script script/Deposit.s.sol:Deposit --sig 'run()' --sender 0xabc... --json" \
+  --estimate-l2-gas \
+  --l2-rpc-url https://base-mainnet.example \
+  --l2-gas-buffer 25 \
+  --out ../active/evm/tasks/2025-06-04-deposit/config/mainnet/validations/base-sc.json
+```
+
+The command must emit a `TransactionDeposited` event for L2 gas estimation to
+work. The script automatically adds `-vvvv` to the Forge command when this
+option is enabled.
+
+### Sign and verify task origins
+
+`genTaskOriginSig.ts` supports four commands:
+
+- `sign`: Create a creator or facilitator signature.
+- `verify`: Verify one signature.
+- `verify-all`: Verify the creator and both facilitator signatures.
+- `tar`: Create a deterministic task tarball for inspection.
+
+Sign a task creator signature and then verify all signatures:
+
+```bash
+npx tsx scripts/genTaskOriginSig.ts sign \
+  --task-folder ../active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet \
+  --signature-path ../active/evm/tasks/2025-06-04-upgrade-foo/signatures/mainnet
+
+npx tsx scripts/genTaskOriginSig.ts verify-all \
+  --task-folder ../active/evm/tasks/2025-06-04-upgrade-foo/config/mainnet \
+  --signature-path ../active/evm/tasks/2025-06-04-upgrade-foo/signatures/mainnet \
+  --common-name alice@example.com
+```
+
+Use `--facilitator base` or `--facilitator security-council` when signing or
+verifying a facilitator signature. The `--common-name` option is the task
+creator's certificate identity and is required when verifying creator
+signatures. `ottr-cli` must be installed and available on `PATH`.
+
+### Run repository checks
+
+Run the automated checks before submitting a task repository change:
+
+```bash
+npm run check-overrides
+npm run test
+npm run lint
+```
+
+The first command checks whether dependency overrides are still needed. The
+test and lint commands run the project's automated test and static-analysis
+suites.
+
 ## Task Repository Integration
 
 To use this tool in a task repository like [contract-deployments](https://github.com/base/contract-deployments), clone this repo into the root of the task repo.
