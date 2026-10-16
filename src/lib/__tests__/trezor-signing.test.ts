@@ -105,6 +105,19 @@ describe('signSafeTxWithTrezor', () => {
     expect(res.error).toMatch(/recovers to/);
   });
 
+  it('rejects signatures with v = 0/1', async () => {
+    const { signature } = await deviceSignature();
+    const v = signature.slice(-2) === '1b' ? '00' : '01';
+    nextResult = {
+      error: null,
+      stdout: JSON.stringify({ address: account.address, signature: signature.slice(0, -2) + v }),
+      stderr: '',
+    };
+    const res = await signSafeTxWithTrezor({ typedData });
+    expect(res.success).toBe(false);
+    expect(res.error).toMatch(/Could not parse trezorctl output/);
+  });
+
   it('fails on unparseable output', async () => {
     nextResult = { error: null, stdout: 'address: 0xabc', stderr: '' };
     const res = await signSafeTxWithTrezor({ typedData });

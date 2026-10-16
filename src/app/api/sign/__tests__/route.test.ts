@@ -1,5 +1,6 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
+import { maxUint256 } from 'viem';
 import type { LedgerSigningOptions, LedgerSigningResult } from '@/lib/ledger-signing';
 import type { TrezorSigningOptions } from '@/lib/trezor-signing';
 import { hashSafeTxTypedData, type SafeTxTypedData } from '@/lib/safe-typed-data';
@@ -321,6 +322,33 @@ describe('POST /api/sign', () => {
       );
       expect(res.status).toBe(400);
       expect((await res.json()).error).toMatch(/does not hash/i);
+      expect(mockSignSafeTxWithTrezor).not.toHaveBeenCalled();
+    });
+
+    it('accepts the maximum uint256 value', async () => {
+      const maxTyped: SafeTxTypedData = {
+        ...typedData,
+        message: { ...typedData.message, value: maxUint256.toString() },
+      };
+      const hashes = hashSafeTxTypedData(maxTyped);
+      const res = await POST(createRequest({ device: 'trezor', ...hashes, typedData: maxTyped }));
+      expect(res.status).toBe(200);
+    });
+
+    it('returns 400 when a uint256 field overflows', async () => {
+      const res = await POST(
+        createRequest({
+          device: 'trezor',
+          domainHash,
+          messageHash,
+          typedData: {
+            ...typedData,
+            message: { ...typedData.message, value: (maxUint256 + BigInt(1)).toString() },
+          },
+        })
+      );
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(/uint256/);
       expect(mockSignSafeTxWithTrezor).not.toHaveBeenCalled();
     });
 

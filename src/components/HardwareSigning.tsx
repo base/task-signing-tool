@@ -316,6 +316,7 @@ export function HardwareSigning({
                 }}
                 variant="secondary"
                 className="flex-1"
+                disabled={loading}
               >
                 Go Back
               </Button>

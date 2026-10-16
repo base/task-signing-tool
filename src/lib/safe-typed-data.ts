@@ -3,6 +3,7 @@ import {
   getAddress,
   hashDomain,
   hashStruct,
+  maxUint256,
   type Hex,
   type TypedData,
 } from 'viem';
@@ -14,7 +15,10 @@ import { z } from 'zod';
 // hashes the signer validated.
 
 const AddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'must be a 0x-prefixed address');
-const UintSchema = z.string().regex(/^\d+$/, 'must be a decimal integer string');
+const UintSchema = z
+  .string()
+  .regex(/^\d+$/, 'must be a decimal integer string')
+  .refine(v => BigInt(v) <= maxUint256, 'must fit in uint256');
 
 export const SafeTxTypedDataSchema = z
   .object({

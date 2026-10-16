@@ -98,7 +98,8 @@ function parseTrezorOutput(stdout?: string): { address: string; signature: Hex }
       typeof out.address === 'string' &&
       /^0x[a-fA-F0-9]{40}$/.test(out.address) &&
       typeof out.signature === 'string' &&
-      /^0x[a-fA-F0-9]{130}$/.test(out.signature)
+      // Safe treats v = 0/1 as other signature types; only accept ECDSA v = 27/28.
+      /^0x[a-fA-F0-9]{128}(1b|1c)$/i.test(out.signature)
     ) {
       return { address: out.address, signature: out.signature as Hex };
     }
