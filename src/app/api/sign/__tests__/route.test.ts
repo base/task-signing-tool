@@ -1,6 +1,8 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import type { LedgerSigningOptions, LedgerSigningResult } from '@/lib/ledger-signing';
+import type { TrezorSigningOptions } from '@/lib/trezor-signing';
+import { hashSafeTxTypedData, type SafeTxTypedData } from '@/lib/safe-typed-data';
 
 const mockCheckLedgerAvailability = jest.fn<() => Promise<boolean>>();
 const mockSignDomainAndMessageHash =
@@ -9,6 +11,15 @@ const mockSignDomainAndMessageHash =
 jest.unstable_mockModule('@/lib/ledger-signing', () => ({
   checkLedgerAvailability: mockCheckLedgerAvailability,
   signDomainAndMessageHash: mockSignDomainAndMessageHash,
+}));
+
+const mockCheckTrezorctlAvailability = jest.fn<() => Promise<boolean>>();
+const mockSignSafeTxWithTrezor =
+  jest.fn<(options: TrezorSigningOptions) => Promise<LedgerSigningResult>>();
+
+jest.unstable_mockModule('@/lib/trezor-signing', () => ({
+  checkTrezorctlAvailability: mockCheckTrezorctlAvailability,
+  signSafeTxWithTrezor: mockSignSafeTxWithTrezor,
 }));
 
 const { POST } = await import('../route');
@@ -239,6 +250,93 @@ describe('POST /api/sign', () => {
       expect(res.status).toBe(500);
       const body = await res.json();
       expect(body.error).toBe('Signing failed');
+    });
+  });
+
+  describe('device: trezor', () => {
+    const ZERO = '0x0000000000000000000000000000000000000000';
+    const typedData: SafeTxTypedData = {
+      domain: { chainId: '8453', verifyingContract: '0x9855054731540A48b28990B63DcF4f33d8AE46A1' },
+      message: {
+        to: '0xcA11bde05977b3631167028862bE2a173976CA11',
+        value: '0',
+        data: '0x1234',
+        operation: 1,
+        safeTxGas: '0',
+        baseGas: '0',
+        gasPrice: '0',
+        gasToken: ZERO,
+        refundReceiver: ZERO,
+        nonce: '7',
+      },
+    };
+    const { domainHash, messageHash } = hashSafeTxTypedData(typedData);
+
+    beforeEach(() => {
+      mockCheckTrezorctlAvailability.mockResolvedValue(true);
+      mockSignSafeTxWithTrezor.mockResolvedValue({
+        success: true,
+        data: '0x1901',
+        signature: 'f'.repeat(130),
+        signer: '0x' + '1'.repeat(40),
+      });
+    });
+
+    it('signs with the Trezor when typed data matches the hashes', async () => {
+      const res = await POST(
+        createRequest({ device: 'trezor', domainHash, messageHash, ledgerAccount: 2, typedData })
+      );
+      expect(res.status).toBe(200);
+      expect(mockSignSafeTxWithTrezor).toHaveBeenCalledWith({ typedData, accountIndex: 2 });
+      expect(mockSignDomainAndMessageHash).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when typedData is missing', async () => {
+      const res = await POST(createRequest({ device: 'trezor', domainHash, messageHash }));
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(/invalid typedData/i);
+    });
+
+    it('returns 400 when typedData has unexpected fields', async () => {
+      const res = await POST(
+        createRequest({
+          device: 'trezor',
+          domainHash,
+          messageHash,
+          typedData: { ...typedData, primaryType: 'Other' },
+        })
+      );
+      expect(res.status).toBe(400);
+      expect(mockSignSafeTxWithTrezor).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when typedData does not hash to the provided hashes', async () => {
+      const res = await POST(
+        createRequest({
+          device: 'trezor',
+          domainHash,
+          messageHash,
+          typedData: { ...typedData, message: { ...typedData.message, nonce: '8' } },
+        })
+      );
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(/does not hash/i);
+      expect(mockSignSafeTxWithTrezor).not.toHaveBeenCalled();
+    });
+
+    it('returns 500 when trezorctl is unavailable', async () => {
+      mockCheckTrezorctlAvailability.mockResolvedValue(false);
+      const res = await POST(
+        createRequest({ device: 'trezor', domainHash, messageHash, typedData })
+      );
+      expect(res.status).toBe(500);
+      expect((await res.json()).error).toMatch(/trezorctl not found/i);
+    });
+
+    it('returns 400 for an unknown device', async () => {
+      const res = await POST(createRequest({ device: 'keystone', domainHash, messageHash }));
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(/invalid device/i);
     });
   });
 });

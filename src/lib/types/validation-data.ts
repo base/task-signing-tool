@@ -4,6 +4,7 @@ import type {
   StateChange,
   StateOverride,
 } from './validation-config';
+import type { SafeTxTypedData } from '../safe-typed-data';
 
 // Task Origin Validation Types
 export type TaskOriginRole = 'taskCreator' | 'baseFacilitator' | 'securityCouncilFacilitator';
@@ -32,6 +33,8 @@ export interface ValidationData {
     stateChanges: StateChange[];
     balanceChanges?: BalanceChange[];
     domainAndMessageHashes?: ExpectedHashes;
+    // Present when the task simulation emitted a SafeTx; required for Trezor signing.
+    safeTxTypedData?: SafeTxTypedData;
   };
   taskOriginValidation?: TaskOriginValidation;
 }

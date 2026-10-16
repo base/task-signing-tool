@@ -157,7 +157,7 @@ export function SigningConfirmation({
                 <div className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">
                   <Check size={14} />
                 </div>
-                <h3 className="text-base font-bold text-green-900">Ledger Signature Generated</h3>
+                <h3 className="text-base font-bold text-green-900">Signature Generated</h3>
               </div>
 
               <Button
@@ -205,7 +205,8 @@ export function SigningConfirmation({
         <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
           <h3 className="mb-2 text-lg font-semibold text-amber-900">No Signature Data</h3>
           <p className="text-sm text-amber-800">
-            No signature was provided. Please go back and complete the Ledger signing process.
+            No signature was provided. Please go back and complete the hardware wallet signing
+            process.
           </p>
         </div>
       )}

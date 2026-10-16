@@ -5,7 +5,7 @@ import {
   UpgradeSelection,
   UserSelection,
   ValidationResults,
-  LedgerSigning,
+  HardwareSigning,
   SigningConfirmation,
   SelectionSummary,
   UserSummary,
@@ -13,7 +13,7 @@ import {
 import { PageShell, StepIndicator } from '@/components/ui';
 import { NetworkType, ValidationData, Upgrade } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
-import { LedgerSigningResult } from '@/lib/ledger-signing';
+import type { SigningResult } from '@/lib/types/signing';
 
 type Step = 'upgrade' | 'user' | 'validation' | 'ledger' | 'signing';
 type StepStatus = 'current' | 'completed' | 'pending';
@@ -32,7 +32,7 @@ export default function Home() {
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<Upgrade | null>(null);
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
-  const [signingData, setSigningData] = useState<LedgerSigningResult | null>(null);
+  const [signingData, setSigningData] = useState<SigningResult | null>(null);
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
   const resetSelectionsFrom = (step: 'upgrade' | 'user') => {
@@ -66,7 +66,7 @@ export default function Home() {
     setCurrentStep('ledger');
   };
 
-  const handleLedgerSigningComplete = (res: LedgerSigningResult) => {
+  const handleSigningComplete = (res: SigningResult) => {
     setSigningData(res);
     setCurrentStep('signing');
   };
@@ -113,7 +113,7 @@ export default function Home() {
     },
     {
       id: 'ledger',
-      label: 'Sign with Ledger',
+      label: 'Sign with Hardware Wallet',
       status:
         currentStep === 'ledger'
           ? 'current'
@@ -168,11 +168,12 @@ export default function Home() {
         )}
 
         {currentStep === 'ledger' && validationData && (
-          <LedgerSigning
+          <HardwareSigning
             domainHash={validationData.expected?.domainAndMessageHashes?.domainHash || ''}
             messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
             ledgerAccount={userLedgerAccount}
-            onSigningComplete={handleLedgerSigningComplete}
+            safeTxTypedData={validationData.actual?.safeTxTypedData}
+            onSigningComplete={handleSigningComplete}
           />
         )}
 

@@ -4,6 +4,7 @@ import { TASK_ORIGIN_COMMON_NAMES, TASK_ORIGIN_SIGNATURE_FILE_NAMES } from './co
 import { findContractDeploymentsRoot } from './deployments';
 import { getValidationSummary, parseFromString } from './parser';
 import { assertWithinDir } from './path-validation';
+import type { SafeTxTypedData } from './safe-typed-data';
 import { StateDiffClient } from './state-diff';
 import { verifyTaskOrigin } from './task-origin-validate';
 import {
@@ -112,6 +113,7 @@ async function runStateDiffSimulation(
   stateChanges: StateChange[];
   balanceChanges: BalanceChange[];
   domainAndMessageHashes: ExpectedHashes;
+  safeTxTypedData?: SafeTxTypedData;
 }> {
   try {
     console.log('Running state-diff simulation...');
@@ -131,6 +133,7 @@ async function runStateDiffSimulation(
       stateChanges: stateDiffResult.result.stateChanges,
       balanceChanges: stateDiffResult.result.balanceChanges ?? [],
       domainAndMessageHashes: stateDiffResult.result.expectedDomainAndMessageHashes,
+      safeTxTypedData: stateDiffResult.safeTxTypedData,
     };
   } catch (error) {
     console.error('❌ State-diff simulation failed:', error);

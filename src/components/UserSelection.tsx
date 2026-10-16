@@ -90,7 +90,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
     <div className="w-full animate-fade-in">
       <SectionHeader
         title="Select Profile"
-        description="Identify which profile you are signing as. This determines the Ledger path and configuration used."
+        description="Identify which profile you are signing as. This determines the derivation path (account index) and configuration used."
       />
 
       <div className="mb-8">

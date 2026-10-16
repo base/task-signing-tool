@@ -3,8 +3,16 @@ import {
   LedgerSigningOptions,
   signDomainAndMessageHash,
 } from '@/lib/ledger-signing';
+import { checkTrezorctlAvailability, signSafeTxWithTrezor } from '@/lib/trezor-signing';
+import { SafeTxTypedDataSchema, safeTxTypedDataMatches } from '@/lib/safe-typed-data';
 import { HashSchema } from '@/lib/config-schemas';
+import type { HardwareWallet } from '@/lib/types/signing';
 import { NextRequest, NextResponse } from 'next/server';
+
+type SignRequestBody = Partial<LedgerSigningOptions> & {
+  device?: HardwareWallet;
+  typedData?: unknown;
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +20,16 @@ export async function POST(req: NextRequest) {
       domainHash,
       messageHash,
       ledgerAccount = 0,
-    } = (await req.json()) as Partial<LedgerSigningOptions>;
+      device = 'ledger',
+      typedData,
+    } = (await req.json()) as SignRequestBody;
+
+    if (device !== 'ledger' && device !== 'trezor') {
+      return NextResponse.json(
+        { error: "Invalid device: must be 'ledger' or 'trezor'" },
+        { status: 400 }
+      );
+    }
 
     if (!domainHash || !messageHash) {
       return NextResponse.json(
@@ -42,6 +59,46 @@ export async function POST(req: NextRequest) {
         { error: 'Invalid ledgerAccount: must be a non-negative integer' },
         { status: 400 }
       );
+    }
+
+    if (device === 'trezor') {
+      const parsed = SafeTxTypedDataSchema.safeParse(typedData);
+      if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        return NextResponse.json(
+          {
+            error: `Invalid typedData: ${issue ? `${issue.path.join('.')} ${issue.message}` : 'missing'}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // The device signs the typed data, so it must hash to exactly what was validated.
+      if (!safeTxTypedDataMatches(parsed.data, { domainHash, messageHash })) {
+        return NextResponse.json(
+          { error: 'typedData does not hash to the provided domainHash/messageHash' },
+          { status: 400 }
+        );
+      }
+
+      if (!(await checkTrezorctlAvailability())) {
+        return NextResponse.json(
+          {
+            error:
+              'trezorctl not found. Install it with `pipx install trezor` and ensure it is on your PATH.',
+          },
+          { status: 500 }
+        );
+      }
+
+      const result = await signSafeTxWithTrezor({
+        typedData: parsed.data,
+        accountIndex: ledgerAccount,
+      });
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+      return NextResponse.json(result, { status: 200 });
     }
 
     if (!(await checkLedgerAvailability())) {

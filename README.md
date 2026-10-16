@@ -159,7 +159,7 @@ Validation configs live under each task directory at `active/evm/tasks/<YYYY-MM-
 These files must be valid JSON and conform to the schema enforced by the app. Required fields and constraints:
 
 - **cmd** (string): The full forge command to execute (e.g., `forge script script/Test.s.sol --sig 'run()' --sender 0xabc...`).
-- **ledgerId** (number): Non‑negative integer Ledger account index.
+- **ledgerId** (number): Non‑negative integer hardware wallet account index (`m/44'/60'/<ledgerId>'/0/0`), used for both Ledger and Trezor.
 - **rpcUrl** (string): HTTPS RPC endpoint to use for simulation.
 - **expectedDomainAndMessageHashes** (object):
   - **address** (0x40 hex string)
@@ -238,6 +238,28 @@ Minimal example (`validations/base-sc.json`):
   }
 }
 ```
+
+### Hardware wallets
+
+The signing step supports Ledger and Trezor (Model T, Safe 3, Safe 5).
+
+- **Ledger** blind-signs the validated domain and message hashes via [`eip712sign`](https://github.com/base/eip712sign) (`eip712sign --ledger`).
+- **Trezor** Core devices cannot sign a bare hash. They sign the full EIP-712 `SafeTx` and display each field on the device. The tool builds the typed data from the task simulation and refuses to sign unless it hashes to the exact domain and message hashes that were validated. The signature is checked to recover to the device address and is printed in the same format as `eip712sign`.
+
+Trezor setup:
+
+```bash
+pipx install trezor   # provides trezorctl (~/.local/bin is picked up automatically)
+trezorctl ethereum get-address -n "m/44'/60'/0'/0/0" --show-display   # verify your signer address
+```
+
+Close Trezor Suite before signing, because it holds the USB device. Enter any passphrase on the device; the tool does not answer host prompts.
+
+Trezor signing needs the task simulation to emit the SafeTx. Besides `dataToSign`, the `stateDiff.json` written by the Foundry script must contain:
+
+- **safeTx** (hex string): `abi.encode(SafeTx)` for `targetSafe`, where `SafeTx` is the struct `(address to, uint256 value, bytes data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, uint256 nonce)`.
+
+The chain ID comes from `rpcUrl` and the verifying contract is `targetSafe`. Domains for Safe >= 1.3.0 (with `chainId`) and for older Safes are both supported. If `safeTx` is missing, the Trezor option is disabled and Ledger signing still works. If `safeTx` is present but does not hash to `dataToSign`, validation fails.
 
 ### Generate a validation file from a Foundry run
 
