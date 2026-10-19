@@ -33,7 +33,7 @@ const DEVICE_CHECKLISTS: Record<HardwareWallet, string[]> = {
   trezor: [
     'Connected via USB and unlocked with your PIN',
     'Trezor Suite is closed (it locks the device)',
-    'trezorctl is installed (pipx install trezor)',
+    'Firmware is up to date (Model T, Safe 3 or Safe 5)',
     'Passphrase is entered on the device, or not enabled for this wallet',
   ],
 };

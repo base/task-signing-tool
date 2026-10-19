@@ -3,7 +3,7 @@ import {
   LedgerSigningOptions,
   signDomainAndMessageHash,
 } from '@/lib/ledger-signing';
-import { checkTrezorctlAvailability, signSafeTxWithTrezor } from '@/lib/trezor-signing';
+import { ensureTrezorctl, signSafeTxWithTrezor } from '@/lib/trezor-signing';
 import { SafeTxTypedDataSchema, safeTxTypedDataMatches } from '@/lib/safe-typed-data';
 import { HashSchema } from '@/lib/config-schemas';
 import type { HardwareWallet } from '@/lib/types/signing';
@@ -81,14 +81,10 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (!(await checkTrezorctlAvailability())) {
-        return NextResponse.json(
-          {
-            error:
-              'trezorctl not found. Install it with `pipx install trezor` and ensure it is on your PATH.',
-          },
-          { status: 500 }
-        );
+      // Installs the pinned trezorctl on first use.
+      const trezorctlError = await ensureTrezorctl();
+      if (trezorctlError) {
+        return NextResponse.json({ error: trezorctlError }, { status: 500 });
       }
 
       const result = await signSafeTxWithTrezor({

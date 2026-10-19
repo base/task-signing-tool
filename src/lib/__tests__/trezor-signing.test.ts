@@ -1,5 +1,7 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { readFileSync } from 'fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import * as os from 'os';
+import { join } from 'path';
 import { keccak256, serializeSignature, type Hex } from 'viem';
 import { privateKeyToAccount, sign } from 'viem/accounts';
 import type { SafeTxTypedData } from '../safe-typed-data';
@@ -12,20 +14,44 @@ type ExecCallback = (
 
 let nextResult: { error: (Error & { killed?: boolean }) | null; stdout: string; stderr: string };
 let lastArgs: string[] = [];
+let lastOpts: { env?: NodeJS.ProcessEnv } = {};
 let lastTypedDataJson: unknown;
 
-const mockExecFile = jest.fn((_cmd: string, args: string[], _opts: unknown, cb: ExecCallback) => {
-  lastArgs = args;
-  const file = args[args.length - 1];
-  if (file.endsWith('.json')) lastTypedDataJson = JSON.parse(readFileSync(file, 'utf8'));
-  setImmediate(() => cb(nextResult.error, nextResult.stdout, nextResult.stderr));
-  return { stdin: { end: jest.fn() } };
-});
+// Isolate from the machine: no mise or trezorctl unless a test installs a fake one.
+const fakeHome = mkdtempSync(join(os.tmpdir(), 'trezor-home-'));
+process.env.PATH = '';
+
+function installFake(name: string): string {
+  const dir = join(fakeHome, '.local', 'bin');
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, name);
+  writeFileSync(file, '');
+  chmodSync(file, 0o755);
+  return file;
+}
+
+const mockExecFile = jest.fn(
+  (_cmd: string, args: string[], opts: { env?: NodeJS.ProcessEnv }, cb: ExecCallback) => {
+    lastArgs = args;
+    lastOpts = opts;
+    const file = args[args.length - 1];
+    if (file.endsWith('.json')) lastTypedDataJson = JSON.parse(readFileSync(file, 'utf8'));
+    setImmediate(() => cb(nextResult.error, nextResult.stdout, nextResult.stderr));
+    return { stdin: { end: jest.fn() } };
+  }
+);
 
 jest.unstable_mockModule('child_process', () => ({ execFile: mockExecFile }));
+jest.unstable_mockModule('os', () => ({ ...os, homedir: () => fakeHome }));
 
-const { signSafeTxWithTrezor, mapTrezorError, checkTrezorctlAvailability } =
-  await import('../trezor-signing');
+const {
+  signSafeTxWithTrezor,
+  mapTrezorError,
+  ensureTrezorctl,
+  getTrezorctlCommand,
+  TREZOR_PACKAGE_VERSION,
+  UV_VERSION,
+} = await import('../trezor-signing');
 const { hashSafeTxTypedData } = await import('../safe-typed-data');
 
 const PRIVATE_KEY = ('0x' + '11'.repeat(32)) as Hex;
@@ -143,16 +169,54 @@ describe('signSafeTxWithTrezor', () => {
   });
 });
 
-describe('checkTrezorctlAvailability', () => {
-  it('returns false when trezorctl fails', async () => {
+describe('ensureTrezorctl', () => {
+  it('returns null when trezorctl runs', async () => {
+    nextResult = { error: null, stdout: 'trezorctl, version 0.20.2', stderr: '' };
+    expect(await ensureTrezorctl()).toBeNull();
+    expect(lastArgs.slice(-1)).toEqual(['--version']);
+    expect(lastOpts.env?.MISE_YES).toBe('1');
+  });
+
+  it('returns the mapped error when trezorctl is missing', async () => {
     nextResult = { error: new Error('spawn trezorctl ENOENT'), stdout: '', stderr: '' };
-    expect(await checkTrezorctlAvailability()).toBe(false);
+    expect(await ensureTrezorctl()).toMatch(/trezorctl not found.*pipx install trezor/);
+  });
+
+  it('reports a timed-out install', async () => {
+    const err = Object.assign(new Error('killed'), { killed: true });
+    nextResult = { error: err, stdout: '', stderr: '' };
+    expect(await ensureTrezorctl()).toMatch(/Timed out installing trezorctl/);
+  });
+});
+
+describe('getTrezorctlCommand', () => {
+  it('falls back to trezorctl on PATH without mise', () => {
+    expect(getTrezorctlCommand()).toEqual({ file: 'trezorctl', prefix: [] });
+  });
+
+  it('prefers the pinned version through mise', () => {
+    const trezorctl = installFake('trezorctl');
+    expect(getTrezorctlCommand()).toEqual({ file: trezorctl, prefix: [] });
+
+    const mise = installFake('mise');
+    expect(getTrezorctlCommand()).toEqual({
+      file: mise,
+      prefix: [
+        'exec',
+        `uv@${UV_VERSION}`,
+        `pipx:trezor@${TREZOR_PACKAGE_VERSION}`,
+        '--',
+        'trezorctl',
+      ],
+    });
   });
 });
 
 describe('mapTrezorError', () => {
   it.each([
     ['spawn trezorctl ENOENT', /trezorctl not found/],
+    ['mise WARN  GitHub rate limit exceeded', /GITHUB_TOKEN/],
+    ['mise ERROR failed to install aqua:astral-sh/uv@0.13.1', /Installing trezorctl failed/],
     ['No Trezor found', /No Trezor found/],
     ['LIBUSB_ERROR_ACCESS', /Close Trezor Suite/],
     ['Aborted!', /passphrase/],

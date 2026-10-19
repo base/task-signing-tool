@@ -246,11 +246,14 @@ The signing step supports Ledger and Trezor (Model T, Safe 3, Safe 5).
 - **Ledger** blind-signs the validated domain and message hashes via [`eip712sign`](https://github.com/base/eip712sign) (`eip712sign --ledger`).
 - **Trezor** Core devices cannot sign a bare hash. They sign the full EIP-712 `SafeTx` and display each field on the device. The tool builds the typed data from the task simulation and refuses to sign unless it hashes to the exact domain and message hashes that were validated. The signature is checked to recover to the device address and is printed in the same format as `eip712sign`.
 
-Trezor setup:
+Trezor setup: nothing to install by hand. When [mise](https://mise.jdx.dev) is available (contract-deployments installs it to `~/.local/bin/mise`), the tool runs a pinned `trezorctl` through `mise exec uv@0.13.1 pipx:trezor@0.20.2 -- trezorctl` and installs it on first use. The first Trezor signature takes about a minute longer while uv, Python and `trezor` download. Without mise, the tool falls back to a `trezorctl` on your PATH or in `~/.local/bin` (`pipx install trezor`).
+
+If the install fails with a GitHub rate limit, run `export GITHUB_TOKEN=$(gh auth token)` before `make sign-task`.
+
+Use account 0 with no passphrase unless your signer address is elsewhere. The tool signs with `m/44'/60'/{account}'/0/0`. To check the address on the device:
 
 ```bash
-pipx install trezor   # provides trezorctl (~/.local/bin is picked up automatically)
-trezorctl ethereum get-address -n "m/44'/60'/0'/0/0" --show-display   # verify your signer address
+~/.local/bin/mise exec uv@0.13.1 pipx:trezor@0.20.2 -- trezorctl ethereum get-address -n "m/44'/60'/0'/0/0" --show-display
 ```
 
 Close Trezor Suite before signing, because it holds the USB device. Enter any passphrase on the device; the tool does not answer host prompts.
