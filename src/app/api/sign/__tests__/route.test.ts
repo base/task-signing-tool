@@ -352,6 +352,23 @@ describe('POST /api/sign', () => {
       expect(mockSignSafeTxWithTrezor).not.toHaveBeenCalled();
     });
 
+    it.each(['1.5', '1e3', '-1', ''])(
+      'returns 400 when a uint256 field is not a decimal integer (%p)',
+      async value => {
+        const res = await POST(
+          createRequest({
+            device: 'trezor',
+            domainHash,
+            messageHash,
+            typedData: { ...typedData, message: { ...typedData.message, value } },
+          })
+        );
+        expect(res.status).toBe(400);
+        expect((await res.json()).error).toMatch(/decimal integer/);
+        expect(mockSignSafeTxWithTrezor).not.toHaveBeenCalled();
+      }
+    );
+
     it('returns 500 with the install error when trezorctl is unavailable', async () => {
       mockEnsureTrezorctl.mockResolvedValue('trezorctl not found. Install mise');
       const res = await POST(

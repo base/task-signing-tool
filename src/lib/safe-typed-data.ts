@@ -18,7 +18,8 @@ const AddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'must be a 0x-pref
 const UintSchema = z
   .string()
   .regex(/^\d+$/, 'must be a decimal integer string')
-  .refine(v => BigInt(v) <= maxUint256, 'must fit in uint256');
+  // zod keeps running refinements after a failed regex, so guard BigInt() against non-digits.
+  .refine(v => !/^\d+$/.test(v) || BigInt(v) <= maxUint256, 'must fit in uint256');
 
 export const SafeTxTypedDataSchema = z
   .object({
