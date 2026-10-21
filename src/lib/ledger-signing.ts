@@ -158,7 +158,7 @@ async function runEip712sign(args: string[]): Promise<RunEip712signResult> {
   }
 }
 
-function getEip712SignPath(): string {
+export function getEip712SignPath(): string {
   // Try GOPATH first
   if (process.env.GOPATH) {
     const path = join(process.env.GOPATH, 'bin', 'eip712sign');

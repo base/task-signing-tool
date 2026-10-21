@@ -14,12 +14,10 @@ jest.unstable_mockModule('@/lib/ledger-signing', () => ({
   signDomainAndMessageHash: mockSignDomainAndMessageHash,
 }));
 
-const mockEnsureTrezorctl = jest.fn<() => Promise<string | null>>();
 const mockSignSafeTxWithTrezor =
   jest.fn<(options: TrezorSigningOptions) => Promise<LedgerSigningResult>>();
 
 jest.unstable_mockModule('@/lib/trezor-signing', () => ({
-  ensureTrezorctl: mockEnsureTrezorctl,
   signSafeTxWithTrezor: mockSignSafeTxWithTrezor,
 }));
 
@@ -274,7 +272,6 @@ describe('POST /api/sign', () => {
     const { domainHash, messageHash } = hashSafeTxTypedData(typedData);
 
     beforeEach(() => {
-      mockEnsureTrezorctl.mockResolvedValue(null);
       mockSignSafeTxWithTrezor.mockResolvedValue({
         success: true,
         data: '0x1901',
@@ -369,13 +366,13 @@ describe('POST /api/sign', () => {
       }
     );
 
-    it('returns 500 with the install error when trezorctl is unavailable', async () => {
-      mockEnsureTrezorctl.mockResolvedValue('trezorctl not found. Install mise');
+    it('returns 500 with the signing error when the Trezor fails', async () => {
+      mockSignSafeTxWithTrezor.mockResolvedValue({ success: false, error: 'No Trezor found.' });
       const res = await POST(
         createRequest({ device: 'trezor', domainHash, messageHash, typedData })
       );
       expect(res.status).toBe(500);
-      expect((await res.json()).error).toMatch(/trezorctl not found/i);
+      expect((await res.json()).error).toMatch(/No Trezor found/);
     });
 
     it('returns 400 for an unknown device', async () => {

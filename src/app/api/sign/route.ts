@@ -3,7 +3,7 @@ import {
   LedgerSigningOptions,
   signDomainAndMessageHash,
 } from '@/lib/ledger-signing';
-import { ensureTrezorctl, signSafeTxWithTrezor } from '@/lib/trezor-signing';
+import { signSafeTxWithTrezor } from '@/lib/trezor-signing';
 import { SafeTxTypedDataSchema, safeTxTypedDataMatches } from '@/lib/safe-typed-data';
 import { HashSchema } from '@/lib/config-schemas';
 import type { HardwareWallet } from '@/lib/types/signing';
@@ -79,12 +79,6 @@ export async function POST(req: NextRequest) {
           { error: 'typedData does not hash to the provided domainHash/messageHash' },
           { status: 400 }
         );
-      }
-
-      // Installs the pinned trezorctl on first use.
-      const trezorctlError = await ensureTrezorctl();
-      if (trezorctlError) {
-        return NextResponse.json({ error: trezorctlError }, { status: 500 });
       }
 
       const result = await signSafeTxWithTrezor({

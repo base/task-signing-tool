@@ -33,14 +33,17 @@ const DEVICE_CHECKLISTS: Record<HardwareWallet, string[]> = {
   trezor: [
     'Connected via USB and unlocked with your PIN',
     'Trezor Suite is closed (it locks the device)',
-    'Firmware is up to date (Model T, Safe 3 or Safe 5)',
-    'Passphrase is entered on the device, or not enabled for this wallet',
+    'Firmware 2.9.1 or newer (Model T, Safe 3 or Safe 5)',
+    'Passphrase protection is off for this wallet (the tool signs with the standard wallet)',
+    'The device shows the domain name and version as "unknown": expected, because Safe domains have neither',
+    'Tap "Show full message" to review every SafeTx field; skipping it jumps to the end with no way back',
+    'Before confirming, check the message hash on the device matches the Message Hash below',
   ],
 };
 
 const INSTALL_HINTS: Record<HardwareWallet, string> = {
   ledger: 'make install-eip712sign',
-  trezor: 'pipx install trezor',
+  trezor: 'make install-eip712sign',
 };
 
 async function submitSignatureRequest(payload: {
@@ -271,7 +274,7 @@ export function HardwareSigning({
                   <p className="text-sm font-bold text-blue-900 mb-1">Verification Required</p>
                   <p className="text-sm text-blue-800">
                     {device === 'trezor'
-                      ? 'Your Trezor shows each SafeTx field. Verify every field on the device matches the values below before confirming. The tool has checked that these fields hash to the validated domain and message hashes.'
+                      ? 'Your Trezor shows each SafeTx field, then the message hash. Verify every field and the message hash on the device match the values below before confirming. The tool has checked that these fields hash to the validated domain and message hashes.'
                       : 'Verify the domain and message hashes match the values displayed on your Ledger device.'}
                   </p>
                 </div>

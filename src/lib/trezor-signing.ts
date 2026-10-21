@@ -1,9 +1,6 @@
 import { execFile } from 'child_process';
-import { existsSync } from 'fs';
-import { mkdtemp, rm, writeFile } from 'fs/promises';
-import { homedir, tmpdir } from 'os';
-import { delimiter, join } from 'path';
 import { getAddress, keccak256, recoverAddress, type Hex } from 'viem';
+import { getEip712SignPath } from './ledger-signing';
 import { hashSafeTxTypedData, toEip712Json, type SafeTxTypedData } from './safe-typed-data';
 import type { SigningResult } from './types/signing';
 
@@ -15,15 +12,9 @@ export interface TrezorSigningOptions {
 // Generous: the signer pages through every SafeTx field on the device before confirming.
 const SIGN_TIMEOUT_MS = 5 * 60 * 1000;
 
-// Pinned trezorctl, installed through mise on first use. uv lets mise install the PyPI package and
-// fetches its own Python, so signers need nothing beyond the mise that contract-deployments installs.
-export const TREZOR_PACKAGE_VERSION = '0.20.2';
-export const UV_VERSION = '0.13.1';
-// The first run downloads uv, Python and trezor.
-const INSTALL_TIMEOUT_MS = 5 * 60 * 1000;
-
-const MANUAL_INSTALL_HINT =
-  'Install mise (https://mise.jdx.dev) so the tool can install trezorctl itself, or install it with `pipx install trezor`.';
+// First eip712sign release with `--trezor` (full EIP-712 typed data through base/usbwallet, with the
+// message hash shown on the device).
+export const MIN_EIP712SIGN_VERSION = 'v0.0.15';
 
 interface RunResult {
   success: boolean;
@@ -32,21 +23,26 @@ interface RunResult {
   timedOut?: boolean;
 }
 
+/**
+ * Signs a SafeTx on a Trezor with `eip712sign --trezor`, the same binary used for Ledger.
+ *
+ * The device receives the full typed data, shows each SafeTx field, and asks the signer to confirm
+ * the message hash (firmware 2.9.1+). The result is bound to the hashes the signer validated.
+ */
 export async function signSafeTxWithTrezor(options: TrezorSigningOptions): Promise<SigningResult> {
   const { typedData, accountIndex = 0 } = options;
   const hdPath = `m/44'/60'/${accountIndex}'/0/0`;
   const { domainHash, messageHash } = hashSafeTxTypedData(typedData);
   const dataToSign = `0x1901${domainHash.slice(2)}${messageHash.slice(2)}` as Hex;
 
-  const dir = await mkdtemp(join(tmpdir(), 'trezor-sign-'));
   try {
-    const file = join(dir, 'typed-data.json');
-    await writeFile(file, JSON.stringify(toEip712Json(typedData)), { mode: 0o600 });
-
-    const result = await runTrezorctl(
-      ['--json', 'ethereum', 'sign-typed-data', '-n', hdPath, file],
-      SIGN_TIMEOUT_MS
-    );
+    const result = await runEip712sign([
+      '--trezor',
+      '--hd-paths',
+      hdPath,
+      '--data',
+      JSON.stringify(toEip712Json(typedData)),
+    ]);
     if (!result.success) {
       return {
         success: false,
@@ -56,31 +52,37 @@ export async function signSafeTxWithTrezor(options: TrezorSigningOptions): Promi
       };
     }
 
-    const parsed = parseTrezorOutput(result.stdout);
+    const parsed = parseEip712signOutput(result.stdout);
     if (!parsed) {
       return {
         success: false,
-        error: `Could not parse trezorctl output. Output was: ${result.stdout}`,
+        error: `Could not extract signature from eip712sign output. Output was: ${result.stdout}`,
+      };
+    }
+    // eip712sign hashes the typed data itself; it must be exactly what was validated.
+    if (parsed.data.toLowerCase() !== dataToSign.toLowerCase()) {
+      return {
+        success: false,
+        error: `eip712sign signed ${parsed.data}, expected ${dataToSign}`,
       };
     }
 
-    // Bind the device signature to the hashes the signer validated.
     const recovered = await recoverAddress({
       hash: keccak256(dataToSign),
       signature: parsed.signature,
     });
-    if (getAddress(recovered) !== getAddress(parsed.address)) {
+    if (getAddress(recovered) !== getAddress(parsed.signer)) {
       return {
         success: false,
-        error: `Trezor signature recovers to ${recovered}, expected ${parsed.address}`,
+        error: `Trezor signature recovers to ${recovered}, expected ${parsed.signer}`,
       };
     }
 
     return {
       success: true,
       data: dataToSign,
-      signer: getAddress(parsed.address),
-      // Match eip712sign output (no 0x prefix) so downstream signature collection is unchanged.
+      signer: getAddress(parsed.signer),
+      // Same format as the Ledger path (no 0x prefix).
       signature: parsed.signature.slice(2),
     };
   } catch (error) {
@@ -88,87 +90,59 @@ export async function signSafeTxWithTrezor(options: TrezorSigningOptions): Promi
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error during Trezor signing',
     };
-  } finally {
-    await rm(dir, { recursive: true, force: true });
   }
 }
 
-/**
- * Makes sure trezorctl runs, installing the pinned version through mise on first use.
- * Returns null when ready, otherwise an error message for the signer.
- */
-export async function ensureTrezorctl(): Promise<string | null> {
-  const result = await runTrezorctl(['--version'], INSTALL_TIMEOUT_MS);
-  if (result.success) return null;
-  return result.timedOut
-    ? 'Timed out installing trezorctl. Check your network connection and try again.'
-    : mapTrezorError(result.stderr);
-}
+function parseEip712signOutput(
+  stdout?: string
+): { data: Hex; signer: string; signature: Hex } | null {
+  const data = stdout?.match(/^Data:\s*(0x1901[a-fA-F0-9]{128})\s*$/m)?.[1];
+  const signer = stdout?.match(/^Signer:\s*(0x[a-fA-F0-9]{40})\s*$/m)?.[1];
+  const raw = stdout?.match(/^Signature:\s*(?:0x)?([a-fA-F0-9]{130})\s*$/m)?.[1];
+  if (!data || !signer || !raw) return null;
 
-function parseTrezorOutput(stdout?: string): { address: string; signature: Hex } | null {
-  try {
-    const out = JSON.parse(stdout ?? '') as { address?: unknown; signature?: unknown };
-    if (
-      typeof out.address === 'string' &&
-      /^0x[a-fA-F0-9]{40}$/.test(out.address) &&
-      typeof out.signature === 'string' &&
-      // Safe treats v = 0/1 as other signature types; only accept ECDSA v = 27/28.
-      /^0x[a-fA-F0-9]{128}(1b|1c)$/i.test(out.signature)
-    ) {
-      return { address: out.address, signature: out.signature as Hex };
-    }
-  } catch {
-    // fall through
-  }
-  return null;
+  // Safe treats v = 0/1 as other signature types, so normalize device v = 0/1 to ECDSA 27/28.
+  const v = parseInt(raw.slice(128), 16);
+  const normalizedV = v < 27 ? v + 27 : v;
+  if (normalizedV !== 27 && normalizedV !== 28) return null;
+  const signature = `0x${raw.slice(0, 128)}${normalizedV.toString(16)}` as Hex;
+
+  return { data: data as Hex, signer, signature };
 }
 
 export function mapTrezorError(stderr?: string): string {
   const fallback = 'Unknown error during Trezor signing';
   if (!stderr) return fallback;
 
-  if (/rate limit|403 Forbidden/i.test(stderr)) {
-    return 'Installing trezorctl hit the GitHub API rate limit. Run `export GITHUB_TOKEN=$(gh auth token)` before `make sign-task`, or install it with `pipx install trezor`.';
+  if (/flag provided but not defined: -trezor/i.test(stderr)) {
+    return `eip712sign is too old for Trezor. Install ${MIN_EIP712SIGN_VERSION} or newer: run \`make deps\` in contract-deployments, or \`go install github.com/base/eip712sign@${MIN_EIP712SIGN_VERSION}\`.`;
   }
-  if (/failed to install/i.test(stderr)) {
-    return `Installing trezorctl failed. ${MANUAL_INSTALL_HINT}\n${stderr.trim()}`;
+  if (/requires firmware v2\.9\.1/i.test(stderr)) {
+    return 'Trezor firmware 2.9.1 or newer is required. Update it in Trezor Suite, then close Trezor Suite and try again.';
   }
-  if (/ENOENT|command not found/i.test(stderr)) {
-    return `trezorctl not found. ${MANUAL_INSTALL_HINT}`;
+  if (/no hardware wallets found|error starting trezor/i.test(stderr)) {
+    return 'No Trezor found. Connect and unlock your Trezor, and close Trezor Suite (it holds the device).';
   }
-  if (/no trezor|device not found|no device/i.test(stderr)) {
-    return 'No Trezor found. Connect and unlock your Trezor.';
-  }
-  if (/busy|LIBUSB_ERROR_ACCESS|claim|in use/i.test(stderr)) {
-    return 'The Trezor is in use by another application. Close Trezor Suite and try again.';
+  if (/no such file or directory|ENOENT|command not found/i.test(stderr)) {
+    return `eip712sign not found. Run \`make deps\` in contract-deployments, or \`go install github.com/base/eip712sign@${MIN_EIP712SIGN_VERSION}\`.`;
   }
   if (/cancel/i.test(stderr)) {
     return 'Signing was cancelled on the Trezor device';
   }
-  if (/passphrase|aborted/i.test(stderr)) {
-    return 'Trezor requested input on the host (e.g. a passphrase). Enter it on the device or disable passphrase protection for this wallet.';
-  }
-  if (/UnexpectedMessage/i.test(stderr)) {
-    return 'The Trezor rejected the request. Update the device firmware and try again.';
+  if (/LIBUSB_ERROR|access denied|busy|in use/i.test(stderr)) {
+    return 'The Trezor is in use by another application. Close Trezor Suite, unplug and reconnect the Trezor, and try again.';
   }
 
   const trimmed = stderr.trim();
   return trimmed.length > 0 ? trimmed : fallback;
 }
 
-function runTrezorctl(args: string[], timeout: number): Promise<RunResult> {
-  const { file, prefix } = getTrezorctlCommand();
+function runEip712sign(args: string[]): Promise<RunResult> {
   return new Promise(resolve => {
     const child = execFile(
-      file,
-      [...prefix, ...args],
-      {
-        encoding: 'utf8',
-        maxBuffer: 10 * 1024 * 1024,
-        timeout,
-        // Never stop at a mise confirmation prompt; there is no terminal.
-        env: { ...process.env, MISE_YES: '1' },
-      },
+      getEip712SignPath(),
+      args,
+      { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, timeout: SIGN_TIMEOUT_MS },
       (error, stdout, stderr) => {
         if (!error) {
           resolve({ success: true, stdout });
@@ -182,33 +156,7 @@ function runTrezorctl(args: string[], timeout: number): Promise<RunResult> {
         });
       }
     );
-    // trezorctl never gets interactive host input: PIN and confirmations happen on the device.
+    // Confirmations happen on the device; never wait on host input.
     child.stdin?.end();
   });
-}
-
-export function getTrezorctlCommand(): { file: string; prefix: string[] } {
-  const mise = findOnPath('mise', [join(homedir(), '.local', 'bin', 'mise')]);
-  if (mise) {
-    return {
-      file: mise,
-      prefix: [
-        'exec',
-        `uv@${UV_VERSION}`,
-        `pipx:trezor@${TREZOR_PACKAGE_VERSION}`,
-        '--',
-        'trezorctl',
-      ],
-    };
-  }
-  // Without mise, use a manual install. pipx puts it in ~/.local/bin, often missing from the server's PATH.
-  return {
-    file: findOnPath('trezorctl', [join(homedir(), '.local', 'bin', 'trezorctl')]) ?? 'trezorctl',
-    prefix: [],
-  };
-}
-
-function findOnPath(name: string, preferred: string[]): string | null {
-  const dirs = (process.env.PATH ?? '').split(delimiter).filter(Boolean);
-  return [...preferred, ...dirs.map(dir => join(dir, name))].find(p => existsSync(p)) ?? null;
 }

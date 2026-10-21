@@ -71,7 +71,7 @@ function domainType(typedData: SafeTxTypedData) {
       ];
 }
 
-/** Full eth_signTypedData_v4 JSON, as consumed by `trezorctl ethereum sign-typed-data`. */
+/** Full eth_signTypedData_v4 JSON, as consumed by `eip712sign --trezor --data`. */
 export function toEip712Json(typedData: SafeTxTypedData) {
   return {
     types: { EIP712Domain: domainType(typedData), SafeTx: SAFE_TX_TYPE },

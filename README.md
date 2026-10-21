@@ -244,19 +244,26 @@ Minimal example (`validations/base-sc.json`):
 The signing step supports Ledger and Trezor (Model T, Safe 3, Safe 5).
 
 - **Ledger** blind-signs the validated domain and message hashes via [`eip712sign`](https://github.com/base/eip712sign) (`eip712sign --ledger`).
-- **Trezor** Core devices cannot sign a bare hash. They sign the full EIP-712 `SafeTx` and display each field on the device. The tool builds the typed data from the task simulation and refuses to sign unless it hashes to the exact domain and message hashes that were validated. The signature is checked to recover to the device address and is printed in the same format as `eip712sign`.
+- **Trezor** signs the full EIP-712 `SafeTx` via `eip712sign --trezor` (v0.0.15+, through [base/usbwallet](https://github.com/base/usbwallet)). The device shows each SafeTx field, then asks the signer to confirm the message hash. The tool builds the typed data from the task simulation and refuses to sign unless it hashes to the exact domain and message hashes that were validated. It checks that eip712sign signed those hashes and that the signature recovers to the device address.
 
-Trezor setup: nothing to install by hand. When [mise](https://mise.jdx.dev) is available (contract-deployments installs it to `~/.local/bin/mise`), the tool runs a pinned `trezorctl` through `mise exec uv@0.13.1 pipx:trezor@0.20.2 -- trezorctl` and installs it on first use. The first Trezor signature takes about a minute longer while uv, Python and `trezor` download. Without mise, the tool falls back to a `trezorctl` on your PATH or in `~/.local/bin` (`pipx install trezor`).
+Trezor setup:
 
-If the install fails with a GitHub rate limit, run `export GITHUB_TOKEN=$(gh auth token)` before `make sign-task`.
+- eip712sign v0.0.15 or newer (`make deps` in contract-deployments installs it, or `go install github.com/base/eip712sign@v0.0.15`).
+- Firmware 2.9.1 or newer. eip712sign refuses older Core firmware, because message hash display arrived in 2.9.1.
+- Close Trezor Suite before signing, because it holds the USB device.
+- Turn passphrase protection off for the signing wallet. eip712sign answers passphrase requests with an empty passphrase, so it signs with the standard wallet.
 
-Use account 0 with no passphrase unless your signer address is elsewhere. The tool signs with `m/44'/60'/{account}'/0/0`. To check the address on the device:
+The tool signs with `m/44'/60'/{account}'/0/0`; use account 0 unless your signer address is elsewhere. To print the address:
 
 ```bash
-~/.local/bin/mise exec uv@0.13.1 pipx:trezor@0.20.2 -- trezorctl ethereum get-address -n "m/44'/60'/0'/0/0" --show-display
+eip712sign --trezor --address --hd-paths "m/44'/60'/0'/0/0"
 ```
 
-Close Trezor Suite before signing, because it holds the USB device. Enter any passphrase on the device; the tool does not answer host prompts.
+On the device:
+
+- The domain name and version show as "unknown". This is expected: Safe's EIP-712 domain has only `chainId` and `verifyingContract`.
+- Tap "Show full message" to review every SafeTx field. Skipping it jumps to the end, and there is no back button.
+- Check that the message hash on the device matches the Message Hash in the tool before confirming. The domain hash is not shown; the domain is checked through the chain ID and Safe address fields.
 
 Trezor signing needs the task simulation to emit the SafeTx. Besides `dataToSign`, the `stateDiff.json` written by the Foundry script must contain:
 

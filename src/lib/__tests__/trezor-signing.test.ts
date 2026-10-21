@@ -1,7 +1,4 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
-import * as os from 'os';
-import { join } from 'path';
 import { keccak256, serializeSignature, type Hex } from 'viem';
 import { privateKeyToAccount, sign } from 'viem/accounts';
 import type { SafeTxTypedData } from '../safe-typed-data';
@@ -14,44 +11,16 @@ type ExecCallback = (
 
 let nextResult: { error: (Error & { killed?: boolean }) | null; stdout: string; stderr: string };
 let lastArgs: string[] = [];
-let lastOpts: { env?: NodeJS.ProcessEnv } = {};
-let lastTypedDataJson: unknown;
 
-// Isolate from the machine: no mise or trezorctl unless a test installs a fake one.
-const fakeHome = mkdtempSync(join(os.tmpdir(), 'trezor-home-'));
-process.env.PATH = '';
-
-function installFake(name: string): string {
-  const dir = join(fakeHome, '.local', 'bin');
-  mkdirSync(dir, { recursive: true });
-  const file = join(dir, name);
-  writeFileSync(file, '');
-  chmodSync(file, 0o755);
-  return file;
-}
-
-const mockExecFile = jest.fn(
-  (_cmd: string, args: string[], opts: { env?: NodeJS.ProcessEnv }, cb: ExecCallback) => {
-    lastArgs = args;
-    lastOpts = opts;
-    const file = args[args.length - 1];
-    if (file.endsWith('.json')) lastTypedDataJson = JSON.parse(readFileSync(file, 'utf8'));
-    setImmediate(() => cb(nextResult.error, nextResult.stdout, nextResult.stderr));
-    return { stdin: { end: jest.fn() } };
-  }
-);
+const mockExecFile = jest.fn((_cmd: string, args: string[], _opts: unknown, cb: ExecCallback) => {
+  lastArgs = args;
+  setImmediate(() => cb(nextResult.error, nextResult.stdout, nextResult.stderr));
+  return { stdin: { end: jest.fn() } };
+});
 
 jest.unstable_mockModule('child_process', () => ({ execFile: mockExecFile }));
-jest.unstable_mockModule('os', () => ({ ...os, homedir: () => fakeHome }));
 
-const {
-  signSafeTxWithTrezor,
-  mapTrezorError,
-  ensureTrezorctl,
-  getTrezorctlCommand,
-  TREZOR_PACKAGE_VERSION,
-  UV_VERSION,
-} = await import('../trezor-signing');
+const { signSafeTxWithTrezor, mapTrezorError } = await import('../trezor-signing');
 const { hashSafeTxTypedData } = await import('../safe-typed-data');
 
 const PRIVATE_KEY = ('0x' + '11'.repeat(32)) as Hex;
@@ -83,17 +52,33 @@ async function deviceSignature(): Promise<{ data: Hex; signature: Hex }> {
   return { data, signature };
 }
 
+/** stdout shaped like eip712sign v0.0.15 after a successful typed-data signature. */
+function eip712signOutput(o: { data: string; signer: string; signature: string }): string {
+  return [
+    `Domain hash: 0x${o.data.slice(6, 70)}`,
+    `Message hash: 0x${o.data.slice(70)}`,
+    `Signing as: ${o.signer}`,
+    '',
+    'Data sent to device, awaiting signature...done',
+    '',
+    'Typed: 0x7b7d',
+    `Data: ${o.data}`,
+    `Signer: ${o.signer}`,
+    `Signature: ${o.signature}`,
+    '',
+  ].join('\n');
+}
+
 describe('signSafeTxWithTrezor', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    lastTypedDataJson = undefined;
   });
 
-  it('signs via trezorctl and returns eip712sign-compatible output', async () => {
+  it('signs the full typed data with eip712sign --trezor', async () => {
     const { data, signature } = await deviceSignature();
     nextResult = {
       error: null,
-      stdout: JSON.stringify({ address: account.address, signature }),
+      stdout: eip712signOutput({ data, signer: account.address, signature: signature.slice(2) }),
       stderr: '',
     };
 
@@ -105,25 +90,39 @@ describe('signSafeTxWithTrezor', () => {
       signer: account.address,
       signature: signature.slice(2),
     });
-    expect(lastArgs.slice(0, 5)).toEqual([
-      '--json',
-      'ethereum',
-      'sign-typed-data',
-      '-n',
-      "m/44'/60'/3'/0/0",
-    ]);
-    expect(lastTypedDataJson).toMatchObject({
+    expect(lastArgs.slice(0, 4)).toEqual(['--trezor', '--hd-paths', "m/44'/60'/3'/0/0", '--data']);
+    expect(JSON.parse(lastArgs[4])).toMatchObject({
       primaryType: 'SafeTx',
       domain: typedData.domain,
       message: typedData.message,
     });
   });
 
-  it('rejects a signature that does not recover to the reported address', async () => {
-    const { signature } = await deviceSignature();
+  it('normalizes device v = 0/1 to 27/28', async () => {
+    const { data, signature } = await deviceSignature();
+    const v = signature.slice(-2) === '1b' ? '00' : '01';
     nextResult = {
       error: null,
-      stdout: JSON.stringify({ address: '0x' + '2'.repeat(40), signature }),
+      stdout: eip712signOutput({
+        data,
+        signer: account.address,
+        signature: signature.slice(2, -2) + v,
+      }),
+      stderr: '',
+    };
+    const res = await signSafeTxWithTrezor({ typedData });
+    expect(res).toMatchObject({ success: true, signature: signature.slice(2) });
+  });
+
+  it('rejects a signature that does not recover to the reported signer', async () => {
+    const { data, signature } = await deviceSignature();
+    nextResult = {
+      error: null,
+      stdout: eip712signOutput({
+        data,
+        signer: '0x' + '2'.repeat(40),
+        signature: signature.slice(2),
+      }),
       stderr: '',
     };
     const res = await signSafeTxWithTrezor({ typedData });
@@ -131,31 +130,34 @@ describe('signSafeTxWithTrezor', () => {
     expect(res.error).toMatch(/recovers to/);
   });
 
-  it('rejects signatures with v = 0/1', async () => {
+  it('rejects output for different hashes than the validated ones', async () => {
     const { signature } = await deviceSignature();
-    const v = signature.slice(-2) === '1b' ? '00' : '01';
     nextResult = {
       error: null,
-      stdout: JSON.stringify({ address: account.address, signature: signature.slice(0, -2) + v }),
+      stdout: eip712signOutput({
+        data: '0x1901' + 'ab'.repeat(64),
+        signer: account.address,
+        signature: signature.slice(2),
+      }),
       stderr: '',
     };
     const res = await signSafeTxWithTrezor({ typedData });
     expect(res.success).toBe(false);
-    expect(res.error).toMatch(/Could not parse trezorctl output/);
+    expect(res.error).toMatch(/eip712sign signed .* expected/);
   });
 
   it('fails on unparseable output', async () => {
-    nextResult = { error: null, stdout: 'address: 0xabc', stderr: '' };
+    nextResult = { error: null, stdout: 'Signer: 0xabc', stderr: '' };
     const res = await signSafeTxWithTrezor({ typedData });
     expect(res.success).toBe(false);
-    expect(res.error).toMatch(/Could not parse trezorctl output/);
+    expect(res.error).toMatch(/Could not extract signature/);
   });
 
   it('maps device errors', async () => {
     nextResult = {
       error: new Error('exit 1'),
       stdout: '',
-      stderr: 'Error: Action cancelled by user',
+      stderr: '2026/10/21 10:00:00 Error signing data: trezor: Action cancelled by user',
     };
     const res = await signSafeTxWithTrezor({ typedData });
     expect(res).toEqual({ success: false, error: 'Signing was cancelled on the Trezor device' });
@@ -169,58 +171,16 @@ describe('signSafeTxWithTrezor', () => {
   });
 });
 
-describe('ensureTrezorctl', () => {
-  it('returns null when trezorctl runs', async () => {
-    nextResult = { error: null, stdout: 'trezorctl, version 0.20.2', stderr: '' };
-    expect(await ensureTrezorctl()).toBeNull();
-    expect(lastArgs.slice(-1)).toEqual(['--version']);
-    expect(lastOpts.env?.MISE_YES).toBe('1');
-  });
-
-  it('returns the mapped error when trezorctl is missing', async () => {
-    nextResult = { error: new Error('spawn trezorctl ENOENT'), stdout: '', stderr: '' };
-    expect(await ensureTrezorctl()).toMatch(/trezorctl not found.*pipx install trezor/);
-  });
-
-  it('reports a timed-out install', async () => {
-    const err = Object.assign(new Error('killed'), { killed: true });
-    nextResult = { error: err, stdout: '', stderr: '' };
-    expect(await ensureTrezorctl()).toMatch(/Timed out installing trezorctl/);
-  });
-});
-
-describe('getTrezorctlCommand', () => {
-  it('falls back to trezorctl on PATH without mise', () => {
-    expect(getTrezorctlCommand()).toEqual({ file: 'trezorctl', prefix: [] });
-  });
-
-  it('prefers the pinned version through mise', () => {
-    const trezorctl = installFake('trezorctl');
-    expect(getTrezorctlCommand()).toEqual({ file: trezorctl, prefix: [] });
-
-    const mise = installFake('mise');
-    expect(getTrezorctlCommand()).toEqual({
-      file: mise,
-      prefix: [
-        'exec',
-        `uv@${UV_VERSION}`,
-        `pipx:trezor@${TREZOR_PACKAGE_VERSION}`,
-        '--',
-        'trezorctl',
-      ],
-    });
-  });
-});
-
 describe('mapTrezorError', () => {
   it.each([
-    ['spawn trezorctl ENOENT', /trezorctl not found/],
-    ['mise WARN  GitHub rate limit exceeded', /GITHUB_TOKEN/],
-    ['mise ERROR failed to install aqua:astral-sh/uv@0.13.1', /Installing trezorctl failed/],
-    ['No Trezor found', /No Trezor found/],
+    ['flag provided but not defined: -trezor', /eip712sign is too old.*v0\.0\.15/],
+    ['trezor: typed data signing requires firmware v2.9.1 or newer', /firmware 2\.9\.1/],
+    [
+      'Error creating signer: no hardware wallets found, please connect your device',
+      /No Trezor found/,
+    ],
+    ['spawn eip712sign ENOENT', /eip712sign not found/],
     ['LIBUSB_ERROR_ACCESS', /Close Trezor Suite/],
-    ['Aborted!', /passphrase/],
-    ['Failure_UnexpectedMessage', /firmware/],
     ['something else', /something else/],
   ])('%s', (stderr, expected) => {
     expect(mapTrezorError(stderr)).toMatch(expected);
