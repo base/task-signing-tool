@@ -71,13 +71,32 @@ function domainType(typedData: SafeTxTypedData) {
       ];
 }
 
-/** Full eth_signTypedData_v4 JSON, as consumed by `eip712sign --trezor --data`. */
+const toHexUint = (v: string) => `0x${BigInt(v).toString(16)}`;
+
+/**
+ * Full eth_signTypedData_v4 JSON, as consumed by `eip712sign --trezor --data`.
+ *
+ * Integers are sent as 0x-hex strings: base/usbwallet encodes every integer string for the device
+ * with `common.FromHex`, so a decimal string such as "560048" would reach the Trezor as 0x560048.
+ * go-ethereum (which computes the expected hash) reads hex strings the same way.
+ */
 export function toEip712Json(typedData: SafeTxTypedData) {
+  const { domain, message } = typedData;
   return {
     types: { EIP712Domain: domainType(typedData), SafeTx: SAFE_TX_TYPE },
     primaryType: 'SafeTx',
-    domain: typedData.domain,
-    message: typedData.message,
+    domain: {
+      ...(domain.chainId === undefined ? {} : { chainId: toHexUint(domain.chainId) }),
+      verifyingContract: domain.verifyingContract,
+    },
+    message: {
+      ...message,
+      value: toHexUint(message.value),
+      safeTxGas: toHexUint(message.safeTxGas),
+      baseGas: toHexUint(message.baseGas),
+      gasPrice: toHexUint(message.gasPrice),
+      nonce: toHexUint(message.nonce),
+    },
   };
 }
 

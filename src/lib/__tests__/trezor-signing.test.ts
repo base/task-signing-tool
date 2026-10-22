@@ -21,7 +21,7 @@ const mockExecFile = jest.fn((_cmd: string, args: string[], _opts: unknown, cb: 
 jest.unstable_mockModule('child_process', () => ({ execFile: mockExecFile }));
 
 const { signSafeTxWithTrezor, mapTrezorError } = await import('../trezor-signing');
-const { hashSafeTxTypedData } = await import('../safe-typed-data');
+const { hashSafeTxTypedData, toEip712Json } = await import('../safe-typed-data');
 
 const PRIVATE_KEY = ('0x' + '11'.repeat(32)) as Hex;
 const account = privateKeyToAccount(PRIVATE_KEY);
@@ -91,11 +91,7 @@ describe('signSafeTxWithTrezor', () => {
       signature: signature.slice(2),
     });
     expect(lastArgs.slice(0, 4)).toEqual(['--trezor', '--hd-paths', "m/44'/60'/3'/0/0", '--data']);
-    expect(JSON.parse(lastArgs[4])).toMatchObject({
-      primaryType: 'SafeTx',
-      domain: typedData.domain,
-      message: typedData.message,
-    });
+    expect(JSON.parse(lastArgs[4])).toEqual(toEip712Json(typedData));
   });
 
   it('normalizes device v = 0/1 to 27/28', async () => {
@@ -181,6 +177,11 @@ describe('mapTrezorError', () => {
     ],
     ['spawn eip712sign ENOENT', /eip712sign not found/],
     ['LIBUSB_ERROR_ACCESS', /Close Trezor Suite/],
+    ['Error signing data: trezor: Message hash mismatch', /different message hash.*Do not retry/],
+    [
+      'error opening device: trezor: expected reply types [Success], got Features',
+      /Unplug and reconnect/,
+    ],
     ['something else', /something else/],
   ])('%s', (stderr, expected) => {
     expect(mapTrezorError(stderr)).toMatch(expected);

@@ -123,6 +123,12 @@ export function mapTrezorError(stderr?: string): string {
   if (/no hardware wallets found|error starting trezor/i.test(stderr)) {
     return 'No Trezor found. Connect and unlock your Trezor, and close Trezor Suite (it holds the device).';
   }
+  if (/message hash mismatch/i.test(stderr)) {
+    return 'The Trezor computed a different message hash from the one being signed, so it refused to sign. Do not retry: report this with the SafeTx fields the device showed.';
+  }
+  if (/expected reply types/i.test(stderr)) {
+    return 'The Trezor connection is out of sync after a failed attempt. Unplug and reconnect the Trezor, then try again.';
+  }
   if (/no such file or directory|ENOENT|command not found/i.test(stderr)) {
     return `eip712sign not found. Run \`make deps\` in contract-deployments, or \`go install github.com/base/eip712sign@${MIN_EIP712SIGN_VERSION}\`.`;
   }

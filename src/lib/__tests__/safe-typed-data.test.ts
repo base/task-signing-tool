@@ -173,4 +173,24 @@ describe('toEip712Json', () => {
     expect(json.types.EIP712Domain.map(f => f.name)).toEqual(['chainId', 'verifyingContract']);
     expect(json.types.SafeTx.map(f => f.name)).toEqual(SAFE_TX_COMPONENTS.map(f => f.name));
   });
+
+  // base/usbwallet reads integer strings as hex (common.FromHex), so decimal strings would reach
+  // the Trezor with the wrong values ("560048" -> 0x560048) and fail with "Message hash mismatch".
+  it('encodes integers as 0x-hex strings that parse back to the validated values', () => {
+    const typed = buildSafeTxTypedData({
+      encodedSafeTx,
+      safe: SAFE,
+      chainId: '8453',
+      domainHash,
+      messageHash,
+    });
+    const { domain, message } = toEip712Json(typed);
+    expect(domain.chainId).toBe('0x2105');
+    for (const field of ['value', 'safeTxGas', 'baseGas', 'gasPrice', 'nonce'] as const) {
+      expect(message[field]).toMatch(/^0x[0-9a-f]+$/);
+      expect(BigInt(message[field]).toString()).toBe(typed.message[field]);
+    }
+    expect(message.operation).toBe(typed.message.operation);
+    expect(message.data).toBe(typed.message.data);
+  });
 });
