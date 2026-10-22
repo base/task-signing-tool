@@ -34,12 +34,11 @@ interface ValueSectionProps {
   label: string;
   value: string;
   diffs?: StringDiff[];
-  className?: string;
   shouldWrap?: boolean;
 }
 
-const ValueSection = ({ label, value, diffs, className, shouldWrap }: ValueSectionProps) => (
-  <div className={className}>
+const ValueSection = ({ label, value, diffs, shouldWrap }: ValueSectionProps) => (
+  <div>
     <label className="text-[10px] font-bold uppercase text-[var(--cds-text-tertiary)] tracking-wider">
       {label}
     </label>
