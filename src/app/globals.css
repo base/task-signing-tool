@@ -6,50 +6,19 @@
   --cds-primary-hover: #0045cc;
   --cds-background: #ffffff;
   --cds-surface: #ffffff;
-  --cds-surface-raised: #ffffff;
   --cds-text-primary: #050f19;
   --cds-text-secondary: #5b616e;
   --cds-text-tertiary: #8a919e;
   --cds-border: #ebecef;
-  --cds-border-active: #0052ff;
   --cds-success: #05b169;
   --cds-warning: #f0b90b;
   --cds-error: #df3349;
   --cds-divider: #eef0f3;
-
-  /* Elevation (Shadows) */
-  --cds-shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.02), 0px 1px 2px rgba(0, 0, 0, 0.04);
-  --cds-shadow-md: 0px 4px 8px rgba(0, 0, 0, 0.04), 0px 2px 4px rgba(0, 0, 0, 0.02);
-  --cds-shadow-lg: 0px 12px 24px rgba(0, 0, 0, 0.06), 0px 4px 8px rgba(0, 0, 0, 0.04);
-  --cds-shadow-xl: 0px 24px 48px rgba(0, 0, 0, 0.12), 0px 8px 16px rgba(0, 0, 0, 0.04);
-
-  /* Radii */
-  --cds-radius-sm: 4px;
-  --cds-radius-md: 8px;
-  --cds-radius-lg: 16px;
-  --cds-radius-xl: 24px;
-  --cds-radius-full: 9999px;
 }
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-
-  /* Extend tailwind colors with CDS tokens */
-  --color-cds-primary: var(--cds-primary);
-  --color-cds-primary-hover: var(--cds-primary-hover);
-  --color-cds-background: var(--cds-background);
-  --color-cds-surface: var(--cds-surface);
-  --color-cds-surface-raised: var(--cds-surface-raised);
-  --color-cds-text-primary: var(--cds-text-primary);
-  --color-cds-text-secondary: var(--cds-text-secondary);
-  --color-cds-text-tertiary: var(--cds-text-tertiary);
-  --color-cds-border: var(--cds-border);
-  --color-cds-border-active: var(--cds-border-active);
-  --color-cds-success: var(--cds-success);
-  --color-cds-warning: var(--cds-warning);
-  --color-cds-error: var(--cds-error);
-  --color-cds-divider: var(--cds-divider);
 }
 
 body {
@@ -61,62 +30,6 @@ body {
     -apple-system,
     sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-/* Utility for premium cards */
-.cds-card {
-  background: var(--cds-surface);
-  border: 1px solid var(--cds-border);
-  border-radius: var(--cds-radius-lg);
-  box-shadow: var(--cds-shadow-sm);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.cds-card:hover {
-  box-shadow: var(--cds-shadow-md);
-  border-color: #d0d5dd;
-}
-
-/* Primary Button */
-.cds-button-primary {
-  background-color: var(--cds-primary);
-  color: white;
-  border-radius: var(--cds-radius-full);
-  padding: 12px 24px;
-  font-weight: 600;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-}
-
-.cds-button-primary:hover {
-  background-color: var(--cds-primary-hover);
-}
-
-.cds-button-primary:disabled {
-  background-color: var(--cds-text-tertiary);
-  cursor: not-allowed;
-}
-
-/* Secondary Button */
-.cds-button-secondary {
-  background-color: transparent;
-  border: 1px solid var(--cds-border);
-  color: var(--cds-text-primary);
-  border-radius: var(--cds-radius-full);
-  padding: 12px 24px;
-  font-weight: 600;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
-  cursor: pointer;
-}
-
-.cds-button-secondary:hover {
-  border-color: var(--cds-text-secondary);
-  background-color: #f5f8ff;
 }
 
 /* Animations */
