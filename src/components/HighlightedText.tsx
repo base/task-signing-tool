@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import type { StringDiff } from '@/lib/types';
 import { checksummizeAddressesInText } from '@/lib/format';
 
@@ -11,13 +10,11 @@ const DIFF_CLASSNAMES: Record<StringDiff['type'], string> = {
 
 type HighlightedTextProps = {
   diffs: StringDiff[];
-  className?: string;
-  style?: CSSProperties;
 };
 
-export function HighlightedText({ diffs, className, style }: HighlightedTextProps) {
+export function HighlightedText({ diffs }: HighlightedTextProps) {
   return (
-    <span className={className} style={style}>
+    <span>
       {diffs.map((diff, index) => (
         <span
           key={index}

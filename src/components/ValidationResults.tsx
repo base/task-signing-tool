@@ -109,8 +109,8 @@ interface ValidationResultsProps {
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
 
-const getIcon = (iconName: string, size: number = 24, className?: string) => {
-  const props = { size, className };
+const getIcon = (iconName: string, size: number = 24) => {
+  const props = { size };
   switch (iconName) {
     case 'check':
       return <CheckCircle {...props} />;
