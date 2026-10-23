@@ -14,6 +14,7 @@ import {
 import { BalanceChange, StateChange, StateOverride, TaskConfig } from './types/index';
 import contractsCfg from './config/contracts.json';
 import { assertWithinDir } from './path-validation';
+import { buildSafeTxTypedData, type SafeTxTypedData } from './safe-typed-data';
 
 type ParsedInput = {
   targetSafe: string;
@@ -21,6 +22,8 @@ type ParsedInput = {
   stateDiff: string; // hex-encoded ABI tuple[]
   preimages: string; // hex-encoded ABI tuple[]
   overrides: string; // hex-encoded ABI tuple
+  // Optional hex-encoded ABI SafeTx struct for targetSafe; needed for Trezor (full EIP-712) signing.
+  safeTx?: string;
 };
 
 type StorageOverrideDecoded = { key: Hex; value: Hex };
@@ -123,6 +126,7 @@ export class StateDiffClient {
     transactionTo: Address;
     transactionData: Hex;
     forgeOutput: string;
+    safeTxTypedData?: SafeTxTypedData;
   }> {
     // Validate workdir to prevent path traversal attacks
     const normalizedWorkdir = assertWithinDir(workdir, this.allowedDir);
@@ -189,6 +193,15 @@ export class StateDiffClient {
         transactionTo: payload.to,
         transactionData: payload.data,
         forgeOutput: stdout,
+        safeTxTypedData: parsed.safeTx
+          ? buildSafeTxTypedData({
+              encodedSafeTx: parsed.safeTx,
+              safe: parsed.targetSafe,
+              chainId: chainIdStr,
+              domainHash,
+              messageHash,
+            })
+          : undefined,
       };
     } finally {
       await this.deleteFile(stateDiffPath);

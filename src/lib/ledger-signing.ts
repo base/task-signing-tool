@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { join } from 'path';
 import { homedir } from 'os';
 import { existsSync } from 'fs';
+import type { SigningResult } from './types/signing';
 
 export interface LedgerSigningOptions {
   domainHash: string;
@@ -11,13 +12,7 @@ export interface LedgerSigningOptions {
   ledgerAccount?: number;
 }
 
-export interface LedgerSigningResult {
-  success: boolean;
-  data?: string;
-  signature?: string;
-  signer?: string;
-  error?: string;
-}
+export type LedgerSigningResult = SigningResult;
 
 interface ExecFileError extends Error {
   code?: number | string;
@@ -163,7 +158,7 @@ async function runEip712sign(args: string[]): Promise<RunEip712signResult> {
   }
 }
 
-function getEip712SignPath(): string {
+export function getEip712SignPath(): string {
   // Try GOPATH first
   if (process.env.GOPATH) {
     const path = join(process.env.GOPATH, 'bin', 'eip712sign');
