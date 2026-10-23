@@ -118,12 +118,7 @@ export function LedgerSigning({
               </ul>
             </div>
 
-            <Button
-              onClick={handleConnect}
-              fullWidth
-              size="lg"
-              icon={<ArrowRight size={16} />}
-            >
+            <Button onClick={handleConnect} fullWidth size="lg" icon={<ArrowRight size={16} />}>
               Continue
             </Button>
           </Card>
