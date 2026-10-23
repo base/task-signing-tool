@@ -76,9 +76,9 @@ const toHexUint = (v: string) => `0x${BigInt(v).toString(16)}`;
 /**
  * Full eth_signTypedData_v4 JSON, as consumed by `eip712sign --trezor --data`.
  *
- * Integers are sent as 0x-hex strings: base/usbwallet encodes every integer string for the device
- * with `common.FromHex`, so a decimal string such as "560048" would reach the Trezor as 0x560048.
- * go-ethereum (which computes the expected hash) reads hex strings the same way.
+ * Integers are sent as 0x-hex strings. base/usbwallet before v0.1.2 (eip712sign before v0.0.16)
+ * decoded message integer strings as hex and sent the domain chainId as 0; hex strings avoid the
+ * first problem and read the same way in go-ethereum, which computes the expected hash.
  */
 export function toEip712Json(typedData: SafeTxTypedData) {
   const { domain, message } = typedData;

@@ -244,11 +244,11 @@ Minimal example (`validations/base-sc.json`):
 The signing step supports Ledger and Trezor (Model T, Safe 3, Safe 5).
 
 - **Ledger** blind-signs the validated domain and message hashes via [`eip712sign`](https://github.com/base/eip712sign) (`eip712sign --ledger`).
-- **Trezor** signs the full EIP-712 `SafeTx` via `eip712sign --trezor` (v0.0.15+, through [base/usbwallet](https://github.com/base/usbwallet)). The device shows each SafeTx field, then asks the signer to confirm the message hash. The tool builds the typed data from the task simulation and refuses to sign unless it hashes to the exact domain and message hashes that were validated. It checks that eip712sign signed those hashes and that the signature recovers to the device address.
+- **Trezor** signs the full EIP-712 `SafeTx` via `eip712sign --trezor` (v0.0.16+, through [base/usbwallet](https://github.com/base/usbwallet)). The device shows each SafeTx field, then asks the signer to confirm the message hash. The tool builds the typed data from the task simulation and refuses to sign unless it hashes to the exact domain and message hashes that were validated. It checks that eip712sign signed those hashes and that the signature recovers to the device address.
 
 Trezor setup:
 
-- eip712sign v0.0.15 or newer (`make deps` in contract-deployments installs it, or `go install github.com/base/eip712sign@v0.0.15`).
+- eip712sign v0.0.16 or newer (`make deps` in contract-deployments installs it, or `go install github.com/base/eip712sign@v0.0.16`). v0.0.15 added `--trezor` but sends the domain `chainId` to the device as 0, so its Trezor signatures do not recover.
 - Firmware 2.9.1 or newer. eip712sign refuses older Core firmware, because message hash display arrived in 2.9.1.
 - Close Trezor Suite before signing, because it holds the USB device.
 - Turn passphrase protection off for the signing wallet. eip712sign answers passphrase requests with an empty passphrase, so it signs with the standard wallet.

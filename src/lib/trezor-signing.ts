@@ -12,9 +12,9 @@ export interface TrezorSigningOptions {
 // Generous: the signer pages through every SafeTx field on the device before confirming.
 const SIGN_TIMEOUT_MS = 5 * 60 * 1000;
 
-// First eip712sign release with `--trezor` (full EIP-712 typed data through base/usbwallet, with the
-// message hash shown on the device).
-export const MIN_EIP712SIGN_VERSION = 'v0.0.15';
+// First eip712sign release whose `--trezor` signs typed data correctly: v0.0.15 added `--trezor` with
+// the message hash shown on the device, but its base/usbwallet sent the domain chainId as 0.
+export const MIN_EIP712SIGN_VERSION = 'v0.0.16';
 
 interface RunResult {
   success: boolean;
@@ -74,7 +74,7 @@ export async function signSafeTxWithTrezor(options: TrezorSigningOptions): Promi
     if (getAddress(recovered) !== getAddress(parsed.signer)) {
       return {
         success: false,
-        error: `Trezor signature recovers to ${recovered}, expected ${parsed.signer}`,
+        error: `Trezor signature recovers to ${recovered}, expected ${parsed.signer}. eip712sign older than ${MIN_EIP712SIGN_VERSION} signs the wrong domain on a Trezor; run \`make deps\` in contract-deployments to update it.`,
       };
     }
 

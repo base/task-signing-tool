@@ -52,7 +52,7 @@ async function deviceSignature(): Promise<{ data: Hex; signature: Hex }> {
   return { data, signature };
 }
 
-/** stdout shaped like eip712sign v0.0.15 after a successful typed-data signature. */
+/** stdout shaped like eip712sign v0.0.16 after a successful typed-data signature. */
 function eip712signOutput(o: { data: string; signer: string; signature: string }): string {
   return [
     `Domain hash: 0x${o.data.slice(6, 70)}`,
@@ -123,7 +123,7 @@ describe('signSafeTxWithTrezor', () => {
     };
     const res = await signSafeTxWithTrezor({ typedData });
     expect(res.success).toBe(false);
-    expect(res.error).toMatch(/recovers to/);
+    expect(res.error).toMatch(/recovers to .*older than v0\.0\.16/);
   });
 
   it('rejects output for different hashes than the validated ones', async () => {
@@ -169,7 +169,7 @@ describe('signSafeTxWithTrezor', () => {
 
 describe('mapTrezorError', () => {
   it.each([
-    ['flag provided but not defined: -trezor', /eip712sign is too old.*v0\.0\.15/],
+    ['flag provided but not defined: -trezor', /eip712sign is too old.*v0\.0\.16/],
     ['trezor: typed data signing requires firmware v2.9.1 or newer', /firmware 2\.9\.1/],
     [
       'Error creating signer: no hardware wallets found, please connect your device',
