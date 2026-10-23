@@ -1,9 +1,9 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { NetworkType, TaskStatus } from '@/lib/types';
-import type { DeploymentInfo } from '@/lib/deployments';
+import type { Upgrade } from '@/lib/types';
 
-const mockGetUpgradeOptions = jest.fn<(network: NetworkType) => DeploymentInfo[]>();
+const mockGetUpgradeOptions = jest.fn<(network: NetworkType) => Upgrade[]>();
 
 jest.unstable_mockModule('@/lib/deployments', () => ({
   getUpgradeOptions: mockGetUpgradeOptions,
@@ -84,14 +84,14 @@ describe('GET /api/upgrades', () => {
     const res = GET(createRequest({ readyToSign: 'true' }));
     const body = await res.json();
 
-    expect(body.map((t: DeploymentInfo) => t.id)).toEqual([
+    expect(body.map((t: Upgrade) => t.id)).toEqual([
       '2025-12-31-upgrade-new',
       '2025-01-01-upgrade-old',
     ]);
   });
 
   it('returns only ready-to-sign tasks tagged with the fetched network', async () => {
-    const readyTask: DeploymentInfo = {
+    const readyTask: Upgrade = {
       id: '2025-08-01-upgrade-ready',
       name: 'Ready',
       description: '',
