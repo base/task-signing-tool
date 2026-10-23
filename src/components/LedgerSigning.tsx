@@ -48,30 +48,12 @@ export function LedgerSigning({
   const displayDomainHash = domainHash.toUpperCase();
   const displayMessageHash = messageHash.toUpperCase();
 
-  const missingFields = [!domainHash && 'domainHash', !messageHash && 'messageHash'].filter(
-    Boolean
-  ) as string[];
-  const configurationError = missingFields.length
-    ? `Missing required signing fields: ${missingFields.join(', ')}`
-    : null;
-  const hasRequiredFields = !configurationError;
-
   const handleConnect = () => {
-    if (!hasRequiredFields) {
-      setErrorMessage(configurationError);
-      return;
-    }
-
     setCurrentStep('sign');
     setErrorMessage(null);
   };
 
   const handleSign = async () => {
-    if (!hasRequiredFields) {
-      setErrorMessage(configurationError);
-      return;
-    }
-
     setLoading(true);
     setErrorMessage(null);
 
@@ -138,7 +120,6 @@ export function LedgerSigning({
 
             <Button
               onClick={handleConnect}
-              disabled={!hasRequiredFields}
               fullWidth
               size="lg"
               icon={<ArrowRight size={16} />}
@@ -232,7 +213,7 @@ export function LedgerSigning({
 
               <Button
                 onClick={handleSign}
-                disabled={loading || !hasRequiredFields}
+                disabled={loading}
                 isLoading={loading}
                 className="flex-[2]"
               >
@@ -269,20 +250,6 @@ export function LedgerSigning({
           </span>
         </div>
       </div>
-
-      {configurationError && (
-        <div className="max-w-2xl mx-auto mb-8 rounded-xl border border-red-200 bg-red-50 p-4">
-          <div className="flex gap-3">
-            <div className="text-red-500">
-              <XCircle size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-[var(--cds-error)]">Configuration Error</p>
-              <p className="text-sm text-red-700 mt-1">{configurationError}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {renderStepContent()}
     </div>
