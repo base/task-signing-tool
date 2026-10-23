@@ -90,6 +90,29 @@ describe('GET /api/upgrades', () => {
     ]);
   });
 
+  it('returns only ready-to-sign tasks tagged with the fetched network', async () => {
+    const readyTask: DeploymentInfo = {
+      id: '2025-08-01-upgrade-ready',
+      name: 'Ready',
+      description: '',
+      date: '2025-08-01',
+      network: NetworkType.Sepolia,
+      status: TaskStatus.ReadyToSign,
+    };
+    mockGetUpgradeOptions.mockImplementation((network: NetworkType) =>
+      network === NetworkType.Mainnet
+        ? [
+            readyTask,
+            { ...readyTask, id: '2025-08-02-upgrade-pending', status: TaskStatus.Pending },
+          ]
+        : []
+    );
+
+    const res = GET(createRequest({ readyToSign: 'true' }));
+
+    expect(await res.json()).toEqual([{ ...readyTask, network: NetworkType.Mainnet }]);
+  });
+
   it('includes zeronet when aggregating ready-to-sign tasks', async () => {
     const res = GET(createRequest({ readyToSign: 'true' }));
 
