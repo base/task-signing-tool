@@ -21,7 +21,7 @@ export interface Upgrade {
   name: string;
   description: string;
   date: string;
-  network: string;
+  network: NetworkType;
   status?: TaskStatus;
   executionLinks?: ExecutionLink[];
 }

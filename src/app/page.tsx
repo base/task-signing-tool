@@ -51,7 +51,7 @@ export default function Home() {
 
   const handleUpgradeSelection = (upgrade: Upgrade) => {
     setSelectedUpgrade(upgrade);
-    setSelectedNetwork(upgrade.network as NetworkType);
+    setSelectedNetwork(upgrade.network);
     setCurrentStep('user');
   };
 

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { NetworkType, TaskStatus } from './types';
+import { NetworkType, TaskStatus, Upgrade, ExecutionLink } from './types';
 
 let cachedRoot: string | null = null;
 
@@ -38,19 +38,6 @@ export function findContractDeploymentsRoot(): string {
   // Fallback for default behavior when the tool is cloned inside the task repo root.
   cachedRoot = path.join(process.cwd(), '..');
   return cachedRoot;
-}
-
-export interface DeploymentInfo {
-  id: string;
-  name: string;
-  description: string;
-  date: string;
-  network: NetworkType;
-  status?: TaskStatus;
-  executionLinks?: Array<{
-    url: string;
-    label: string;
-  }>;
 }
 
 const DEFAULT_DESCRIPTION = 'Smart contract upgrade deployment';
@@ -126,7 +113,7 @@ export function normalizeUrl(rawUrl: string): string | undefined {
 
 function parseExecutionStatus(content: string): {
   status?: TaskStatus;
-  executionLinks?: Array<{ url: string; label: string }>;
+  executionLinks?: ExecutionLink[];
 } {
   try {
     const lines = content.replace(/\r\n/g, '\n').split('\n');
@@ -142,14 +129,9 @@ function parseExecutionStatus(content: string): {
     const isExecuted = normalizedStatus.includes(TaskStatus.Executed);
     const isReady = normalizedStatus.includes(TaskStatus.ReadyToSign);
 
-    if (!isExecuted) {
-      if (isReady) {
-        return { status: TaskStatus.ReadyToSign };
-      }
-      return { status: TaskStatus.Pending };
-    }
+    if (!isExecuted) return { status: isReady ? TaskStatus.ReadyToSign : TaskStatus.Pending };
 
-    const executionLinks: Array<{ url: string; label: string }> = [];
+    const executionLinks: ExecutionLink[] = [];
     const seenUrls = new Set<string>();
 
     const addLink = (label: string, maybeUrl: string | undefined) => {
@@ -202,7 +184,7 @@ function getUpgradeOption(
   contractDeploymentsPath: string,
   taskId: string,
   network: NetworkType
-): DeploymentInfo | undefined {
+): Upgrade | undefined {
   const evmPath = path.join(contractDeploymentsPath, 'active', 'evm');
   const taskPath = path.join(evmPath, 'tasks', taskId);
   const networkConfigPath = path.join(taskPath, 'config', network);
@@ -212,7 +194,7 @@ function getUpgradeOption(
     return undefined;
   }
 
-  const baseInfo: DeploymentInfo = {
+  const baseInfo: Upgrade = {
     id: taskId,
     name: formatUpgradeName(taskId),
     description: '',
@@ -246,7 +228,7 @@ function getUpgradeOption(
   }
 }
 
-export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
+export function getUpgradeOptions(network: NetworkType): Upgrade[] {
   const contractDeploymentsPath = findContractDeploymentsRoot();
   const tasksPath = path.join(contractDeploymentsPath, 'active', 'evm', 'tasks');
 
@@ -260,7 +242,7 @@ export function getUpgradeOptions(network: NetworkType): DeploymentInfo[] {
       .filter(dirent => dirent.isDirectory())
       .filter(dirent => /^\d{4}-\d{2}-\d{2}-/.test(dirent.name))
       .map(dirent => getUpgradeOption(contractDeploymentsPath, dirent.name, network))
-      .filter((option): option is DeploymentInfo => option !== undefined)
+      .filter((option): option is Upgrade => option !== undefined)
       .sort((a, b) => b.id.localeCompare(a.id));
   } catch (error) {
     console.error(`Error reading active task folders for ${network}:`, error);
