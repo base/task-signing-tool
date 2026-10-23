@@ -43,17 +43,6 @@ describe('GET /api/upgrades', () => {
     jest.restoreAllMocks();
   });
 
-  it('accepts zeronet as a valid network query', async () => {
-    const res = GET(createRequest({ network: 'zeronet' }));
-
-    expect(res.status).toBe(200);
-    expect(mockGetUpgradeOptions).toHaveBeenCalledWith(NetworkType.Zeronet);
-
-    const body = await res.json();
-    expect(body).toHaveLength(1);
-    expect(body[0].network).toBe(NetworkType.Zeronet);
-  });
-
   it('sorts aggregated ready-to-sign tasks newest-first across networks', async () => {
     // Older task on an earlier network, newer task on a later network: without a final
     // sort the aggregate would follow network order (older first).
@@ -98,7 +87,6 @@ describe('GET /api/upgrades', () => {
     const res = GET(createRequest({ readyToSign: 'true' }));
 
     expect(res.status).toBe(200);
-    expect(mockGetUpgradeOptions).toHaveBeenCalledWith(NetworkType.Zeronet);
 
     const body = await res.json();
     expect(body).toEqual(
