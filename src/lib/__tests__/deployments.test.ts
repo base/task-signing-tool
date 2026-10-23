@@ -142,6 +142,19 @@ describe('getUpgradeOptions', () => {
     ]);
   });
 
+  it('returns pending status for a task with a pending README status', async () => {
+    const toolDir = path.join(tempDir, 'task-signing-tool');
+    const taskPath = path.join(tempDir, 'active', 'evm', 'tasks', '2025-06-04-upgrade-foo');
+    await fs.mkdir(path.join(taskPath, 'config', 'mainnet', 'validations'), { recursive: true });
+    await fs.mkdir(toolDir, { recursive: true });
+    await fs.writeFile(path.join(taskPath, 'README.md'), 'Status: PENDING');
+    process.chdir(toolDir);
+
+    const upgrades = getUpgradeOptions(NetworkType.Mainnet);
+
+    expect(upgrades).toEqual([expect.objectContaining({ status: TaskStatus.Pending })]);
+  });
+
   it('returns all active task folders that have validations for the selected network', async () => {
     const toolDir = path.join(tempDir, 'task-signing-tool');
     await fs.mkdir(
