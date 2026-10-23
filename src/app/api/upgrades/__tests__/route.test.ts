@@ -43,6 +43,13 @@ describe('GET /api/upgrades', () => {
     jest.restoreAllMocks();
   });
 
+  it('returns 400 when readyToSign is missing', async () => {
+    const res = GET(createRequest({}));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Missing required parameter: readyToSign' });
+  });
+
   it('sorts aggregated ready-to-sign tasks newest-first across networks', async () => {
     // Older task on an earlier network, newer task on a later network: without a final
     // sort the aggregate would follow network order (older first).
