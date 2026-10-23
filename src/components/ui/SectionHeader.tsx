@@ -1,14 +1,6 @@
 import React from 'react';
 
-export const SectionHeader = ({
-  title,
-  description,
-  action,
-}: {
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-}) => {
+export const SectionHeader = ({ title, description }: { title: string; description?: string }) => {
   return (
     <div className="flex items-end justify-between mb-6">
       <div>
@@ -21,7 +13,6 @@ export const SectionHeader = ({
           </p>
         )}
       </div>
-      {action && <div className="ml-4 pb-1">{action}</div>}
     </div>
   );
 };
