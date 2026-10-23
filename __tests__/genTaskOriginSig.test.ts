@@ -20,7 +20,6 @@ import {
 } from '../scripts/genTaskOriginSig';
 import { createDeterministicTarball } from '../src/lib/task-origin-validate';
 
-// Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
 const VALID_TASK_FOLDER = path.join(FIXTURES_DIR, 'valid-task', 'config', 'chain1');
@@ -28,39 +27,19 @@ const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
 const INVALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/invalid');
 const MISSING_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/missing');
 
-// Task creator email
 const TASK_CREATOR_EMAIL = 'alexis.williams.1@coinbase.com';
 const WRONG_TASK_CREATOR_EMAIL = 'test@test.com';
 
 describe('parseIdentityFromCertificate', () => {
-  it('strips the user:/// scheme, returning the bare email for a task creator certificate', () => {
-    const certificate = parseEndEntityCertificate(
-      path.join(VALID_SIGNATURES_DIR, 'creator-signature.json')
-    );
+  it.each<[string, string]>([
+    ['creator-signature.json', TASK_CREATOR_EMAIL],
+    ['base-facilitator-signature.json', 'base-facilitators'],
+    ['base-sc-facilitator-signature.json', 'base-sc-facilitators'],
+  ])('strips the user:/// or ldap:/// scheme from %s', (fixtureFile, expectedIdentity) => {
+    const certificate = parseEndEntityCertificate(path.join(VALID_SIGNATURES_DIR, fixtureFile));
     const identity = parseIdentityFromCertificate(certificate);
 
-    expect(identity).toBe(TASK_CREATOR_EMAIL); // 'alexis.williams.1@coinbase.com'
-    expect(identity).not.toMatch(/^(?:user|ldap):\/\/\//);
-  });
-
-  it('strips the ldap:/// scheme, returning the bare group for a base facilitator certificate', () => {
-    const certificate = parseEndEntityCertificate(
-      path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json')
-    );
-    const identity = parseIdentityFromCertificate(certificate);
-
-    expect(identity).toBe('base-facilitators');
-    expect(identity).not.toMatch(/^(?:user|ldap):\/\/\//);
-  });
-
-  it('strips the ldap:/// scheme for a security council facilitator certificate', () => {
-    const certificate = parseEndEntityCertificate(
-      path.join(VALID_SIGNATURES_DIR, 'base-sc-facilitator-signature.json')
-    );
-    const identity = parseIdentityFromCertificate(certificate);
-
-    expect(identity).toBe('base-sc-facilitators');
-    expect(identity).not.toMatch(/^(?:user|ldap):\/\/\//);
+    expect(identity).toBe(expectedIdentity);
   });
 });
 
@@ -109,7 +88,7 @@ describe('parseCertificateChainPEM', () => {
   });
 });
 
-describe('verifyTaskOrigin', () => {
+function registerVerificationHooks() {
   let originalExitCode: number | undefined;
 
   beforeEach(() => {
@@ -123,72 +102,30 @@ describe('verifyTaskOrigin', () => {
     process.exitCode = originalExitCode;
     jest.restoreAllMocks();
   });
+}
+
+describe('verifyTaskOrigin', () => {
+  registerVerificationHooks();
 
   describe('valid signatures', () => {
-    it('validates a valid task creator signature', async () => {
-      await verifyTaskOrigin(
-        VALID_TASK_FOLDER,
-        VALID_SIGNATURES_DIR,
-        undefined, // no facilitator = task creator
-        TASK_CREATOR_EMAIL
-      );
-
-      expect(process.exitCode).toBeUndefined();
-    });
-
-    it('validates a valid base facilitator signature', async () => {
-      await verifyTaskOrigin(
-        VALID_TASK_FOLDER,
-        VALID_SIGNATURES_DIR,
-        'base' as FacilitatorType,
-        undefined // common name derived from facilitator type
-      );
-
-      expect(process.exitCode).toBeUndefined();
-    });
-
-    it('validates a valid security council facilitator signature', async () => {
-      await verifyTaskOrigin(
-        VALID_TASK_FOLDER,
-        VALID_SIGNATURES_DIR,
-        'security-council' as FacilitatorType,
-        undefined // common name derived from facilitator type
-      );
+    it.each<[string, FacilitatorType | undefined, string | undefined]>([
+      ['task creator', undefined, TASK_CREATOR_EMAIL],
+      ['base facilitator', 'base', undefined],
+      ['security council facilitator', 'security-council', undefined],
+    ])('validates a valid %s signature', async (_label, facilitator, commonName) => {
+      await verifyTaskOrigin(VALID_TASK_FOLDER, VALID_SIGNATURES_DIR, facilitator, commonName);
 
       expect(process.exitCode).toBeUndefined();
     });
   });
 
   describe('invalid signatures', () => {
-    it('fails validation with an invalid task creator signature', async () => {
-      await verifyTaskOrigin(
-        VALID_TASK_FOLDER,
-        INVALID_SIGNATURES_DIR,
-        undefined,
-        TASK_CREATOR_EMAIL
-      );
-
-      expect(process.exitCode).toBe(1);
-    });
-
-    it('fails validation with an invalid base facilitator signature', async () => {
-      await verifyTaskOrigin(
-        VALID_TASK_FOLDER,
-        INVALID_SIGNATURES_DIR,
-        'base' as FacilitatorType,
-        undefined
-      );
-
-      expect(process.exitCode).toBe(1);
-    });
-
-    it('fails validation with an invalid security council facilitator signature', async () => {
-      await verifyTaskOrigin(
-        VALID_TASK_FOLDER,
-        INVALID_SIGNATURES_DIR,
-        'security-council' as FacilitatorType,
-        undefined
-      );
+    it.each<[string, FacilitatorType | undefined, string | undefined]>([
+      ['task creator', undefined, TASK_CREATOR_EMAIL],
+      ['base facilitator', 'base', undefined],
+      ['security council facilitator', 'security-council', undefined],
+    ])('fails validation with an invalid %s signature', async (_label, facilitator, commonName) => {
+      await verifyTaskOrigin(VALID_TASK_FOLDER, INVALID_SIGNATURES_DIR, facilitator, commonName);
 
       expect(process.exitCode).toBe(1);
     });
@@ -212,19 +149,7 @@ describe('verifyTaskOrigin', () => {
 });
 
 describe('verifyAllSignatures', () => {
-  let originalExitCode: number | undefined;
-
-  beforeEach(() => {
-    originalExitCode = process.exitCode as number | undefined;
-    process.exitCode = undefined;
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    process.exitCode = originalExitCode;
-    jest.restoreAllMocks();
-  });
+  registerVerificationHooks();
 
   it('validates successfully when all 3 signatures are valid', async () => {
     await verifyAllSignatures(VALID_TASK_FOLDER, VALID_SIGNATURES_DIR, TASK_CREATOR_EMAIL);
@@ -289,7 +214,6 @@ describe('signTaskWithCert', () => {
     expect(signatureFile).toBeDefined();
     const bundle = JSON.parse(await fsp.readFile(signatureFile!, 'utf8'));
 
-    // Expect Sigstore Bundle v0.2
     expect(bundle.mediaType).toBe('application/vnd.dev.sigstore.bundle+json;version=0.2');
     expect(bundle.messageSignature.signature).toBeTruthy();
 
