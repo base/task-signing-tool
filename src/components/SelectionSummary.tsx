@@ -5,7 +5,7 @@ import { MarkdownText } from './MarkdownText';
 
 interface SelectionSummaryProps {
   selectedUpgrade: Upgrade | null;
-  onChange?: () => void;
+  onChange: () => void;
 }
 
 export function SelectionSummary({ selectedUpgrade, onChange }: SelectionSummaryProps) {
@@ -22,11 +22,9 @@ export function SelectionSummary({ selectedUpgrade, onChange }: SelectionSummary
             <MarkdownText>{selectedUpgrade.description}</MarkdownText>
           </div>
         </div>
-        {onChange && (
-          <Button variant="ghost" size="sm" onClick={onChange} className="shrink-0">
-            Change
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" onClick={onChange} className="shrink-0">
+          Change
+        </Button>
       </div>
     </Card>
   );

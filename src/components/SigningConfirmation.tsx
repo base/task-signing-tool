@@ -1,7 +1,7 @@
 import { ArrowRight, Check, Clipboard } from 'lucide-react';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { toChecksumAddressSafe, toDisplaySignature } from '@/lib/format';
-import { LedgerSigningResult } from '@/lib/ledger-signing';
+import type { SigningResult } from '@/lib/types/signing';
 import { ConfigOption } from './UserSelection';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -12,7 +12,7 @@ interface SigningConfirmationProps {
   selectedUpgrade: {
     name: string;
   };
-  signingData?: LedgerSigningResult | null;
+  signingData: SigningResult;
   onBackToSetup: () => void;
 }
 
@@ -49,10 +49,6 @@ export function SigningConfirmation({
   }, [signingData]);
 
   const handleCopySignature = async () => {
-    if (!signingData) {
-      return;
-    }
-
     try {
       await navigator.clipboard.writeText(toDisplaySignature(signingData));
       setCopied(true);
@@ -78,35 +74,30 @@ export function SigningConfirmation({
       label: 'Upgrade',
       value: selectedUpgrade.name,
     },
-  ];
-
-  if (signingData) {
-    summaryItems.push({
+    {
       label: 'Signer Address',
       value: toChecksumAddressSafe(signingData.signer),
       monospace: true,
-    });
-  }
+    },
+  ];
 
-  const signatureItems: DetailItem[] = signingData
-    ? [
-        {
-          label: 'Data',
-          value: signingData.data,
-          monospace: true,
-        },
-        {
-          label: 'Signer',
-          value: toChecksumAddressSafe(signingData.signer),
-          monospace: true,
-        },
-        {
-          label: 'Signature',
-          value: signingData.signature,
-          monospace: true,
-        },
-      ]
-    : [];
+  const signatureItems: DetailItem[] = [
+    {
+      label: 'Data',
+      value: signingData.data,
+      monospace: true,
+    },
+    {
+      label: 'Signer',
+      value: toChecksumAddressSafe(signingData.signer),
+      monospace: true,
+    },
+    {
+      label: 'Signature',
+      value: signingData.signature,
+      monospace: true,
+    },
+  ];
 
   return (
     <div className="max-w-3xl mx-auto animate-fade-in pb-20">
@@ -149,67 +140,57 @@ export function SigningConfirmation({
         </div>
       </Card>
 
-      {signingData ? (
-        <div className="space-y-6 mb-12">
-          <Card className="border-green-200 bg-green-50/30 overflow-visible">
-            <div className="px-6 py-4 border-b border-green-100 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">
-                  <Check size={14} />
-                </div>
-                <h3 className="text-base font-bold text-green-900">Signature Generated</h3>
+      <div className="space-y-6 mb-12">
+        <Card className="border-green-200 bg-green-50/30 overflow-visible">
+          <div className="px-6 py-4 border-b border-green-100 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">
+                <Check size={14} />
               </div>
-
-              <Button
-                onClick={handleCopySignature}
-                size="sm"
-                variant={copied ? 'primary' : 'secondary'}
-                className={copied ? 'bg-green-600 hover:bg-green-700 border-transparent' : ''}
-                icon={!copied ? <Clipboard size={14} /> : <Check size={14} />}
-              >
-                {copied ? 'Copied!' : 'Copy Signature'}
-              </Button>
+              <h3 className="text-base font-bold text-green-900">Signature Generated</h3>
             </div>
 
-            <div className="p-6">
-              <div className="bg-white border border-green-200 rounded-xl p-4 shadow-sm overflow-x-auto">
-                <div className="space-y-3">
-                  {signatureItems.map(({ label, value }) => (
-                    <div key={label} className="flex flex-col gap-1">
-                      <span className="text-xs font-bold text-[var(--cds-text-tertiary)] uppercase">
-                        {label}
-                      </span>
-                      <div className="font-mono text-xs text-[var(--cds-text-primary)] break-all">
-                        {value}
-                      </div>
+            <Button
+              onClick={handleCopySignature}
+              size="sm"
+              variant={copied ? 'primary' : 'secondary'}
+              className={copied ? 'bg-green-600 hover:bg-green-700 border-transparent' : ''}
+              icon={!copied ? <Clipboard size={14} /> : <Check size={14} />}
+            >
+              {copied ? 'Copied!' : 'Copy Signature'}
+            </Button>
+          </div>
+
+          <div className="p-6">
+            <div className="bg-white border border-green-200 rounded-xl p-4 shadow-sm overflow-x-auto">
+              <div className="space-y-3">
+                {signatureItems.map(({ label, value }) => (
+                  <div key={label} className="flex flex-col gap-1">
+                    <span className="text-xs font-bold text-[var(--cds-text-tertiary)] uppercase">
+                      {label}
+                    </span>
+                    <div className="font-mono text-xs text-[var(--cds-text-primary)] break-all">
+                      {value}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </Card>
-
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 flex gap-4">
-            <div className="text-2xl text-blue-600">
-              <ArrowRight size={24} />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-blue-900 mb-1">Next Steps</h4>
-              <p className="text-sm text-blue-800">
-                Copy the signature above and send it to your facilitator to complete the operation.
-              </p>
             </div>
           </div>
+        </Card>
+
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 flex gap-4">
+          <div className="text-2xl text-blue-600">
+            <ArrowRight size={24} />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-blue-900 mb-1">Next Steps</h4>
+            <p className="text-sm text-blue-800">
+              Copy the signature above and send it to your facilitator to complete the operation.
+            </p>
+          </div>
         </div>
-      ) : (
-        <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
-          <h3 className="mb-2 text-lg font-semibold text-amber-900">No Signature Data</h3>
-          <p className="text-sm text-amber-800">
-            No signature was provided. Please go back and complete the hardware wallet signing
-            process.
-          </p>
-        </div>
-      )}
+      </div>
 
       <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8 border-t border-[var(--cds-divider)]">
         <Button onClick={onBackToSetup} variant="primary">
