@@ -177,7 +177,7 @@ export default function Home() {
           />
         )}
 
-        {currentStep === 'signing' && (
+        {currentStep === 'signing' && signingData && (
           <SigningConfirmation
             user={selectedUser}
             network={selectedNetwork || ''}

@@ -4,7 +4,7 @@ import { ConfigOption } from './UserSelection';
 
 interface UserSummaryProps {
   selectedUser: ConfigOption | undefined;
-  onChange?: () => void;
+  onChange: () => void;
 }
 
 export function UserSummary({ selectedUser, onChange }: UserSummaryProps) {
@@ -26,11 +26,9 @@ export function UserSummary({ selectedUser, onChange }: UserSummaryProps) {
             </p>
           </div>
         </div>
-        {onChange && (
-          <Button variant="ghost" size="sm" onClick={onChange} className="shrink-0">
-            Change
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" onClick={onChange} className="shrink-0">
+          Change
+        </Button>
       </div>
     </Card>
   );
