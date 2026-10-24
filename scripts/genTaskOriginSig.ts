@@ -38,7 +38,6 @@ const ECDSA_CURVE_TO_HASH: Record<
 
 export type FacilitatorType = 'base' | 'security-council';
 type VerificationResult = {
-  role: TaskOriginRole;
   roleName: string;
   success: boolean;
   error?: string;
@@ -417,7 +416,6 @@ export async function verifyAllSignatures(
       });
 
       results.push({
-        role,
         roleName,
         success: true,
         signatureFile,
@@ -425,7 +423,6 @@ export async function verifyAllSignatures(
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       results.push({
-        role,
         roleName,
         success: false,
         error: errorMessage,

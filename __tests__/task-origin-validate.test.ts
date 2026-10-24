@@ -11,7 +11,6 @@ import {
 } from '../src/lib/task-origin-validate';
 import type { TaskOriginRole } from '../src/lib/types';
 
-// Fixture paths
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
 // The tarball is scoped to a single network config dir; cache/ and out/ build
@@ -21,7 +20,6 @@ const MODIFIED_TASK_FOLDER = path.join(FIXTURES_DIR, 'modified-task', 'config', 
 const VALID_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/valid');
 const PINNING_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/pinning');
 
-// Task creator email
 const TASK_CREATOR_EMAIL = 'alexis.williams.1@coinbase.com';
 const WRONG_TASK_CREATOR_EMAIL = 'test@test.com';
 
@@ -52,10 +50,8 @@ describe('createDeterministicTarball', () => {
   });
 
   afterEach(async () => {
-    // Clean up temp directory
     await fs.rm(tempDir, { recursive: true, force: true });
 
-    // Clean up any created tarballs
     for (const tarball of createdTarballs) {
       try {
         await fs.unlink(tarball);
@@ -68,48 +64,39 @@ describe('createDeterministicTarball', () => {
   });
 
   it('produces a valid tarball', async () => {
-    // Create a simple file structure
     await fs.writeFile(path.join(tempDir, 'test.txt'), 'test content');
 
     const tarballPath = await createDeterministicTarball(tempDir);
     createdTarballs.push(tarballPath);
 
-    // Verify tarball exists and has content
     const stats = await fs.stat(tarballPath);
     expect(stats.size).toBeGreaterThan(0);
 
-    // Verify it's a valid tar by listing entries
     const entries = await listTarEntries(tarballPath);
     expect(entries).toContain('test.txt');
   });
 
   it('produces deterministic output with identical hash', async () => {
-    // Create some files
     await fs.writeFile(path.join(tempDir, 'file1.txt'), 'content 1');
     await fs.writeFile(path.join(tempDir, 'file2.txt'), 'content 2');
     await fs.mkdir(path.join(tempDir, 'subdir'), { recursive: true });
     await fs.writeFile(path.join(tempDir, 'subdir', 'file3.txt'), 'content 3');
 
-    // Create first tarball and compute hash
     const tarball1 = await createDeterministicTarball(tempDir);
     createdTarballs.push(tarball1);
     const hash1 = await computeFileHash(tarball1);
 
-    // Delete the tarball
     await fs.unlink(tarball1);
     createdTarballs = createdTarballs.filter(t => t !== tarball1);
 
-    // Create second tarball and compute hash
     const tarball2 = await createDeterministicTarball(tempDir);
     createdTarballs.push(tarball2);
     const hash2 = await computeFileHash(tarball2);
 
-    // Hashes should be identical
     expect(hash1).toBe(hash2);
   });
 
   it('sorts files alphabetically in the tarball', async () => {
-    // Create files and folders out of alphabetical order
     await fs.mkdir(path.join(tempDir, 'zebra'), { recursive: true });
     await fs.mkdir(path.join(tempDir, 'apple'), { recursive: true });
     await fs.writeFile(path.join(tempDir, 'zebra', 'file.txt'), 'zebra data');
@@ -123,13 +110,11 @@ describe('createDeterministicTarball', () => {
 
     const entries = await listTarEntries(tarballPath);
 
-    // Verify entries are in alphabetical order
     const sortedEntries = [...entries].sort();
     expect(entries).toEqual(sortedEntries);
   });
 
   it('includes nested directories', async () => {
-    // Create nested structure
     await fs.mkdir(path.join(tempDir, 'level1', 'level2', 'level3'), { recursive: true });
     await fs.writeFile(path.join(tempDir, 'level1', 'l1.txt'), 'level 1');
     await fs.writeFile(path.join(tempDir, 'level1', 'level2', 'l2.txt'), 'level 2');
@@ -172,7 +157,6 @@ describe('buildAndValidateSignature', () => {
 
   describe('tarball mismatch', () => {
     it('fails validation when signature does not match tarball content', async () => {
-      // Use valid signature but with modified task folder
       await expect(
         buildAndValidateSignature({
           taskFolderPath: MODIFIED_TASK_FOLDER,
