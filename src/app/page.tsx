@@ -11,7 +11,7 @@ import {
   UserSummary,
 } from '@/components';
 import { PageShell, StepIndicator } from '@/components/ui';
-import { NetworkType, ValidationData, Upgrade } from '@/lib/types';
+import { ValidationData, Upgrade } from '@/lib/types';
 import { ConfigOption } from '@/components/UserSelection';
 import type { SigningResult } from '@/lib/types/signing';
 
@@ -29,29 +29,25 @@ const STEP_LAYOUT_WIDTH: Record<Step, string> = {
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('upgrade');
   const [selectedUser, setSelectedUser] = useState<ConfigOption>();
-  const [selectedNetwork, setSelectedNetwork] = useState<NetworkType | null>(null);
   const [selectedUpgrade, setSelectedUpgrade] = useState<Upgrade | null>(null);
+  const selectedNetwork = selectedUpgrade?.network ?? null;
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<SigningResult | null>(null);
   const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
   const resetSelectionsFrom = (step: 'upgrade' | 'user') => {
     if (step === 'upgrade') {
-      setSelectedNetwork(null);
       setSelectedUpgrade(null);
     }
 
-    if (step === 'upgrade' || step === 'user') {
-      setSelectedUser(undefined);
-      setValidationData(null);
-      setSigningData(null);
-      setUserLedgerAccount(0);
-    }
+    setSelectedUser(undefined);
+    setValidationData(null);
+    setSigningData(null);
+    setUserLedgerAccount(0);
   };
 
   const handleUpgradeSelection = (upgrade: Upgrade) => {
     setSelectedUpgrade(upgrade);
-    setSelectedNetwork(upgrade.network);
     setCurrentStep('user');
   };
 
@@ -142,13 +138,7 @@ export default function Home() {
           <UserSummary selectedUser={selectedUser} onChange={handleGoToUserSelection} />
         )}
 
-        {currentStep === 'upgrade' && (
-          <UpgradeSelection
-            selectedUpgradeId={selectedUpgrade?.id ?? null}
-            selectedNetwork={selectedNetwork ?? null}
-            onSelect={handleUpgradeSelection}
-          />
-        )}
+        {currentStep === 'upgrade' && <UpgradeSelection onSelect={handleUpgradeSelection} />}
 
         {currentStep === 'user' && selectedNetwork && selectedUpgrade && (
           <UserSelection

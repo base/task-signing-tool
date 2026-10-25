@@ -12,16 +12,10 @@ const STATUS_VARIANT_MAP: Record<TaskStatus, 'success' | 'warning' | 'neutral'> 
 };
 
 interface UpgradeSelectionProps {
-  selectedUpgradeId: string | null;
-  selectedNetwork: string | null;
   onSelect: (upgrade: Upgrade) => void;
 }
 
-export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
-  selectedUpgradeId,
-  selectedNetwork,
-  onSelect,
-}) => {
+export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({ onSelect }) => {
   const [upgradeOptions, setUpgradeOptions] = useState<Upgrade[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,14 +131,12 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
       <div className="space-y-4">
         {upgradeOptions.map(option => {
           const optionKey = `${option.network}-${option.id}`;
-          const isSelected = selectedUpgradeId === option.id && selectedNetwork === option.network;
           const isExpanded = !!expandedCards[optionKey];
 
           return (
             <Card
               key={optionKey}
               interactive
-              selected={isSelected}
               onClick={() => onSelect(option)}
               className="relative group"
             >
@@ -188,19 +180,6 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({
 
                 <div className="flex flex-col items-end gap-3 shrink-0">
                   <StatusBadge status={option.status} executionLinks={option.executionLinks} />
-                  {isSelected && (
-                    <div className="h-6 w-6 rounded-full bg-[var(--cds-primary)] text-white flex items-center justify-center">
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={3}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
                 </div>
               </div>
             </Card>
