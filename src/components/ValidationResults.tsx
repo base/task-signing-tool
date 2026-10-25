@@ -21,12 +21,34 @@ import {
   TASK_ORIGIN_ROLE_LABELS,
   ValidationNavEntry,
 } from '@/lib/validation-results-utils';
+import type { ValidationDescription } from '@/lib/validation-results-utils';
 import { TaskOriginSignerResult, ValidationData } from '@/lib/types';
 import { ComparisonCard } from './ComparisonCard';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { Modal } from './ui/Modal';
+
+const DESCRIPTION_STYLES: Record<
+  ValidationDescription['variant'],
+  { box: string; title: string; text: string }
+> = {
+  'expected-difference': {
+    box: 'border-green-200 bg-green-50',
+    title: 'text-green-800',
+    text: 'text-green-900',
+  },
+  error: {
+    box: 'border-red-200 bg-red-50',
+    title: 'text-red-800',
+    text: 'text-red-700',
+  },
+  info: {
+    box: 'border-blue-200 bg-blue-50',
+    title: 'text-blue-800',
+    text: 'text-blue-900',
+  },
+};
 
 interface TaskOriginCardProps {
   results: TaskOriginSignerResult[];
@@ -232,6 +254,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   const matchStatus = evaluation?.matchStatus;
   const descriptionContent = evaluation?.description;
+  const hashes = validationResult.expected?.domainAndMessageHashes;
+  const canSign = Boolean(hashes?.domainHash && hashes?.messageHash);
+  const showEntryDetails = !(taskOriginDisabled && currentEntry?.kind === 'taskOrigin');
 
   const handleNext = () => {
     if (currentIndex === totalItems - 1) {
@@ -304,7 +329,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </Button>
         </div>
 
-        {matchStatus && !(taskOriginDisabled && currentEntry?.kind === 'taskOrigin') && (
+        {matchStatus && showEntryDetails && (
           <div
             className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
               matchStatus.status === 'match'
@@ -338,37 +363,19 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           </div>
         )}
 
-        {descriptionContent && !(taskOriginDisabled && currentEntry?.kind === 'taskOrigin') && (
+        {descriptionContent && showEntryDetails && (
           <div
-            className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${
-              descriptionContent.variant === 'expected-difference'
-                ? 'border-green-200 bg-green-50'
-                : descriptionContent.variant === 'error'
-                  ? 'border-red-200 bg-red-50'
-                  : 'border-blue-200 bg-blue-50'
-            }`}
+            className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${DESCRIPTION_STYLES[descriptionContent.variant].box}`}
           >
             <div className="mt-0.5">{getIcon(descriptionContent.icon, 24)}</div>
             <div className="flex-1">
               <h4
-                className={`mb-1 text-xs font-bold uppercase tracking-wider ${
-                  descriptionContent.variant === 'expected-difference'
-                    ? 'text-green-800'
-                    : descriptionContent.variant === 'error'
-                      ? 'text-red-800'
-                      : 'text-blue-800'
-                }`}
+                className={`mb-1 text-xs font-bold uppercase tracking-wider ${DESCRIPTION_STYLES[descriptionContent.variant].title}`}
               >
                 {descriptionContent.title}
               </h4>
               <p
-                className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${
-                  descriptionContent.variant === 'expected-difference'
-                    ? 'text-green-900'
-                    : descriptionContent.variant === 'error'
-                      ? 'text-red-700'
-                      : 'text-blue-900'
-                }`}
+                className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${DESCRIPTION_STYLES[descriptionContent.variant].text}`}
               >
                 {descriptionContent.text}
               </p>
@@ -407,35 +414,30 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             </p>
           )}
 
-          {(!validationResult.expected?.domainAndMessageHashes ||
-            !validationResult.expected?.domainAndMessageHashes?.domainHash ||
-            !validationResult.expected?.domainAndMessageHashes?.messageHash) &&
-            !blockingErrorsExist && (
-              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg w-full mb-6">
-                <p className="mb-1 text-sm font-bold text-yellow-800 flex items-center gap-1">
-                  <AlertTriangle size={16} /> Signing Not Available
-                </p>
-                <p className="text-sm text-yellow-700 text-left">
-                  Domain and message hashes are required for signing but were not generated during
-                  validation.
-                </p>
-              </div>
-            )}
+          {!blockingErrorsExist && !canSign && (
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg w-full mb-6">
+              <p className="mb-1 text-sm font-bold text-yellow-800 flex items-center gap-1">
+                <AlertTriangle size={16} /> Signing Not Available
+              </p>
+              <p className="text-sm text-yellow-700 text-left">
+                Domain and message hashes are required for signing but were not generated during
+                validation.
+              </p>
+            </div>
+          )}
 
-          {!blockingErrorsExist &&
-            validationResult.expected?.domainAndMessageHashes?.domainHash &&
-            validationResult.expected?.domainAndMessageHashes?.messageHash && (
-              <div className="w-full flex justify-center">
-                <Button
-                  onClick={() => onProceedToLedgerSigning(validationResult)}
-                  size="lg"
-                  icon={<ChevronRight size={20} />}
-                  fullWidth
-                >
-                  Proceed to signing
-                </Button>
-              </div>
-            )}
+          {!blockingErrorsExist && canSign && (
+            <div className="w-full flex justify-center">
+              <Button
+                onClick={() => onProceedToLedgerSigning(validationResult)}
+                size="lg"
+                icon={<ChevronRight size={20} />}
+                fullWidth
+              >
+                Proceed to signing
+              </Button>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
