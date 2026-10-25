@@ -30,13 +30,11 @@ export type ValidationNavEntry =
 export type ValidationMatchStatus =
   | {
       status: 'match';
-      bgClass: string;
       icon: string;
       text: string;
     }
   | {
       status: 'mismatch' | 'expected-difference' | 'missing';
-      bgClass: string;
       icon: string;
       text: string;
     };
@@ -67,8 +65,6 @@ export interface ValidationEntryEvaluation {
     expected: ComparisonCardContent;
     actual: ComparisonCardContent;
   };
-  contractName: string;
-  stepLabel: string;
 }
 
 export interface StepCounts {
@@ -453,11 +449,11 @@ export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
 const defaultContractAddress = (address?: string) =>
   address && address.trim().length > 0 ? address : 'Unknown Address';
 
-const STATUS_STYLES: Record<ValidationMatchStatus['status'], { bgClass: string; icon: string }> = {
-  match: { bgClass: 'bg-green-600', icon: 'check' },
-  mismatch: { bgClass: 'bg-red-600', icon: 'x' },
-  missing: { bgClass: 'bg-red-500', icon: 'x' },
-  'expected-difference': { bgClass: 'bg-emerald-600', icon: 'check' },
+const STATUS_ICONS: Record<ValidationMatchStatus['status'], string> = {
+  match: 'check',
+  mismatch: 'x',
+  missing: 'x',
+  'expected-difference': 'check',
 };
 
 const createMatchStatus = (
@@ -466,7 +462,7 @@ const createMatchStatus = (
 ): ValidationMatchStatus => ({
   status,
   text,
-  ...STATUS_STYLES[status],
+  icon: STATUS_ICONS[status],
 });
 
 const assertNever = (value: never): never => {
@@ -481,7 +477,6 @@ const UNDECLARED_DESCRIPTION: ValidationDescription = {
 };
 
 const evaluateUndeclaredEntry = (
-  stepLabel: string,
   contractName: string,
   contractAddress: string,
   storageKey: string,
@@ -493,8 +488,6 @@ const evaluateUndeclaredEntry = (
     'Unexpected - This result was not declared in the expected config'
   ),
   description: UNDECLARED_DESCRIPTION,
-  stepLabel,
-  contractName,
   cards: {
     expected: {
       contractName,
@@ -536,8 +529,6 @@ export const evaluateValidationEntry = (
             title: 'Validation Skipped',
             text: 'Task origin validation was explicitly skipped using skipTaskOriginValidation: true in the config. This is acceptable for testnet tasks but must be enabled for mainnet tasks.',
           },
-          stepLabel: STEP_DEFINITION_MAP.taskOrigin.label,
-          contractName: 'Task Origin Validation',
           cards: {
             expected: {
               contractName: 'Task Origin',
@@ -577,8 +568,6 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: STEP_DEFINITION_MAP.taskOrigin.label,
-        contractName: 'Task Origin Signatures',
         cards: {
           expected: {
             contractName: 'Task Origin',
@@ -621,8 +610,6 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: STEP_DEFINITION_MAP.signing.label,
-        contractName: item.contractName,
         cards: {
           expected: {
             contractName: item.contractName,
@@ -646,7 +633,6 @@ export const evaluateValidationEntry = (
       const item = items.overrides[entry.index]!;
       if (!item.expected) {
         return evaluateUndeclaredEntry(
-          STEP_DEFINITION_MAP.override.label,
           item.contractName,
           defaultContractAddress(item.contractAddress),
           item.actual?.key ?? NOT_FOUND_TEXT,
@@ -688,8 +674,6 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: STEP_DEFINITION_MAP.override.label,
-        contractName: item.contractName,
         cards: {
           expected: {
             contractName: item.contractName,
@@ -713,7 +697,6 @@ export const evaluateValidationEntry = (
       const item = items.changes[entry.index]!;
       if (!item.expected) {
         return evaluateUndeclaredEntry(
-          STEP_DEFINITION_MAP.change.label,
           item.contractName,
           defaultContractAddress(item.contractAddress),
           item.actual?.key ?? NOT_FOUND_TEXT,
@@ -757,8 +740,6 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: STEP_DEFINITION_MAP.change.label,
-        contractName: item.contractName,
         cards: {
           expected: {
             contractName: item.contractName,
@@ -787,7 +768,6 @@ export const evaluateValidationEntry = (
         const actualBefore = item.actual ? formatBalanceValue(item.actual.before) : NOT_FOUND_TEXT;
         const actualAfter = item.actual ? formatBalanceValue(item.actual.after) : NOT_FOUND_TEXT;
         return evaluateUndeclaredEntry(
-          STEP_DEFINITION_MAP.balance.label,
           item.contractName,
           defaultContractAddress(item.contractAddress),
           item.actual?.field ?? NOT_FOUND_TEXT,
@@ -849,8 +829,6 @@ export const evaluateValidationEntry = (
       return {
         matchStatus,
         description,
-        stepLabel: STEP_DEFINITION_MAP.balance.label,
-        contractName: item.contractName,
         cards: {
           expected: {
             contractName: item.contractName,
