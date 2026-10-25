@@ -58,6 +58,7 @@ describe('POST /api/install-deps', () => {
     const res = await POST(createRequest({ network: 'Zeronet', upgradeId: UPGRADE_ID }));
 
     expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true });
     expect(mockExec).toHaveBeenCalledTimes(1);
 
     const [command, options] = mockExec.mock.calls[0];
