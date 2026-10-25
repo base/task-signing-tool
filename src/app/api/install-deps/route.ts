@@ -55,7 +55,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid path: access denied' }, { status: 403 });
     }
 
-    const libPath = path.join(resolvedUpgradePath, 'lib');
     const resolvedTaskPath = assertWithinDir(taskPath, contractDeploymentsPath);
 
     const taskPathExists = await pathExists(resolvedTaskPath);
@@ -74,7 +73,7 @@ export async function POST(req: NextRequest) {
     // .env, and any network-specific dependency steps, from TASK_NETWORK, and
     // refuses to run without it. actualNetwork is checked against
     // safePathPattern above, so it is safe to interpolate into the command.
-    const { stdout, stderr } = await execAsync(`make TASK_NETWORK=${actualNetwork} deps`, {
+    await execAsync(`make TASK_NETWORK=${actualNetwork} deps`, {
       cwd: resolvedTaskPath,
       timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
@@ -82,21 +81,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`Dependencies installed for ${actualNetwork}/${upgradeId}`);
 
-    // Verify that lib folder was created
-    const libExistsAfterInstall = await pathExists(libPath);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: `Dependencies installed successfully for ${actualNetwork}/${upgradeId}`,
-        libExists: libExistsAfterInstall,
-        installed: true,
-        depsInstalled: true,
-        stdout: stdout || '',
-        stderr: stderr || '',
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error(`❌ Error installing dependencies:`, error);
 

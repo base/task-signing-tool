@@ -41,10 +41,7 @@ const DEVICE_CHECKLISTS: Record<HardwareWallet, string[]> = {
   ],
 };
 
-const INSTALL_HINTS: Record<HardwareWallet, string> = {
-  ledger: 'make install-eip712sign',
-  trezor: 'make install-eip712sign',
-};
+const INSTALL_HINT = 'make install-eip712sign';
 
 async function submitSignatureRequest(payload: {
   device: HardwareWallet;
@@ -58,10 +55,7 @@ async function submitSignatureRequest(payload: {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      action: 'sign',
-      ...payload,
-    }),
+    body: JSON.stringify(payload),
   });
 
   return response.json();
@@ -279,7 +273,7 @@ export function HardwareSigning({
                     <p className="text-sm text-red-700 mb-2">{errorMessage}</p>
                     {errorMessage.includes('not found') && (
                       <div className="text-xs bg-white/50 p-2 rounded border border-red-100 inline-block font-mono text-red-800">
-                        {INSTALL_HINTS[device]}
+                        {INSTALL_HINT}
                       </div>
                     )}
                   </div>
