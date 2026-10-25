@@ -8,7 +8,6 @@ import type { SigningResult } from './types/signing';
 export interface LedgerSigningOptions {
   domainHash: string;
   messageHash: string;
-  hdPath?: string;
   ledgerAccount?: number;
 }
 
@@ -32,7 +31,7 @@ export async function signDomainAndMessageHash(
   options: LedgerSigningOptions
 ): Promise<LedgerSigningResult> {
   const { domainHash, messageHash, ledgerAccount = 0 } = options;
-  const hdPath = options.hdPath || `m/44'/60'/${ledgerAccount}'/0/0`;
+  const hdPath = `m/44'/60'/${ledgerAccount}'/0/0`;
 
   try {
     validateHash('domain hash', domainHash);

@@ -31,7 +31,6 @@ const toErrorState = (message: string): ValidationRunnerState => ({
 type InstallDepsResponse = {
   success: boolean;
   error?: string;
-  depsInstalled?: boolean;
 };
 
 type ValidateResponse = {
@@ -95,9 +94,7 @@ export const useValidationRunner = ({
         return null;
       }
 
-      if (depsResult.depsInstalled) {
-        console.log(`✅ Dependencies installed successfully for ${networkSlug}/${upgradeId}`);
-      }
+      console.log(`✅ Dependencies installed successfully for ${networkSlug}/${upgradeId}`);
 
       console.log('Running validation with options:', {
         upgradeId,
