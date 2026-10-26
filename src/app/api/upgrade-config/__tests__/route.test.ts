@@ -120,9 +120,18 @@ describe('GET /api/upgrade-config', () => {
       expect(body.configOptions[0]).toMatchObject({
         fileName: 'config1',
         displayName: 'Config1',
-        configFile: 'config1.json',
         ledgerId: 1,
       });
+    });
+
+    it('returns the default config option when parsing fails', async () => {
+      mockParseFromString.mockReturnValue({ result: { success: false } });
+      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.configOptions).toEqual([
+        { fileName: 'config1', displayName: 'Config1', ledgerId: 0 },
+      ]);
     });
 
     it('returns 200 with empty array on ENOENT', async () => {

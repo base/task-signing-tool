@@ -72,7 +72,6 @@ export async function GET(req: NextRequest) {
             return {
               fileName: baseName,
               displayName,
-              configFile,
               ledgerId: parsedConfig.config.ledgerId,
             };
           }
@@ -85,7 +84,6 @@ export async function GET(req: NextRequest) {
         return {
           fileName: baseName,
           displayName,
-          configFile,
           ledgerId: 0,
         };
       })
