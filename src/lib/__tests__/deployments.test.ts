@@ -25,97 +25,52 @@ afterEach(async () => {
 });
 
 describe('normalizeUrl', () => {
-  describe('valid URLs', () => {
-    it('accepts valid https URL', () => {
-      const url = 'https://etherscan.io/tx/0x123';
-      expect(normalizeUrl(url)).toBe(url);
-    });
-
-    it('accepts valid http URL', () => {
-      const url = 'http://example.com/path';
-      expect(normalizeUrl(url)).toBe(url);
-    });
-
-    it('trims whitespace from valid URL', () => {
-      expect(normalizeUrl('  https://example.com  ')).toBe('https://example.com');
-    });
-
-    it('strips trailing punctuation from valid URL', () => {
-      expect(normalizeUrl('https://example.com/path).')).toBe('https://example.com/path');
-      expect(normalizeUrl('https://example.com/path],')).toBe('https://example.com/path');
-      expect(normalizeUrl('https://example.com/path...')).toBe('https://example.com/path');
-    });
+  it.each([
+    ['https://etherscan.io/tx/0x123', 'https://etherscan.io/tx/0x123'],
+    ['http://example.com/path', 'http://example.com/path'],
+    ['  https://example.com  ', 'https://example.com'],
+    ['https://example.com/path).', 'https://example.com/path'],
+    ['https://example.com/path],', 'https://example.com/path'],
+    ['https://example.com/path...', 'https://example.com/path'],
+    ['https://example.com/path?foo=bar&baz=qux', 'https://example.com/path?foo=bar&baz=qux'],
+    ['https://example.com/path#section', 'https://example.com/path#section'],
+    ['https://example.com:8080/path', 'https://example.com:8080/path'],
+    ['https://user:pass@example.com/path', 'https://user:pass@example.com/path'],
+  ])('normalizes %p to %p', (input, expected) => {
+    expect(normalizeUrl(input)).toBe(expected);
   });
 
-  describe('malformed URLs', () => {
-    it('rejects empty string', () => {
-      expect(normalizeUrl('')).toBeUndefined();
-    });
-
-    it('rejects bare http string', () => {
-      expect(normalizeUrl('http')).toBeUndefined();
-    });
-
-    it('rejects http without proper URL structure', () => {
-      expect(normalizeUrl('http://')).toBeUndefined();
-    });
-
-    it('rejects httpxyz fake protocol', () => {
-      expect(normalizeUrl('httpxyz://not-valid')).toBeUndefined();
-    });
-
-    it('rejects http:not-a-url format', () => {
-      expect(normalizeUrl('http:not-a-url')).toBeUndefined();
-    });
-
-    it('rejects random text', () => {
-      expect(normalizeUrl('not a url at all')).toBeUndefined();
-    });
-
-    it('rejects ftp protocol', () => {
-      expect(normalizeUrl('ftp://files.example.com')).toBeUndefined();
-    });
-
-    it('rejects javascript protocol', () => {
-      expect(normalizeUrl('javascript:alert(1)')).toBeUndefined();
-    });
-
-    it('rejects file protocol', () => {
-      expect(normalizeUrl('file:///etc/passwd')).toBeUndefined();
-    });
-  });
-
-  describe('edge cases', () => {
-    it('handles URL with query parameters', () => {
-      const url = 'https://example.com/path?foo=bar&baz=qux';
-      expect(normalizeUrl(url)).toBe(url);
-    });
-
-    it('handles URL with fragment', () => {
-      const url = 'https://example.com/path#section';
-      expect(normalizeUrl(url)).toBe(url);
-    });
-
-    it('handles URL with port', () => {
-      const url = 'https://example.com:8080/path';
-      expect(normalizeUrl(url)).toBe(url);
-    });
-
-    it('handles URL with authentication', () => {
-      const url = 'https://user:pass@example.com/path';
-      expect(normalizeUrl(url)).toBe(url);
-    });
+  it.each([
+    '',
+    'http',
+    'http://',
+    'httpxyz://not-valid',
+    'http:not-a-url',
+    'not a url at all',
+    'ftp://files.example.com',
+    'javascript:alert(1)',
+    'file:///etc/passwd',
+  ])('rejects %p', input => {
+    expect(normalizeUrl(input)).toBeUndefined();
   });
 });
 
 describe('getUpgradeOptions', () => {
-  it('discovers active task folders without root-level network folders', async () => {
+  async function makeTask(id: string, network: string, readme?: string) {
+    const taskDir = path.join(tempDir, 'active', 'evm', 'tasks', id);
+    await fs.mkdir(path.join(taskDir, 'config', network, 'validations'), { recursive: true });
+    if (readme !== undefined) {
+      await fs.writeFile(path.join(taskDir, 'README.md'), readme);
+    }
     const toolDir = path.join(tempDir, 'task-signing-tool');
-    const taskPath = path.join(tempDir, 'active', 'evm', 'tasks', '2025-06-04-upgrade-foo');
-    await fs.mkdir(path.join(taskPath, 'config', 'mainnet', 'validations'), { recursive: true });
     await fs.mkdir(toolDir, { recursive: true });
-    await fs.writeFile(
-      path.join(taskPath, 'README.md'),
+    process.chdir(toolDir);
+  }
+
+  it('discovers active task folders without root-level network folders', async () => {
+    await makeTask(
+      '2025-06-04-upgrade-foo',
+      'mainnet',
       [
         '# Upgrade Foo',
         '',
@@ -126,7 +81,6 @@ describe('getUpgradeOptions', () => {
         'Example upgrade task.',
       ].join('\n')
     );
-    process.chdir(toolDir);
 
     const upgrades = getUpgradeOptions(NetworkType.Mainnet);
 
@@ -143,12 +97,7 @@ describe('getUpgradeOptions', () => {
   });
 
   it('returns pending status for a task with a pending README status', async () => {
-    const toolDir = path.join(tempDir, 'task-signing-tool');
-    const taskPath = path.join(tempDir, 'active', 'evm', 'tasks', '2025-06-04-upgrade-foo');
-    await fs.mkdir(path.join(taskPath, 'config', 'mainnet', 'validations'), { recursive: true });
-    await fs.mkdir(toolDir, { recursive: true });
-    await fs.writeFile(path.join(taskPath, 'README.md'), 'Status: PENDING');
-    process.chdir(toolDir);
+    await makeTask('2025-06-04-upgrade-foo', 'mainnet', 'Status: PENDING');
 
     const upgrades = getUpgradeOptions(NetworkType.Mainnet);
 
@@ -156,12 +105,7 @@ describe('getUpgradeOptions', () => {
   });
 
   it('omits execution links from serialized executed tasks with no URLs', async () => {
-    const toolDir = path.join(tempDir, 'task-signing-tool');
-    const taskPath = path.join(tempDir, 'active', 'evm', 'tasks', '2025-06-04-upgrade-foo');
-    await fs.mkdir(path.join(taskPath, 'config', 'mainnet', 'validations'), { recursive: true });
-    await fs.mkdir(toolDir, { recursive: true });
-    await fs.writeFile(path.join(taskPath, 'README.md'), 'Status: EXECUTED');
-    process.chdir(toolDir);
+    await makeTask('2025-06-04-upgrade-foo', 'mainnet', 'Status: EXECUTED');
 
     const upgrades = getUpgradeOptions(NetworkType.Mainnet);
 
@@ -170,48 +114,9 @@ describe('getUpgradeOptions', () => {
   });
 
   it('returns all active task folders that have validations for the selected network', async () => {
-    const toolDir = path.join(tempDir, 'task-signing-tool');
-    await fs.mkdir(
-      path.join(
-        tempDir,
-        'active',
-        'evm',
-        'tasks',
-        '2025-06-04-upgrade-foo',
-        'config',
-        'mainnet',
-        'validations'
-      ),
-      { recursive: true }
-    );
-    await fs.mkdir(
-      path.join(
-        tempDir,
-        'active',
-        'evm',
-        'tasks',
-        '2025-07-12-upgrade-bar',
-        'config',
-        'mainnet',
-        'validations'
-      ),
-      { recursive: true }
-    );
-    await fs.mkdir(
-      path.join(
-        tempDir,
-        'active',
-        'evm',
-        'tasks',
-        '2025-07-12-upgrade-bar',
-        'config',
-        'zeronet',
-        'validations'
-      ),
-      { recursive: true }
-    );
-    await fs.mkdir(toolDir, { recursive: true });
-    process.chdir(toolDir);
+    await makeTask('2025-06-04-upgrade-foo', 'mainnet');
+    await makeTask('2025-07-12-upgrade-bar', 'mainnet');
+    await makeTask('2025-07-12-upgrade-bar', 'zeronet');
 
     const upgrades = getUpgradeOptions(NetworkType.Mainnet);
 
@@ -241,19 +146,8 @@ describe('getUpgradeOptions', () => {
   });
 
   it('ignores non-date-prefixed directories such as templates or archives', async () => {
-    const toolDir = path.join(tempDir, 'task-signing-tool');
-    const tasksDir = path.join(tempDir, 'active', 'evm', 'tasks');
-    // Non-task helper directory with a valid-looking config layout.
-    await fs.mkdir(path.join(tasksDir, 'template', 'config', 'mainnet', 'validations'), {
-      recursive: true,
-    });
-    // A real, date-prefixed task alongside it.
-    await fs.mkdir(
-      path.join(tasksDir, '2025-06-04-upgrade-foo', 'config', 'mainnet', 'validations'),
-      { recursive: true }
-    );
-    await fs.mkdir(toolDir, { recursive: true });
-    process.chdir(toolDir);
+    await makeTask('template', 'mainnet');
+    await makeTask('2025-06-04-upgrade-foo', 'mainnet');
 
     const upgrades = getUpgradeOptions(NetworkType.Mainnet);
 
