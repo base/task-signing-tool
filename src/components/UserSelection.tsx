@@ -6,7 +6,6 @@ import { SectionHeader } from './ui/SectionHeader';
 export interface ConfigOption {
   fileName: string;
   displayName: string;
-  configFile: string;
   ledgerId: number;
 }
 
@@ -23,22 +22,16 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    const resetState = () => {
-      setAvailableUsers([]);
-      setSelectedUser(null);
-      setError('');
-      setLoadingUsers(false);
-    };
+    setAvailableUsers([]);
+    setSelectedUser(null);
+    setError('');
 
     if (!network || !upgradeId) {
-      resetState();
+      setLoadingUsers(false);
       return;
     }
 
     let isActive = true;
-    setAvailableUsers([]);
-    setSelectedUser(null);
-    setError('');
     setLoadingUsers(true);
 
     const fetchAvailableUsers = async () => {
@@ -50,17 +43,12 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
           const message = await response.text();
           throw new Error(message || response.statusText);
         }
-        const { configOptions, error: apiError } = await response.json();
+        const { configOptions } = await response.json();
 
         if (!isActive) return;
 
-        if (apiError) {
-          setError(`API returned an error: ${apiError}`);
-          setAvailableUsers([]);
-        } else {
-          setAvailableUsers(configOptions);
-          setError('');
-        }
+        setAvailableUsers(configOptions);
+        setError('');
       } catch (err) {
         if (!isActive) return;
         const message = err instanceof Error ? err.message : String(err);
@@ -80,11 +68,6 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
       isActive = false;
     };
   }, [network, upgradeId]);
-
-  const handleUserSelect = (userOption: ConfigOption) => {
-    setSelectedUser(userOption);
-    setError('');
-  };
 
   return (
     <div className="w-full animate-fade-in">
@@ -119,7 +102,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
                   key={option.fileName}
                   interactive
                   selected={isSelected}
-                  onClick={() => handleUserSelect(option)}
+                  onClick={() => setSelectedUser(option)}
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
@@ -177,12 +160,6 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
               Error loading profiles
             </h4>
             <p className="text-sm text-red-700 mb-2">{error}</p>
-            {error.includes('not found') && (
-              <div className="text-xs bg-white/50 p-2 rounded border border-red-100 inline-block">
-                Run <code className="font-mono font-bold">make install-eip712sign</code> in project
-                root
-              </div>
-            )}
           </div>
         </div>
       )}
