@@ -117,7 +117,7 @@ describe('GET /api/upgrade-config', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.configOptions).toHaveLength(1);
-      expect(body.configOptions[0]).toMatchObject({
+      expect(body.configOptions[0]).toEqual({
         fileName: 'config1',
         displayName: 'Config1',
         ledgerId: 1,
