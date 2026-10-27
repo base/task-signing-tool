@@ -1,4 +1,4 @@
-export type DiffChangeType = 'added' | 'removed' | 'modified' | 'unchanged';
+type DiffChangeType = 'added' | 'removed' | 'modified' | 'unchanged';
 
 export interface StringDiff {
   type: DiffChangeType;
