@@ -69,33 +69,15 @@ describe('GET /api/upgrade-config', () => {
   });
 
   describe('path traversal prevention', () => {
-    it('returns 400 when network contains ".."', async () => {
-      const res = await GET(createRequest({ network: '..', upgradeId: 'test' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/invalid network/i);
-    });
-
-    it('returns 400 when network contains "/"', async () => {
-      const res = await GET(createRequest({ network: 'foo/bar', upgradeId: 'test' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/invalid network/i);
-    });
-
-    it('returns 400 when network contains spaces', async () => {
-      const res = await GET(createRequest({ network: 'main net', upgradeId: 'test' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/invalid network/i);
-    });
-
-    it('returns 400 when network contains "." (single dot)', async () => {
-      const res = await GET(createRequest({ network: '.', upgradeId: 'test' }));
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body.error).toMatch(/invalid network/i);
-    });
+    it.each(['..', 'foo/bar', 'main net', '.'])(
+      'returns 400 when network is "%s"',
+      async network => {
+        const res = await GET(createRequest({ network, upgradeId: 'test' }));
+        expect(res.status).toBe(400);
+        const body = await res.json();
+        expect(body.error).toMatch(/invalid network/i);
+      }
+    );
     it('returns 400 when upgradeId contains path separators', async () => {
       const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'foo/bar' }));
       expect(res.status).toBe(400);
@@ -132,6 +114,24 @@ describe('GET /api/upgrade-config', () => {
       expect(body.configOptions).toEqual([
         { fileName: 'config1', displayName: 'Config1', ledgerId: 0 },
       ]);
+      expect(console.warn).toHaveBeenCalledWith(
+        'Failed to parse config1.json, using default ledgerId: 0'
+      );
+    });
+
+    it('returns the default config option when reading fails', async () => {
+      const error = new Error('Read failed');
+      mockReadFile.mockRejectedValue(error);
+      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.configOptions).toEqual([
+        { fileName: 'config1', displayName: 'Config1', ledgerId: 0 },
+      ]);
+      expect(console.warn).toHaveBeenCalledWith(
+        'Error reading config1.json, using default ledgerId: 0',
+        error
+      );
     });
 
     it('returns 200 with empty array on ENOENT', async () => {
