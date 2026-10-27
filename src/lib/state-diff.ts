@@ -122,9 +122,6 @@ export class StateDiffClient {
     workdir: string
   ): Promise<{
     result: TaskConfig;
-    output: string;
-    transactionTo: Address;
-    transactionData: Hex;
     forgeOutput: string;
     safeTxTypedData?: SafeTxTypedData;
   }> {
@@ -185,13 +182,9 @@ export class StateDiffClient {
         parentMap,
       });
 
-      const output = `<<<RESULT>>>\n${JSON.stringify(result, null, 2)}`;
       console.log('✅ State-diff transformation completed');
       return {
         result,
-        output,
-        transactionTo: payload.to,
-        transactionData: payload.data,
         forgeOutput: stdout,
         safeTxTypedData: parsed.safeTx
           ? buildSafeTxTypedData({

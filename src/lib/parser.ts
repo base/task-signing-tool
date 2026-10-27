@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { TaskConfigSchema } from './config-schemas';
 import { ParsedConfig, ParseResult } from './types/index';
 
-export function parseConfig(jsonData: unknown): ParsedConfig {
+function parseConfig(jsonData: unknown): ParsedConfig {
   const parsed = TaskConfigSchema.safeParse(jsonData);
 
   if (parsed.success) {
