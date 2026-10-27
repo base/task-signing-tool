@@ -182,14 +182,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
   } = useValidationSummary(validationResult);
 
   useEffect(() => {
-    if (navList.length === 0) {
-      setCurrentIndex(0);
-      return;
-    }
-    setCurrentIndex(prev => Math.min(prev, navList.length - 1));
-  }, [navList.length]);
-
-  useEffect(() => {
     if (validationResult) {
       setCurrentIndex(0);
     }
@@ -334,11 +326,9 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             className={`flex items-center justify-center gap-3 p-4 mb-6 rounded-xl border-2 ${
               matchStatus.status === 'match'
                 ? 'bg-green-100/50 border-green-200 text-green-900'
-                : matchStatus.status === 'mismatch'
+                : matchStatus.status === 'mismatch' || matchStatus.status === 'missing'
                   ? 'bg-red-100/50 border-red-200 text-red-900'
-                  : matchStatus.status === 'missing'
-                    ? 'bg-red-100/50 border-red-200 text-red-900'
-                    : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
+                  : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
             }`}
           >
             {getIcon(matchStatus.icon, 24)}

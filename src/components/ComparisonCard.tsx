@@ -25,9 +25,7 @@ const getValueClasses = (shouldWrap: boolean = false): string => {
   return [
     baseValueClasses,
     shouldWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-nowrap overflow-hidden',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  ].join(' ');
 };
 
 interface ValueSectionProps {

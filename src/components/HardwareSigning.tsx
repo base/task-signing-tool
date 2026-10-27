@@ -305,9 +305,6 @@ export function HardwareSigning({
             </div>
           </Card>
         );
-
-      default:
-        return null;
     }
   };
 
