@@ -33,7 +33,6 @@ export default function Home() {
   const selectedNetwork = selectedUpgrade?.network ?? null;
   const [validationData, setValidationData] = useState<ValidationData | null>(null);
   const [signingData, setSigningData] = useState<SigningResult | null>(null);
-  const [userLedgerAccount, setUserLedgerAccount] = useState<number>(0);
 
   const resetSelectionsFrom = (step: 'upgrade' | 'user') => {
     if (step === 'upgrade') {
@@ -43,7 +42,6 @@ export default function Home() {
     setSelectedUser(undefined);
     setValidationData(null);
     setSigningData(null);
-    setUserLedgerAccount(0);
   };
 
   const handleUpgradeSelection = (upgrade: Upgrade) => {
@@ -53,7 +51,6 @@ export default function Home() {
 
   const handleUserSelection = (cfg: ConfigOption) => {
     setSelectedUser(cfg);
-    setUserLedgerAccount(cfg.ledgerId);
     setCurrentStep('validation');
   };
 
@@ -82,43 +79,34 @@ export default function Home() {
   const canEditUser =
     currentStep === 'validation' || currentStep === 'ledger' || currentStep === 'signing';
 
+  const stepStatus = (step: Step, completed: boolean): StepStatus =>
+    currentStep === step ? 'current' : completed ? 'completed' : 'pending';
+
   const steps = [
     {
       id: 'upgrade',
       label: 'Select Task',
-      status:
-        currentStep === 'upgrade'
-          ? 'current'
-          : ((selectedUpgrade ? 'completed' : 'pending') as 'current' | 'completed' | 'pending'),
+      status: stepStatus('upgrade', !!selectedUpgrade),
     },
     {
       id: 'user',
       label: 'Select User',
-      status:
-        currentStep === 'user'
-          ? 'current'
-          : ((selectedUser ? 'completed' : 'pending') as StepStatus),
+      status: stepStatus('user', !!selectedUser),
     },
     {
       id: 'validation',
       label: 'Review & Validate',
-      status:
-        currentStep === 'validation'
-          ? 'current'
-          : ((validationData ? 'completed' : 'pending') as StepStatus),
+      status: stepStatus('validation', !!validationData),
     },
     {
       id: 'ledger',
       label: 'Sign with Hardware Wallet',
-      status:
-        currentStep === 'ledger'
-          ? 'current'
-          : ((signingData ? 'completed' : 'pending') as StepStatus),
+      status: stepStatus('ledger', !!signingData),
     },
     {
       id: 'signing',
       label: 'Confirmation',
-      status: currentStep === 'signing' ? 'current' : ('pending' as StepStatus),
+      status: stepStatus('signing', false),
     },
   ];
 
@@ -161,7 +149,7 @@ export default function Home() {
           <HardwareSigning
             domainHash={validationData.expected?.domainAndMessageHashes?.domainHash || ''}
             messageHash={validationData.expected?.domainAndMessageHashes?.messageHash || ''}
-            ledgerAccount={userLedgerAccount}
+            ledgerAccount={selectedUser?.ledgerId ?? 0}
             safeTxTypedData={validationData.actual?.safeTxTypedData}
             onSigningComplete={handleSigningComplete}
           />
