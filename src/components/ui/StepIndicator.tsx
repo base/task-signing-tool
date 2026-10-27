@@ -13,7 +13,7 @@ export const StepIndicator = ({ steps }: StepIndicatorProps) => {
     <div className="flex items-center justify-center w-full py-8">
       <nav aria-label="Progress">
         <ol role="list" className="flex items-center space-x-8">
-          {steps.map((step, stepIdx) => (
+          {steps.map(step => (
             <li key={step.id} className="relative">
               {step.status === 'completed' ? (
                 <div className="group flex items-center">
@@ -48,10 +48,6 @@ export const StepIndicator = ({ steps }: StepIndicatorProps) => {
                     {step.label}
                   </span>
                 </div>
-              )}
-
-              {stepIdx !== steps.length - 1 && (
-                <div className="absolute top-4 left-full w-8 h-0.5 -ml-px" />
               )}
             </li>
           ))}

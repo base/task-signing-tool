@@ -40,14 +40,6 @@ export function SigningConfirmation({
     };
   }, []);
 
-  useEffect(() => {
-    setCopied(false);
-    if (resetTimeoutRef.current !== null) {
-      clearTimeout(resetTimeoutRef.current);
-      resetTimeoutRef.current = null;
-    }
-  }, [signingData]);
-
   const handleCopySignature = async () => {
     try {
       await navigator.clipboard.writeText(toDisplaySignature(signingData));

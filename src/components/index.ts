@@ -1,5 +1,3 @@
-export { ComparisonCard } from './ComparisonCard';
-export { HighlightedText } from './HighlightedText';
 export { HardwareSigning } from './HardwareSigning';
 export { SelectionSummary } from './SelectionSummary';
 export { SigningConfirmation } from './SigningConfirmation';
