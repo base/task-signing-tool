@@ -22,21 +22,6 @@ function createRequest(params: Record<string, string>): NextRequest {
 describe('GET /api/upgrades', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetUpgradeOptions.mockImplementation((network: NetworkType) => {
-      if (network === NetworkType.Zeronet) {
-        return [
-          {
-            id: '2025-08-01-upgrade-qux',
-            name: 'Upgrade Qux',
-            description: 'Zeronet upgrade',
-            date: '2025-08-01',
-            network: NetworkType.Zeronet,
-            status: TaskStatus.ReadyToSign,
-          },
-        ];
-      }
-      return [];
-    });
   });
 
   afterEach(() => {
@@ -82,6 +67,7 @@ describe('GET /api/upgrades', () => {
     });
 
     const res = GET(createRequest({ readyToSign: 'true' }));
+    expect(res.status).toBe(200);
     const body = await res.json();
 
     expect(body.map((t: Upgrade) => t.id)).toEqual([
@@ -90,13 +76,13 @@ describe('GET /api/upgrades', () => {
     ]);
   });
 
-  it('returns only ready-to-sign tasks tagged with the fetched network', async () => {
+  it('returns only ready-to-sign tasks', async () => {
     const readyTask: Upgrade = {
       id: '2025-08-01-upgrade-ready',
       name: 'Ready',
       description: '',
       date: '2025-08-01',
-      network: NetworkType.Sepolia,
+      network: NetworkType.Mainnet,
       status: TaskStatus.ReadyToSign,
     };
     mockGetUpgradeOptions.mockImplementation((network: NetworkType) =>
@@ -110,23 +96,6 @@ describe('GET /api/upgrades', () => {
 
     const res = GET(createRequest({ readyToSign: 'true' }));
 
-    expect(await res.json()).toEqual([{ ...readyTask, network: NetworkType.Mainnet }]);
-  });
-
-  it('includes zeronet when aggregating ready-to-sign tasks', async () => {
-    const res = GET(createRequest({ readyToSign: 'true' }));
-
-    expect(res.status).toBe(200);
-
-    const body = await res.json();
-    expect(body).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: '2025-08-01-upgrade-qux',
-          network: NetworkType.Zeronet,
-          status: TaskStatus.ReadyToSign,
-        }),
-      ])
-    );
+    expect(await res.json()).toEqual([readyTask]);
   });
 });

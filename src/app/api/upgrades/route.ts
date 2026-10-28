@@ -12,9 +12,7 @@ export function GET(req: NextRequest) {
 
   const allReadyToSignTasks = availableNetworks.flatMap(network => {
     const upgrades = getUpgradeOptions(network);
-    return upgrades
-      .filter(upgrade => upgrade.status === TaskStatus.ReadyToSign)
-      .map(upgrade => ({ ...upgrade, network }));
+    return upgrades.filter(upgrade => upgrade.status === TaskStatus.ReadyToSign);
   });
 
   // Sort by id (newest first) across all networks; per-network lists are sorted independently.

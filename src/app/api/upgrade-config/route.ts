@@ -64,28 +64,21 @@ export async function GET(req: NextRequest) {
         const displayName = toDisplayName(baseName);
         const filePath = path.join(validationsPath, configFile);
 
+        let ledgerId = 0;
         try {
           const configContent = await fs.readFile(filePath, 'utf-8');
           const parsedConfig = parseFromString(configContent);
 
           if (parsedConfig.result.success && 'config' in parsedConfig) {
-            return {
-              fileName: baseName,
-              displayName,
-              ledgerId: parsedConfig.config.ledgerId,
-            };
+            ledgerId = parsedConfig.config.ledgerId;
+          } else {
+            console.warn(`Failed to parse ${configFile}, using default ledgerId: 0`);
           }
-
-          console.warn(`Failed to parse ${configFile}, using default ledgerId: 0`);
         } catch (error) {
           console.warn(`Error reading ${configFile}, using default ledgerId: 0`, error);
         }
 
-        return {
-          fileName: baseName,
-          displayName,
-          ledgerId: 0,
-        };
+        return { fileName: baseName, displayName, ledgerId };
       })
     );
 
