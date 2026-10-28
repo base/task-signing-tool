@@ -9,7 +9,7 @@ import {
   createDeterministicTarball,
   buildAndValidateSignature,
 } from '../src/lib/task-origin-validate';
-import type { TaskOriginRole } from '../src/lib/types';
+import type { TaskOriginVerifyOptions } from '../src/lib/task-origin-validate';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, 'fixtures');
@@ -22,6 +22,16 @@ const PINNING_SIGNATURES_DIR = path.join(FIXTURES_DIR, 'signatures/pinning');
 
 const TASK_CREATOR_EMAIL = 'alexis.williams.1@coinbase.com';
 const WRONG_TASK_CREATOR_EMAIL = 'test@test.com';
+
+function validate(overrides: Partial<TaskOriginVerifyOptions> = {}) {
+  return buildAndValidateSignature({
+    taskFolderPath: VALID_TASK_FOLDER,
+    signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
+    commonName: TASK_CREATOR_EMAIL,
+    role: 'taskCreator',
+    ...overrides,
+  });
+}
 
 async function computeFileHash(filePath: string): Promise<string> {
   const content = await fs.readFile(filePath);
@@ -144,66 +154,31 @@ describe('buildAndValidateSignature', () => {
 
   describe('valid signatures', () => {
     it('validates a valid signature with matching tarball', async () => {
-      await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
-          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
-          commonName: TASK_CREATOR_EMAIL,
-          role: 'taskCreator' as TaskOriginRole,
-        })
-      ).resolves.not.toThrow();
+      await expect(validate()).resolves.not.toThrow();
     });
   });
 
   describe('tarball mismatch', () => {
     it('fails validation when signature does not match tarball content', async () => {
-      await expect(
-        buildAndValidateSignature({
-          taskFolderPath: MODIFIED_TASK_FOLDER,
-          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
-          commonName: TASK_CREATOR_EMAIL,
-          role: 'taskCreator' as TaskOriginRole,
-        })
-      ).rejects.toThrow();
+      await expect(validate({ taskFolderPath: MODIFIED_TASK_FOLDER })).rejects.toThrow();
     });
   });
 
   describe('SAN mismatch', () => {
     it('fails validation with wrong email for task creator', async () => {
-      await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
-          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
-          commonName: WRONG_TASK_CREATOR_EMAIL,
-          role: 'taskCreator' as TaskOriginRole,
-        })
-      ).rejects.toThrow();
+      await expect(validate({ commonName: WRONG_TASK_CREATOR_EMAIL })).rejects.toThrow();
     });
 
     it('fails validation with a common name that is a prefix of the real identity', async () => {
       const commonName = TASK_CREATOR_EMAIL.replace(/\.com$/, ''); // alexis.williams.1@coinbase
-      await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
-          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
-          commonName,
-          role: 'taskCreator' as TaskOriginRole,
-        })
-      ).rejects.toThrow(
+      await expect(validate({ commonName })).rejects.toThrow(
         `Verification failed: certificate identity error, expected user:///${commonName} but received user:///${TASK_CREATOR_EMAIL}`
       );
     });
 
     it('fails validation with a common name that uses a regex wildcard', async () => {
       const commonName = TASK_CREATOR_EMAIL.replace('.1@', '..@'); // alexis.williams..@coinbase.com
-      await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
-          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
-          commonName,
-          role: 'taskCreator' as TaskOriginRole,
-        })
-      ).rejects.toThrow(
+      await expect(validate({ commonName })).rejects.toThrow(
         `Verification failed: certificate identity error, expected user:///${commonName} but received user:///${TASK_CREATOR_EMAIL}`
       );
     });
@@ -211,25 +186,16 @@ describe('buildAndValidateSignature', () => {
     it('fails validation when task creator signature is verified as facilitator role', async () => {
       // Try to verify a task creator signature with facilitator role
       // This should fail because SAN prefix is user:/// but we expect ldap:///
-      await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
-          signatureFile: path.join(VALID_SIGNATURES_DIR, 'creator-signature.json'),
-          commonName: TASK_CREATOR_EMAIL,
-          role: 'baseFacilitator' as TaskOriginRole,
-        })
-      ).rejects.toThrow();
+      await expect(validate({ role: 'baseFacilitator' })).rejects.toThrow();
     });
 
     it('fails validation when facilitator signature is verified as task creator role', async () => {
       // Try to verify a facilitator signature with task creator role
       // This should fail because SAN prefix is ldap:/// but we expect user:///
       await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
+        validate({
           signatureFile: path.join(VALID_SIGNATURES_DIR, 'base-facilitator-signature.json'),
           commonName: 'base-facilitators',
-          role: 'taskCreator' as TaskOriginRole,
         })
       ).rejects.toThrow();
     });
@@ -240,11 +206,10 @@ describe('buildAndValidateSignature', () => {
       // The pins refuse to inject the self-minted root/intermediate as trust anchors,
       // so no trusted certificate path can be built for the forged leaf.
       await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
+        validate({
           signatureFile: path.join(PINNING_SIGNATURES_DIR, 'self-signed-chain.json'),
           commonName: 'base-facilitators',
-          role: 'baseFacilitator' as TaskOriginRole,
+          role: 'baseFacilitator',
         })
       ).rejects.toThrow(/certificate chain/i);
     });
@@ -252,11 +217,10 @@ describe('buildAndValidateSignature', () => {
     it('rejects a bundle missing the root certificate', async () => {
       // [leaf, runtime, static] with the root ([3]) dropped.
       await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
+        validate({
           signatureFile: path.join(PINNING_SIGNATURES_DIR, 'missing-root.json'),
           commonName: 'base-facilitators',
-          role: 'baseFacilitator' as TaskOriginRole,
+          role: 'baseFacilitator',
         })
       ).rejects.toThrow('certificate chain must contain a runtime intermediate and root');
     });
@@ -264,11 +228,10 @@ describe('buildAndValidateSignature', () => {
     it('rejects a bundle with only a leaf certificate', async () => {
       // Only [leaf] present, so both the runtime intermediate ([1]) and root ([3]) are missing.
       await expect(
-        buildAndValidateSignature({
-          taskFolderPath: VALID_TASK_FOLDER,
+        validate({
           signatureFile: path.join(PINNING_SIGNATURES_DIR, 'leaf-only.json'),
           commonName: 'base-facilitators',
-          role: 'baseFacilitator' as TaskOriginRole,
+          role: 'baseFacilitator',
         })
       ).rejects.toThrow('certificate chain must contain a runtime intermediate and root');
     });
