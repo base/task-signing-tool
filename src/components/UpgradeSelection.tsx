@@ -1,15 +1,9 @@
-import { TaskStatus, Upgrade, ExecutionLink } from '@/lib/types';
+import { Upgrade } from '@/lib/types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MarkdownText } from './MarkdownText';
 import { Card } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { SectionHeader } from './ui/SectionHeader';
-
-const STATUS_VARIANT_MAP: Record<TaskStatus, 'success' | 'warning' | 'neutral'> = {
-  [TaskStatus.Executed]: 'success',
-  [TaskStatus.ReadyToSign]: 'warning',
-  [TaskStatus.Pending]: 'neutral',
-};
 
 interface UpgradeSelectionProps {
   onSelect: (upgrade: Upgrade) => void;
@@ -179,7 +173,7 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({ onSelect }) 
                 </div>
 
                 <div className="flex flex-col items-end gap-3 shrink-0">
-                  <StatusBadge status={option.status} executionLinks={option.executionLinks} />
+                  <Badge variant="warning">{option.status}</Badge>
                 </div>
               </div>
             </Card>
@@ -188,53 +182,4 @@ export const UpgradeSelection: React.FC<UpgradeSelectionProps> = ({ onSelect }) 
       </div>
     </div>
   );
-};
-
-const StatusBadge: React.FC<{
-  status?: TaskStatus;
-  executionLinks?: ExecutionLink[];
-}> = ({ status, executionLinks }) => {
-  if (!status) return null;
-
-  const variant = STATUS_VARIANT_MAP[status] || 'neutral';
-
-  if (status === TaskStatus.Executed && executionLinks && executionLinks.length > 0) {
-    return (
-      <div className="relative group/dropdown">
-        <Badge variant={variant} className="cursor-pointer hover:opacity-80">
-          {status} {executionLinks.length > 1 && `(${executionLinks.length})`}
-          <svg
-            className="ml-1 w-3 h-3 inline-block"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-            />
-          </svg>
-        </Badge>
-
-        <div className="absolute right-0 top-full mt-1 w-48 py-1 bg-white rounded-md shadow-lg border border-gray-100 opacity-0 invisible group-hover/dropdown:opacity-100 group-hover/dropdown:visible transition-all duration-200 z-10">
-          {executionLinks.map((link, i) => (
-            <a
-              key={i}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              onClick={e => e.stopPropagation()}
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return <Badge variant={variant}>{status}</Badge>;
 };

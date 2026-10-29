@@ -2,11 +2,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import {
-  getUpgradeOptions,
-  normalizeUrl,
-  resetContractDeploymentsRootCacheForTests,
-} from '../deployments';
+import { getUpgradeOptions, resetContractDeploymentsRootCacheForTests } from '../deployments';
 import { NetworkType, TaskStatus } from '../types';
 
 let originalCwd: string;
@@ -22,37 +18,6 @@ afterEach(async () => {
   process.chdir(originalCwd);
   resetContractDeploymentsRootCacheForTests();
   await fs.rm(tempDir, { recursive: true, force: true });
-});
-
-describe('normalizeUrl', () => {
-  it.each([
-    ['https://etherscan.io/tx/0x123', 'https://etherscan.io/tx/0x123'],
-    ['http://example.com/path', 'http://example.com/path'],
-    ['  https://example.com  ', 'https://example.com'],
-    ['https://example.com/path).', 'https://example.com/path'],
-    ['https://example.com/path],', 'https://example.com/path'],
-    ['https://example.com/path...', 'https://example.com/path'],
-    ['https://example.com/path?foo=bar&baz=qux', 'https://example.com/path?foo=bar&baz=qux'],
-    ['https://example.com/path#section', 'https://example.com/path#section'],
-    ['https://example.com:8080/path', 'https://example.com:8080/path'],
-    ['https://user:pass@example.com/path', 'https://user:pass@example.com/path'],
-  ])('normalizes %p to %p', (input, expected) => {
-    expect(normalizeUrl(input)).toBe(expected);
-  });
-
-  it.each([
-    '',
-    'http',
-    'http://',
-    'httpxyz://not-valid',
-    'http:not-a-url',
-    'not a url at all',
-    'ftp://files.example.com',
-    'javascript:alert(1)',
-    'file:///etc/passwd',
-  ])('rejects %p', input => {
-    expect(normalizeUrl(input)).toBeUndefined();
-  });
 });
 
 describe('getUpgradeOptions', () => {
@@ -104,13 +69,21 @@ describe('getUpgradeOptions', () => {
     expect(upgrades).toEqual([expect.objectContaining({ status: TaskStatus.Pending })]);
   });
 
-  it('omits execution links from serialized executed tasks with no URLs', async () => {
+  it('returns executed status for a task with an executed README status', async () => {
     await makeTask('2025-06-04-upgrade-foo', 'mainnet', 'Status: EXECUTED');
 
     const upgrades = getUpgradeOptions(NetworkType.Mainnet);
 
     expect(upgrades).toEqual([expect.objectContaining({ status: TaskStatus.Executed })]);
-    expect(JSON.parse(JSON.stringify(upgrades[0]))).not.toHaveProperty('executionLinks');
+  });
+
+  it('omits status when the README has no status line', async () => {
+    await makeTask('2025-06-04-upgrade-foo', 'mainnet', '# Upgrade Foo');
+
+    const upgrades = getUpgradeOptions(NetworkType.Mainnet);
+
+    expect(upgrades).toHaveLength(1);
+    expect(JSON.parse(JSON.stringify(upgrades[0]))).not.toHaveProperty('status');
   });
 
   it('returns all active task folders that have validations for the selected network', async () => {

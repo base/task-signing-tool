@@ -75,20 +75,13 @@ Key requirements and notes:
   - "OP" → `op.json`
 - **Task origin signatures**: By default, tasks require three signature files stored per-network in `tasks/<task-name>/signatures/<network>/`: `creator-signature.json`, `base-facilitator-signature.json`, and `base-sc-facilitator-signature.json`. Signatures are stored separately from the config directory (which is what the tarball is signed over) so signing does not change the signed content. Use the `genTaskOriginSig.ts` script to generate these. Set `skipTaskOriginValidation: true` in the validation config to opt out.
 - **Script execution**: The tool executes Foundry from `active/evm`. Ensure your Foundry project or script context is available under the per-network config directory (`tasks/<task-name>/config/<network>/`); the tool will run the `cmd` specified in your validation config. Temporary outputs like `temp-script-output.txt` will be written there.
-- **Optional README parsing**: If `tasks/<task-name>/config/<network>/README.md` exists, the tool may parse it to display status and execution links.
+- **Optional README parsing**: If `tasks/<task-name>/config/<network>/README.md` exists, the tool may parse it to display status.
 
 ### Task README structure
 
 When present, each task's `README.md` is parsed to populate the UI. Place it at `active/evm/tasks/<YYYY-MM-DD-slug>/config/<network>/README.md` and follow these rules:
 
-- **Status line (required for status display)**: Include a line containing `Status:` within the first 20 lines. Recognized values are `PENDING`, `READY TO SIGN`, and `EXECUTED` (case-insensitive). If `EXECUTED` is not present and `READY TO SIGN` is not present, the status is treated as `PENDING`. Supported formats:
-  - **Single-line with link (any one of these)**:
-    - `Status: EXECUTED (https://explorer/tx/0x...)`
-    - `Status: [EXECUTED](https://explorer/tx/0x...)`
-    - `Status: EXECUTED https://explorer/tx/0x...`
-  - **Multi-line links (up to 5 lines after the status line)**:
-    - First line: `Status: EXECUTED`
-    - Next lines: `Label: https://...` (e.g., `Transaction: https://...`, `Proposal: https://...`)
+- **Status line (required for status display)**: Include a line containing `Status:` within the first 20 lines. Recognized values are `PENDING`, `READY TO SIGN`, and `EXECUTED` (case-insensitive). If `EXECUTED` is not present and `READY TO SIGN` is not present, the status is treated as `PENDING`.
 
 - **Description (optional but recommended)**: Add a `## Description` section. The first paragraph after this header is shown in the UI and should be concise (aim for ≤150 chars). Formatting like bold, italics, and inline code is stripped.
 
@@ -120,32 +113,6 @@ Status: READY TO SIGN
 ## Description
 
 Multisig proposal prepared; awaiting signatures from designated signers.
-```
-
-Executed with single-line link:
-
-```markdown
-# Upgrade System Config
-
-Status: EXECUTED (https://explorer/tx/0xabc123)
-
-## Description
-
-Executed upgrade to System Config with no parameter changes to gas config.
-```
-
-Executed with multiple labeled links:
-
-```markdown
-# Upgrade System Config
-
-Status: EXECUTED
-Transaction: https://explorer/tx/0xabc123
-Proposal: https://snapshot.org/#/proposal/0xdef456
-
-## Description
-
-Executed upgrade; links include both onchain transaction and governance proposal.
 ```
 
 ### Validation file structure
