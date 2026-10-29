@@ -11,11 +11,6 @@ export enum TaskStatus {
   Pending = 'PENDING',
 }
 
-export interface ExecutionLink {
-  url: string;
-  label: string;
-}
-
 export interface Upgrade {
   id: string;
   name: string;
@@ -23,5 +18,4 @@ export interface Upgrade {
   date: string;
   network: NetworkType;
   status?: TaskStatus;
-  executionLinks?: ExecutionLink[];
 }

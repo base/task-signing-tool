@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { NetworkType, TaskStatus, Upgrade, ExecutionLink } from './types';
+import { NetworkType, TaskStatus, Upgrade } from './types';
 
 let cachedRoot: string | null = null;
 
@@ -42,7 +42,6 @@ export function findContractDeploymentsRoot(): string {
 
 const DEFAULT_DESCRIPTION = 'Smart contract upgrade deployment';
 const MAX_STATUS_SEARCH_LINES = 20;
-const MAX_STATUS_FOLLOW_UP_LINES = 5;
 
 function formatUpgradeName(folderName: string): string {
   const slug = folderName.replace(/^\d{4}-\d{2}-\d{2}-/, '');
@@ -97,24 +96,7 @@ function extractDescription(content: string): string {
   }
 }
 
-export function normalizeUrl(rawUrl: string): string | undefined {
-  if (!rawUrl) return undefined;
-  const trimmed = rawUrl.trim().replace(/[)\].,]+$/, '');
-  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-    return undefined;
-  }
-  try {
-    new URL(trimmed);
-    return trimmed;
-  } catch {
-    return undefined;
-  }
-}
-
-function parseExecutionStatus(content: string): {
-  status?: TaskStatus;
-  executionLinks?: ExecutionLink[];
-} {
+function parseExecutionStatus(content: string): { status?: TaskStatus } {
   try {
     const lines = content.replace(/\r\n/g, '\n').split('\n');
     const statusLineIndex = lines
@@ -129,46 +111,8 @@ function parseExecutionStatus(content: string): {
     const isExecuted = normalizedStatus.includes(TaskStatus.Executed);
     const isReady = normalizedStatus.includes(TaskStatus.ReadyToSign);
 
-    if (!isExecuted) return { status: isReady ? TaskStatus.ReadyToSign : TaskStatus.Pending };
-
-    const executionLinks: ExecutionLink[] = [];
-    const seenUrls = new Set<string>();
-
-    const addLink = (label: string, maybeUrl: string | undefined) => {
-      const url = maybeUrl ? normalizeUrl(maybeUrl) : undefined;
-      if (!url || seenUrls.has(url)) return;
-      seenUrls.add(url);
-      executionLinks.push({ label: label || 'Transaction', url });
-    };
-
-    for (const match of statusLine.matchAll(/https?:\/\/[^\s)\]]+/g)) {
-      addLink('Transaction', match[0]);
-    }
-
-    for (
-      let i = statusLineIndex + 1;
-      i < lines.length && i <= statusLineIndex + MAX_STATUS_FOLLOW_UP_LINES;
-      i++
-    ) {
-      const rawLine = lines[i].trim();
-      if (!rawLine) break;
-      if (rawLine.startsWith('#')) break;
-
-      const labelledMatch = rawLine.match(/^([^:]+):\s*(https?:\/\/\S+)/i);
-      if (labelledMatch) {
-        addLink(labelledMatch[1].trim(), labelledMatch[2]);
-        continue;
-      }
-
-      const urlMatch = rawLine.match(/https?:\/\/\S+/);
-      if (urlMatch) {
-        addLink('Transaction', urlMatch[0]);
-      }
-    }
-
-    return executionLinks.length > 0
-      ? { status: TaskStatus.Executed, executionLinks }
-      : { status: TaskStatus.Executed };
+    if (isExecuted) return { status: TaskStatus.Executed };
+    return { status: isReady ? TaskStatus.ReadyToSign : TaskStatus.Pending };
   } catch (error) {
     console.error('parseExecutionStatus error:', error);
     return {};
@@ -214,13 +158,12 @@ function getUpgradeOption(
 
   try {
     const content = fs.readFileSync(readmePath, 'utf-8');
-    const { status, executionLinks } = parseExecutionStatus(content);
+    const { status } = parseExecutionStatus(content);
     return {
       ...baseInfo,
       name: extractTitle(content) || baseInfo.name,
       description: extractDescription(content),
       status,
-      executionLinks,
     };
   } catch (parseError) {
     console.error(`Error parsing ${readmePath}:`, parseError);
