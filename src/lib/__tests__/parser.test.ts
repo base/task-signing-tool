@@ -18,6 +18,31 @@ it('parses valid config JSON', () => {
   expect(parseFromString(JSON.stringify(config))).toEqual({ success: true, config });
 });
 
+it.each([0, 9007199254740992])('accepts nonnegative integer values including %s', value => {
+  const input = {
+    ...config,
+    ledgerId: value,
+    l2GasEstimation: { estimatedGas: '1', buffer: value, recommendedGasLimit: '1' },
+  };
+  expect(parseFromString(JSON.stringify(input))).toEqual({ success: true, config: input });
+});
+
+it.each([-1, 0.5])('rejects invalid integer fields with value %s', value => {
+  const result = parseFromString(
+    JSON.stringify({
+      ...config,
+      ledgerId: value,
+      l2GasEstimation: { estimatedGas: '1', buffer: value, recommendedGasLimit: '1' },
+    })
+  );
+  expect(result.success).toBe(false);
+  if (result.success) throw new Error('Expected parsing to fail');
+  expect(result.zodError.issues.map(issue => issue.path)).toEqual([
+    ['ledgerId'],
+    ['l2GasEstimation', 'buffer'],
+  ]);
+});
+
 it('returns schema issues for invalid config JSON', () => {
   const result = parseFromString(JSON.stringify({ ...config, ledgerId: -1 }));
   expect(result.success).toBe(false);
