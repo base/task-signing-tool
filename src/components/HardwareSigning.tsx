@@ -294,12 +294,7 @@ export function HardwareSigning({
                 Go Back
               </Button>
 
-              <Button
-                onClick={handleSign}
-                disabled={loading}
-                isLoading={loading}
-                className="flex-[2]"
-              >
+              <Button onClick={handleSign} isLoading={loading} className="flex-[2]">
                 Sign with {deviceLabel}
               </Button>
             </div>
