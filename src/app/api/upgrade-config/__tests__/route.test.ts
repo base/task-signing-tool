@@ -43,7 +43,7 @@ describe('GET /api/upgrade-config', () => {
     mockReaddir.mockResolvedValue(['config1.json']);
     mockReadFile.mockResolvedValue('{}');
     mockParseFromString.mockReturnValue({
-      result: { success: true },
+      success: true,
       config: { ledgerId: 1 },
     });
   });
@@ -107,7 +107,7 @@ describe('GET /api/upgrade-config', () => {
     });
 
     it('returns the default config option when parsing fails', async () => {
-      mockParseFromString.mockReturnValue({ result: { success: false } });
+      mockParseFromString.mockReturnValue({ success: false });
       const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
       expect(res.status).toBe(200);
       const body = await res.json();
