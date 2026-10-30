@@ -41,6 +41,11 @@ it.each([-1, 0.5])('rejects invalid integer fields with value %s', value => {
     ['ledgerId'],
     ['l2GasEstimation', 'buffer'],
   ]);
+  if (value === 0.5) {
+    for (const issue of result.zodError.issues) {
+      expect(issue.message).toBe('Expected integer, received float');
+    }
+  }
 });
 
 it('returns schema issues for invalid config JSON', () => {
