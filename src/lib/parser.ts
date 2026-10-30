@@ -1,45 +1,24 @@
 import { z } from 'zod';
 import { TaskConfigSchema } from './config-schemas';
-import { ParsedConfig, ParseResult } from './types/index';
+import type { TaskConfig } from './types/index';
 
-function parseConfig(jsonData: unknown): ParsedConfig {
-  const parsed = TaskConfigSchema.safeParse(jsonData);
+type ParsingOutcome =
+  | { success: true; config: TaskConfig }
+  | { success: false; zodError: z.ZodError };
 
-  if (parsed.success) {
-    return {
-      config: parsed.data,
-      result: {
-        success: true,
-      },
-    };
-  }
-
-  return {
-    result: {
-      success: false,
-      zodError: parsed.error,
-    },
-  };
-}
-
-export function parseFromString(jsonString: string): ParsedConfig {
+export function parseFromString(jsonString: string): ParsingOutcome {
   try {
-    return parseConfig(JSON.parse(jsonString));
+    const parsed = TaskConfigSchema.safeParse(JSON.parse(jsonString));
+    if (parsed.success) {
+      return { success: true, config: parsed.data };
+    }
+    return { success: false, zodError: parsed.error };
   } catch (error) {
-    return {
-      result: {
-        success: false,
-        zodError: createJsonParseError(error),
-      },
-    };
+    return { success: false, zodError: createJsonParseError(error) };
   }
 }
 
-export function getValidationSummary(result: ParseResult): string {
-  if (result.success) {
-    return '✅ Configuration is valid';
-  }
-
+export function getValidationSummary(result: Extract<ParsingOutcome, { success: false }>): string {
   const parts: string[] = [
     '❌ Configuration has errors',
     `\nErrors (${result.zodError.issues.length}):`,

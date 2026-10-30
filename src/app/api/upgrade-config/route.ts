@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
           const configContent = await fs.readFile(filePath, 'utf-8');
           const parsedConfig = parseFromString(configContent);
 
-          if (parsedConfig.result.success && 'config' in parsedConfig) {
+          if (parsedConfig.success) {
             ledgerId = parsedConfig.config.ledgerId;
           } else {
             console.warn(`Failed to parse ${configFile}, using default ledgerId: 0`);

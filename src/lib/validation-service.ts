@@ -70,13 +70,9 @@ async function getConfigData(opts: ValidationServiceOpts): Promise<{
 
   const parsedConfig = parseFromString(configContent);
 
-  if (!parsedConfig.result.success) {
-    console.error('❌ Failed to parse config:', getValidationSummary(parsedConfig.result));
+  if (!parsedConfig.success) {
+    console.error('❌ Failed to parse config:', getValidationSummary(parsedConfig));
     throw new Error('ValidationService::getConfigData: Failed to parse config file');
-  }
-
-  if (!('config' in parsedConfig)) {
-    throw new Error('ValidationService::getConfigData: Parsed config missing config data');
   }
 
   console.log(`✅ Loaded config data from ${configFileName}`);
