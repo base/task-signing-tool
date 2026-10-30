@@ -103,6 +103,82 @@ describe('taskDirs', () => {
 });
 
 describe('listTasks', () => {
+  it('omits a Task with a regular-file network config without dropping a ready sibling', async () => {
+    await makeTask('2025-06-04-safe', 'mainnet', '# Safe\n\nStatus: READY TO SIGN');
+    const config = path.join(tempDir, 'active', 'evm', 'tasks', '2025-06-05-bad', 'config');
+    await fs.mkdir(config, { recursive: true });
+    await fs.writeFile(path.join(config, 'mainnet'), '{}');
+
+    expect(createTaskCatalog(tempDir).listTasks(NetworkType.Mainnet)).toEqual([
+      {
+        id: '2025-06-04-safe',
+        name: 'Safe',
+        description: 'Smart contract upgrade deployment',
+        date: '2025-06-04',
+        network: NetworkType.Mainnet,
+        status: TaskStatus.ReadyToSign,
+      },
+    ]);
+  });
+
+  it.each(['network', 'Task', 'EVM'])(
+    'ignores a looping %s README and uses the next usable candidate',
+    async level => {
+      await makeTask('2025-06-04-safe', 'mainnet');
+      const evm = path.join(tempDir, 'active', 'evm');
+      const task = path.join(evm, 'tasks', '2025-06-04-safe');
+      const config = path.join(task, 'config', 'mainnet');
+      const readmeDir = level === 'network' ? config : level === 'Task' ? task : evm;
+      const readme = path.join(readmeDir, 'README.md');
+      await fs.symlink(readme, readme);
+      if (level !== 'EVM') {
+        await fs.writeFile(
+          path.join(level === 'network' ? task : evm, 'README.md'),
+          '# Fallback\n\nStatus: READY TO SIGN\n\nFallback description.'
+        );
+      }
+
+      expect(createTaskCatalog(tempDir).listTasks(NetworkType.Mainnet)).toEqual([
+        {
+          id: '2025-06-04-safe',
+          name: level === 'EVM' ? 'Safe' : 'Fallback',
+          description: level === 'EVM' ? '' : 'Fallback description.',
+          date: '2025-06-04',
+          network: NetworkType.Mainnet,
+          ...(level === 'EVM' ? {} : { status: TaskStatus.ReadyToSign }),
+        },
+      ]);
+    }
+  );
+
+  it('returns an empty list for a looping tasks root without throwing', async () => {
+    const evm = path.join(tempDir, 'active', 'evm');
+    await fs.mkdir(evm, { recursive: true });
+    const tasks = path.join(evm, 'tasks');
+    await fs.symlink(tasks, tasks);
+
+    expect(createTaskCatalog(tempDir).listTasks(NetworkType.Mainnet)).toEqual([]);
+  });
+
+  it('returns an empty list when the EVM root escapes to an outside Task tree', async () => {
+    const root = path.join(tempDir, 'catalog');
+    const outside = path.join(tempDir, 'outside');
+    await fs.mkdir(
+      path.join(outside, 'tasks', '2025-06-04-unsafe', 'config', 'mainnet', 'validations'),
+      {
+        recursive: true,
+      }
+    );
+    await fs.writeFile(
+      path.join(outside, 'README.md'),
+      '# External\n\nStatus: READY TO SIGN\n\nExternal description.'
+    );
+    await fs.mkdir(path.join(root, 'active'), { recursive: true });
+    await fs.symlink(outside, path.join(root, 'active', 'evm'));
+
+    expect(createTaskCatalog(root).listTasks(NetworkType.Mainnet)).toEqual([]);
+  });
+
   describe.each(['../x', '', 'a/b'])('invalid network %j', network => {
     it.each([false, true])(
       'rejects the network before listing with tasks directory present: %s',

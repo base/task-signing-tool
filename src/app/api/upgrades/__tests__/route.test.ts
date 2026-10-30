@@ -112,6 +112,26 @@ describe('GET /api/upgrades', () => {
     }
   });
 
+  it('returns a ready-to-sign sibling when another Task has a regular-file network config', async () => {
+    await makeTask('2025-06-04-safe', NetworkType.Mainnet, 'Safe', TaskStatus.ReadyToSign);
+    const config = path.join(fixtureRoot, 'active', 'evm', 'tasks', '2025-06-05-bad', 'config');
+    await fs.mkdir(config, { recursive: true });
+    await fs.writeFile(path.join(config, 'mainnet'), '{}');
+
+    const res = GET(createRequest({ readyToSign: 'true' }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([
+      {
+        id: '2025-06-04-safe',
+        name: 'Safe',
+        description: 'Description for Safe.',
+        date: '2025-06-04',
+        network: NetworkType.Mainnet,
+        status: TaskStatus.ReadyToSign,
+      },
+    ]);
+  });
+
   it('returns only ready-to-sign tasks', async () => {
     await makeTask(
       '2025-08-01-upgrade-ready',

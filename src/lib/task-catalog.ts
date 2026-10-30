@@ -105,8 +105,9 @@ function isListingPathInsideRoot(root: string, realRoot: string, filePath: strin
     assertContainedPath(root, realRoot, filePath);
     return true;
   } catch (error) {
-    if (!(error instanceof TaskCatalogError) || error.kind !== 'outside-root') throw error;
-    console.warn('Skipping Task catalog path outside root', { path: filePath });
+    if (error instanceof TaskCatalogError && error.kind === 'outside-root') {
+      console.warn('Skipping Task catalog path outside root', { path: filePath });
+    }
     return false;
   }
 }
