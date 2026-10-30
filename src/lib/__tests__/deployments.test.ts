@@ -86,6 +86,16 @@ describe('getUpgradeOptions', () => {
     expect(JSON.parse(JSON.stringify(upgrades[0]))).not.toHaveProperty('status');
   });
 
+  it('uses the default description when the README has no descriptive text', async () => {
+    await makeTask('2025-06-04-upgrade-foo', 'mainnet', '# Upgrade Foo\n\nStatus: PENDING');
+
+    const upgrades = getUpgradeOptions(NetworkType.Mainnet);
+
+    expect(upgrades).toEqual([
+      expect.objectContaining({ description: 'Smart contract upgrade deployment' }),
+    ]);
+  });
+
   it('returns all active task folders that have validations for the selected network', async () => {
     await makeTask('2025-06-04-upgrade-foo', 'mainnet');
     await makeTask('2025-07-12-upgrade-bar', 'mainnet');

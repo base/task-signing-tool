@@ -65,58 +65,48 @@ function cleanMarkdownBlock(block: string): string {
 }
 
 function extractDescription(content: string): string {
-  try {
-    const normalized = content.replace(/\r\n/g, '\n');
-    const descriptionMatch = normalized.match(/##\s*Description[^\n]*\n([\s\S]*?)(?=\n##\s+|$)/i);
-    if (descriptionMatch) {
-      return cleanMarkdownBlock(descriptionMatch[1]);
-    }
-
-    const lines = normalized.split('\n');
-    const paragraph: string[] = [];
-
-    for (const rawLine of lines) {
-      const trimmed = rawLine.trim();
-      if (!trimmed) {
-        if (paragraph.length > 0) break;
-        continue;
-      }
-
-      if (trimmed.startsWith('#')) continue;
-      if (/^status\s*:/i.test(trimmed)) continue;
-
-      paragraph.push(rawLine.replace(/[ \t]+$/g, ''));
-    }
-
-    const fallback = cleanMarkdownBlock(paragraph.join('\n'));
-    return fallback || DEFAULT_DESCRIPTION;
-  } catch (error) {
-    console.warn('extractDescription fallback:', error);
-    return DEFAULT_DESCRIPTION;
+  const normalized = content.replace(/\r\n/g, '\n');
+  const descriptionMatch = normalized.match(/##\s*Description[^\n]*\n([\s\S]*?)(?=\n##\s+|$)/i);
+  if (descriptionMatch) {
+    return cleanMarkdownBlock(descriptionMatch[1]);
   }
+
+  const lines = normalized.split('\n');
+  const paragraph: string[] = [];
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) {
+      if (paragraph.length > 0) break;
+      continue;
+    }
+
+    if (trimmed.startsWith('#')) continue;
+    if (/^status\s*:/i.test(trimmed)) continue;
+
+    paragraph.push(rawLine.replace(/[ \t]+$/g, ''));
+  }
+
+  const fallback = cleanMarkdownBlock(paragraph.join('\n'));
+  return fallback || DEFAULT_DESCRIPTION;
 }
 
-function parseExecutionStatus(content: string): { status?: TaskStatus } {
-  try {
-    const lines = content.replace(/\r\n/g, '\n').split('\n');
-    const statusLineIndex = lines
-      .slice(0, MAX_STATUS_SEARCH_LINES)
-      .findIndex(line => /status:/i.test(line));
-    if (statusLineIndex === -1) {
-      return {};
-    }
-
-    const statusLine = lines[statusLineIndex];
-    const normalizedStatus = statusLine.toUpperCase();
-    const isExecuted = normalizedStatus.includes(TaskStatus.Executed);
-    const isReady = normalizedStatus.includes(TaskStatus.ReadyToSign);
-
-    if (isExecuted) return { status: TaskStatus.Executed };
-    return { status: isReady ? TaskStatus.ReadyToSign : TaskStatus.Pending };
-  } catch (error) {
-    console.error('parseExecutionStatus error:', error);
-    return {};
+function parseExecutionStatus(content: string): TaskStatus | undefined {
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const statusLineIndex = lines
+    .slice(0, MAX_STATUS_SEARCH_LINES)
+    .findIndex(line => /status:/i.test(line));
+  if (statusLineIndex === -1) {
+    return undefined;
   }
+
+  const statusLine = lines[statusLineIndex];
+  const normalizedStatus = statusLine.toUpperCase();
+  const isExecuted = normalizedStatus.includes(TaskStatus.Executed);
+  const isReady = normalizedStatus.includes(TaskStatus.ReadyToSign);
+
+  if (isExecuted) return TaskStatus.Executed;
+  return isReady ? TaskStatus.ReadyToSign : TaskStatus.Pending;
 }
 
 function deriveDateFromFolder(folderName: string): string {
@@ -158,7 +148,7 @@ function getUpgradeOption(
 
   try {
     const content = fs.readFileSync(readmePath, 'utf-8');
-    const { status } = parseExecutionStatus(content);
+    const status = parseExecutionStatus(content);
     return {
       ...baseInfo,
       name: extractTitle(content) || baseInfo.name,
