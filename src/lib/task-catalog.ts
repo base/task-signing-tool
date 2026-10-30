@@ -57,6 +57,12 @@ export class TaskCatalogError extends Error {
   }
 }
 
+function assertValidId(id: string): void {
+  if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+    throw new TaskCatalogError('invalid-id', `Invalid Task id or network: ${id}`);
+  }
+}
+
 function taskDirs(root: string, taskId: string, network: string) {
   const evmDir = path.join(root, 'active', 'evm');
   const taskDir = path.join(evmDir, 'tasks', taskId);
@@ -89,22 +95,34 @@ function assertInsideRoot(root: string, dir: string): void {
   }
 }
 
+function assertContainedPath(root: string, realRoot: string, filePath: string): void {
+  assertInsideRoot(root, path.resolve(filePath));
+  assertInsideRoot(realRoot, resolveExistingAncestor(filePath));
+}
+
+function isListingPathInsideRoot(root: string, realRoot: string, filePath: string): boolean {
+  try {
+    assertContainedPath(root, realRoot, filePath);
+    return true;
+  } catch (error) {
+    if (!(error instanceof TaskCatalogError) || error.kind !== 'outside-root') throw error;
+    console.warn('Skipping Task catalog path outside root', { path: filePath });
+    return false;
+  }
+}
+
 export function createTaskCatalog(root: string) {
   root = path.resolve(root);
   return {
     root,
     listTasks: (network: NetworkType) => listTasks(root, network),
     taskDirs: (taskId: string, network: string) => {
-      for (const id of [taskId, network]) {
-        if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
-          throw new TaskCatalogError('invalid-id', `Invalid Task id or network: ${id}`);
-        }
-      }
+      assertValidId(taskId);
+      assertValidId(network);
       const dirs = taskDirs(root, taskId, network);
       const realRoot = resolveExistingAncestor(root);
       for (const dir of Object.values(dirs)) {
-        assertInsideRoot(root, path.resolve(dir));
-        assertInsideRoot(realRoot, resolveExistingAncestor(dir));
+        assertContainedPath(root, realRoot, dir);
       }
       return dirs;
     },
@@ -190,7 +208,8 @@ function deriveDateFromFolder(folderName: string): string {
 function getUpgradeOption(
   contractDeploymentsPath: string,
   taskId: string,
-  network: NetworkType
+  network: NetworkType,
+  realRoot: string
 ): Upgrade | undefined {
   const {
     evmDir: evmPath,
@@ -198,6 +217,13 @@ function getUpgradeOption(
     taskOriginDir: networkConfigPath,
   } = taskDirs(contractDeploymentsPath, taskId, network);
   const validationsPath = path.join(networkConfigPath, 'validations');
+  if (
+    ![taskPath, networkConfigPath, validationsPath].every(dir =>
+      isListingPathInsideRoot(contractDeploymentsPath, realRoot, dir)
+    )
+  ) {
+    return undefined;
+  }
 
   if (!fs.existsSync(validationsPath) || !fs.statSync(validationsPath).isDirectory()) {
     return undefined;
@@ -215,7 +241,12 @@ function getUpgradeOption(
     path.join(networkConfigPath, 'README.md'),
     path.join(taskPath, 'README.md'),
     path.join(evmPath, 'README.md'),
-  ].find(filePath => fs.existsSync(filePath) && fs.statSync(filePath).isFile());
+  ].find(
+    filePath =>
+      isListingPathInsideRoot(contractDeploymentsPath, realRoot, filePath) &&
+      fs.existsSync(filePath) &&
+      fs.statSync(filePath).isFile()
+  );
 
   if (!readmePath) {
     return baseInfo;
@@ -237,7 +268,10 @@ function getUpgradeOption(
 }
 
 function listTasks(contractDeploymentsPath: string, network: NetworkType): Upgrade[] {
+  assertValidId(network);
   const tasksPath = path.join(contractDeploymentsPath, 'active', 'evm', 'tasks');
+  const realRoot = resolveExistingAncestor(contractDeploymentsPath);
+  if (!isListingPathInsideRoot(contractDeploymentsPath, realRoot, tasksPath)) return [];
 
   if (!isDirectory(tasksPath)) {
     return [];
@@ -248,7 +282,7 @@ function listTasks(contractDeploymentsPath: string, network: NetworkType): Upgra
       .readdirSync(tasksPath, { withFileTypes: true })
       .filter(dirent => dirent.isDirectory())
       .filter(dirent => /^\d{4}-\d{2}-\d{2}-/.test(dirent.name))
-      .map(dirent => getUpgradeOption(contractDeploymentsPath, dirent.name, network))
+      .map(dirent => getUpgradeOption(contractDeploymentsPath, dirent.name, network, realRoot))
       .filter((option): option is Upgrade => option !== undefined)
       .sort((a, b) => b.id.localeCompare(a.id));
   } catch (error) {

@@ -73,6 +73,45 @@ describe('GET /api/upgrades', () => {
     ]);
   });
 
+  it('omits an escaping Task while returning a safe ready-to-sign sibling', async () => {
+    const root = fixtureRoot;
+    fixtureRoot = path.join(root, 'catalog');
+    try {
+      await makeTask('2025-06-04-safe', NetworkType.Mainnet, 'Safe', TaskStatus.ReadyToSign);
+      const outside = path.join(root, 'outside');
+      await fs.mkdir(path.join(outside, 'validations'), { recursive: true });
+      await fs.writeFile(
+        path.join(outside, 'README.md'),
+        '# External\n\nStatus: READY TO SIGN\n\nExternal description.'
+      );
+      const config = path.join(
+        fixtureRoot,
+        'active',
+        'evm',
+        'tasks',
+        '2025-06-05-unsafe',
+        'config'
+      );
+      await fs.mkdir(config, { recursive: true });
+      await fs.symlink(outside, path.join(config, 'mainnet'));
+
+      const res = GET(createRequest({ readyToSign: 'true' }));
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual([
+        {
+          id: '2025-06-04-safe',
+          name: 'Safe',
+          description: 'Description for Safe.',
+          date: '2025-06-04',
+          network: NetworkType.Mainnet,
+          status: TaskStatus.ReadyToSign,
+        },
+      ]);
+    } finally {
+      fixtureRoot = root;
+    }
+  });
+
   it('returns only ready-to-sign tasks', async () => {
     await makeTask(
       '2025-08-01-upgrade-ready',
