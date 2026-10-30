@@ -58,15 +58,9 @@ export const BalanceChangeSchema = z.object({
   allowDifference: z.boolean(),
 });
 
-// These fields accept integer-valued numbers beyond the safe integer range.
-const NonnegativeIntegerSchema = z
-  .number()
-  .nonnegative()
-  .refine(Number.isInteger, { error: 'Expected integer, received float' });
-
 export const L2GasEstimationSchema = z.object({
   estimatedGas: z.string().min(1),
-  buffer: NonnegativeIntegerSchema,
+  buffer: z.number().int().nonnegative(),
   recommendedGasLimit: z.string().min(1),
 });
 
@@ -80,7 +74,7 @@ export const TaskOriginValidationConfigSchema = z.object({
 
 export const TaskConfigSchema = z.object({
   cmd: z.string(),
-  ledgerId: NonnegativeIntegerSchema,
+  ledgerId: z.number().int().nonnegative(),
   rpcUrl: z.string().url().min(1),
   expectedDomainAndMessageHashes: ExpectedHashesSchema,
   stateOverrides: z.array(StateOverrideSchema),
