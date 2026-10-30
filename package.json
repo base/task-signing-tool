@@ -56,6 +56,9 @@
     "typescript": "5.9.3"
   },
   "overrides": {
+    "babel-plugin-istanbul": {
+      "test-exclude": "7.0.1"
+    },
     "jest-config": {
       "deepmerge": "4.1.1"
     }
