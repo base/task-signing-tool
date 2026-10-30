@@ -131,17 +131,16 @@ interface ValidationResultsProps {
   onProceedToLedgerSigning: (validationResult: ValidationData) => void;
 }
 
-const getIcon = (iconName: string, size: number = 24) => {
-  const props = { size };
+const getIcon = (iconName: string) => {
   switch (iconName) {
     case 'check':
-      return <CheckCircle {...props} />;
+      return <CheckCircle size={24} />;
     case 'x':
-      return <XCircle {...props} />;
+      return <XCircle size={24} />;
     case 'lightbulb':
-      return <Lightbulb {...props} />;
+      return <Lightbulb size={24} />;
     case 'coins':
-      return <Coins {...props} />;
+      return <Coins size={24} />;
     default:
       return null;
   }
@@ -246,7 +245,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   const matchStatus = evaluation?.matchStatus;
   const descriptionContent = evaluation?.description;
-  const hashes = validationResult.expected?.domainAndMessageHashes;
+  const hashes = validationResult.expected.domainAndMessageHashes;
   const canSign = Boolean(hashes?.domainHash && hashes?.messageHash);
   const showEntryDetails = !(taskOriginDisabled && currentEntry?.kind === 'taskOrigin');
 
@@ -331,7 +330,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
                   : 'bg-emerald-100/50 border-emerald-200 text-emerald-900'
             }`}
           >
-            {getIcon(matchStatus.icon, 24)}
+            {getIcon(matchStatus.icon)}
             <span className="text-lg font-bold">{matchStatus.text}</span>
           </div>
         )}
@@ -357,7 +356,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
           <div
             className={`mt-6 rounded-xl border p-4 flex items-start gap-3 ${DESCRIPTION_STYLES[descriptionContent.variant].box}`}
           >
-            <div className="mt-0.5">{getIcon(descriptionContent.icon, 24)}</div>
+            <div className="mt-0.5">{getIcon(descriptionContent.icon)}</div>
             <div className="flex-1">
               <h4
                 className={`mb-1 text-xs font-bold uppercase tracking-wider ${DESCRIPTION_STYLES[descriptionContent.variant].title}`}

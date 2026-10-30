@@ -53,7 +53,6 @@ const postJson = async <T>(url: string, payload: unknown): Promise<T> => {
 
 interface UseValidationRunnerReturn extends ValidationRunnerState {
   runValidation: () => Promise<ValidationData | null>;
-  reset: () => void;
   isLoading: boolean;
   isInstallingDeps: boolean;
 }
@@ -131,10 +130,10 @@ export const useValidationRunner = ({
       setState({
         status: 'success',
         error: null,
-        result: validationResult.data as ValidationData,
+        result: validationResult.data,
       });
 
-      return validationResult.data as ValidationData;
+      return validationResult.data;
     } catch (err) {
       console.error('Validation error:', err);
       setState(
@@ -148,14 +147,9 @@ export const useValidationRunner = ({
     }
   }, [network, upgradeId, userType]);
 
-  const reset = useCallback(() => {
-    setState(INITIAL_STATE);
-  }, []);
-
   return {
     ...state,
     runValidation,
-    reset,
     isLoading: state.status === 'installing-deps' || state.status === 'running',
     isInstallingDeps: state.status === 'installing-deps',
   };
