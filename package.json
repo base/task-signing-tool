@@ -47,7 +47,7 @@
     "eslint-config-next": "16.4.3",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
-    "jest": "30.2.0",
+    "jest": "30.5.2",
     "node-forge": "1.4.2",
     "prettier": "3.8.1",
     "semver": "7.7.3",
@@ -56,9 +56,6 @@
     "typescript": "5.9.3"
   },
   "overrides": {
-    "babel-plugin-istanbul": {
-      "test-exclude": "7.0.1"
-    },
     "jest-config": {
       "deepmerge": "4.1.1"
     }
