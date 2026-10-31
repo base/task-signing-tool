@@ -519,33 +519,6 @@ export const evaluateValidationEntry = (
     case 'taskOrigin': {
       const item = items.taskOrigin[entry.index]!;
 
-      // Handle disabled state
-      if (item.isDisabled) {
-        return {
-          matchStatus: createMatchStatus('match', 'Task Origin Validation Disabled'),
-          description: {
-            variant: 'info',
-            icon: 'lightbulb',
-            title: 'Validation Skipped',
-            text: 'Task origin validation was explicitly skipped using skipTaskOriginValidation: true in the config. This is acceptable for testnet tasks but must be enabled for mainnet tasks.',
-          },
-          cards: {
-            expected: {
-              contractName: 'Task Origin',
-              contractAddress: 'Configuration',
-              storageKey: 'skipTaskOriginValidation',
-              afterValue: 'true (skipped)',
-            },
-            actual: {
-              contractName: 'Task Origin',
-              contractAddress: 'Status',
-              storageKey: 'Validation',
-              afterValue: 'Skipped',
-            },
-          },
-        };
-      }
-
       const allPassed = item.allPassed;
       const failedCount = item.results.filter(r => !r.success).length;
       const totalCount = item.results.length;
