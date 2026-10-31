@@ -63,6 +63,7 @@ const validation = (
   expected: Partial<ValidationData['expected']>,
   actual: Partial<ValidationData['actual']>
 ): ValidationData => ({
+  ledgerId: 0,
   expected: {
     stateOverrides: expected.stateOverrides ?? [],
     stateChanges: expected.stateChanges ?? [],

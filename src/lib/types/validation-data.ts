@@ -22,6 +22,7 @@ export interface TaskOriginValidation {
 }
 
 export interface ValidationData {
+  ledgerId: number;
   expected: {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];

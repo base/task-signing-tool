@@ -289,6 +289,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
     console.log('❌ Task origin validation failed - skipping simulation');
     const expected = getExpectedData(cfg);
     return {
+      ledgerId: cfg.ledgerId,
       expected,
       actual: {
         stateOverrides: [],
@@ -304,6 +305,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
   const actual = await runStateDiffSimulation(scriptPath, cfg);
 
   return {
+    ledgerId: cfg.ledgerId,
     expected,
     actual,
     taskOriginValidation,

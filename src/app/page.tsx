@@ -149,7 +149,7 @@ export default function Home() {
           <HardwareSigning
             domainHash={validationData.expected.domainAndMessageHashes?.domainHash || ''}
             messageHash={validationData.expected.domainAndMessageHashes?.messageHash || ''}
-            ledgerAccount={selectedUser?.ledgerId ?? 0}
+            ledgerAccount={validationData.ledgerId}
             safeTxTypedData={validationData.actual.safeTxTypedData}
             onSigningComplete={handleSigningComplete}
           />
