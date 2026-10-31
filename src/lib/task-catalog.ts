@@ -80,7 +80,8 @@ function resolveExistingAncestor(dir: string): string {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     if (fs.lstatSync(dir, { throwIfNoEntry: false })?.isSymbolicLink()) {
-      return resolveExistingAncestor(path.resolve(path.dirname(dir), fs.readlinkSync(dir)));
+      const realParent = resolveExistingAncestor(path.dirname(dir));
+      return resolveExistingAncestor(path.resolve(realParent, fs.readlinkSync(dir)));
     }
     const parent = path.dirname(dir);
     if (parent === dir) throw error;

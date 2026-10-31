@@ -47,6 +47,18 @@ describe('taskDirs', () => {
     );
   });
 
+  it('resolves a dangling relative symlink against its real parent', async () => {
+    const root = path.join(tempDir, 'root');
+    const taskDir = path.join(root, 'active', 'evm', 'tasks', 'task');
+    await fs.mkdir(taskDir, { recursive: true });
+    await fs.mkdir(path.join(root, 's'));
+    await fs.symlink('../../../../s', path.join(taskDir, 'signatures'));
+    await fs.symlink('../../out/z', path.join(root, 's', 'mainnet'));
+    expect(() => createTaskCatalog(root).taskDirs('task', 'mainnet')).toThrow(
+      expect.objectContaining({ kind: 'outside-root' })
+    );
+  });
+
   it('allows internal symlinks and returns lexical paths through a symlinked root', async () => {
     const root = path.join(tempDir, 'root');
     const alias = path.join(tempDir, 'alias');
