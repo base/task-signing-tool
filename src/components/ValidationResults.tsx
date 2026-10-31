@@ -180,12 +180,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     taskOriginDisabled,
   } = useValidationSummary(validationResult);
 
-  useEffect(() => {
-    if (validationResult) {
-      setCurrentIndex(0);
-    }
-  }, [validationResult]);
-
   const currentEntry: ValidationNavEntry | undefined = navList[currentIndex];
   const evaluation = currentEntry ? evaluateValidationEntry(currentEntry, itemsByStep) : null;
   const totalItems = navList.length;
@@ -253,7 +247,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
     if (currentIndex === totalItems - 1) {
       setIsResultModalOpen(true);
     } else {
-      setCurrentIndex(prev => Math.min(totalItems - 1, prev + 1));
+      setCurrentIndex(prev => prev + 1);
     }
   };
 

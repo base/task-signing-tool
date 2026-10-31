@@ -4,7 +4,6 @@ import { checksummizeAddressesInText } from '@/lib/format';
 const DIFF_CLASSNAMES: Record<StringDiff['type'], string> = {
   added: 'rounded-sm bg-green-100 px-0.5 py-0.5 text-green-800',
   removed: 'rounded-sm bg-red-100 px-0.5 py-0.5 text-red-600 line-through',
-  modified: 'rounded-sm bg-yellow-100 px-0.5 py-0.5 text-yellow-600',
   unchanged: '',
 };
 

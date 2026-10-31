@@ -85,17 +85,14 @@ export function SigningConfirmation({
     {
       label: 'Data',
       value: signingData.data,
-      monospace: true,
     },
     {
       label: 'Signer',
       value: toChecksumAddressSafe(signingData.signer),
-      monospace: true,
     },
     {
       label: 'Signature',
       value: signingData.signature,
-      monospace: true,
     },
   ];
 
