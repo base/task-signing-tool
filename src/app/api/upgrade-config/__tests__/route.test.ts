@@ -92,6 +92,19 @@ describe('GET /api/upgrade-config', () => {
       });
     });
 
+    it('returns only JSON config options in directory order with formatted names', async () => {
+      mockReaddir.mockResolvedValue(['b-profile.json', 'README.md', 'a.json']);
+      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({
+        configOptions: [
+          { fileName: 'b-profile', displayName: 'B Profile' },
+          { fileName: 'a', displayName: 'A' },
+        ],
+      });
+    });
+
     it('returns 200 with empty array on ENOENT', async () => {
       const enoentError = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
       mockReaddir.mockRejectedValue(enoentError);
