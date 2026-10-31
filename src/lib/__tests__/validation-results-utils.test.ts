@@ -205,3 +205,59 @@ describe('state-diff comparison pairing', () => {
     expect(changeEval.cards.actual.afterValueDiffs).toBeUndefined();
   });
 });
+
+describe('task origin evaluation', () => {
+  it('keeps disabled validation available for the skipped UI without blocking', () => {
+    const items = buildValidationItems({
+      ...validation({}, {}),
+      taskOriginValidation: {
+        enabled: false,
+        hidden: false,
+        results: [{ role: 'taskCreator', success: false }],
+      },
+    });
+
+    expect(items.taskOrigin).toHaveLength(1);
+    expect(items.taskOrigin[0].isDisabled).toBe(true);
+    expect(hasBlockingErrors(items)).toBe(false);
+    expect(evaluateValidationEntry({ kind: 'taskOrigin', index: 0 }, items)).toBeTruthy();
+  });
+
+  it('matches without blocking when all enabled signatures pass', () => {
+    const items = buildValidationItems({
+      ...validation({}, {}),
+      taskOriginValidation: {
+        enabled: true,
+        results: [
+          { role: 'taskCreator', success: true },
+          { role: 'baseFacilitator', success: true },
+          { role: 'securityCouncilFacilitator', success: true },
+        ],
+      },
+    });
+
+    expect(
+      evaluateValidationEntry({ kind: 'taskOrigin', index: 0 }, items).matchStatus.status
+    ).toBe('match');
+    expect(hasBlockingErrors(items)).toBe(false);
+  });
+
+  it('mismatches and blocks when one enabled signature fails', () => {
+    const items = buildValidationItems({
+      ...validation({}, {}),
+      taskOriginValidation: {
+        enabled: true,
+        results: [
+          { role: 'taskCreator', success: true },
+          { role: 'baseFacilitator', success: false },
+          { role: 'securityCouncilFacilitator', success: true },
+        ],
+      },
+    });
+
+    expect(
+      evaluateValidationEntry({ kind: 'taskOrigin', index: 0 }, items).matchStatus.status
+    ).toBe('mismatch');
+    expect(hasBlockingErrors(items)).toBe(true);
+  });
+});
