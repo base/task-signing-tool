@@ -2,12 +2,10 @@ import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals
 import { NextRequest } from 'next/server';
 
 const mockReaddir = jest.fn<(path: string) => Promise<string[]>>();
-const mockReadFile = jest.fn<(path: string, encoding: BufferEncoding) => Promise<string>>();
 
 jest.unstable_mockModule('fs', () => ({
   promises: {
     readdir: mockReaddir,
-    readFile: mockReadFile,
   },
 }));
 
@@ -15,12 +13,6 @@ const mockFindContractDeploymentsRoot = jest.fn<() => string>();
 
 jest.unstable_mockModule('@/lib/deployments', () => ({
   findContractDeploymentsRoot: mockFindContractDeploymentsRoot,
-}));
-
-const mockParseFromString = jest.fn();
-
-jest.unstable_mockModule('@/lib/parser', () => ({
-  parseFromString: mockParseFromString,
 }));
 
 const { GET } = await import('../route');
@@ -41,11 +33,6 @@ describe('GET /api/upgrade-config', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
     mockFindContractDeploymentsRoot.mockReturnValue('/mock-root');
     mockReaddir.mockResolvedValue(['config1.json']);
-    mockReadFile.mockResolvedValue('{}');
-    mockParseFromString.mockReturnValue({
-      success: true,
-      config: { ledgerId: 1 },
-    });
   });
 
   afterEach(() => {
@@ -102,36 +89,7 @@ describe('GET /api/upgrade-config', () => {
       expect(body.configOptions[0]).toEqual({
         fileName: 'config1',
         displayName: 'Config1',
-        ledgerId: 1,
       });
-    });
-
-    it('returns the default config option when parsing fails', async () => {
-      mockParseFromString.mockReturnValue({ success: false });
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
-      expect(res.status).toBe(200);
-      const body = await res.json();
-      expect(body.configOptions).toEqual([
-        { fileName: 'config1', displayName: 'Config1', ledgerId: 0 },
-      ]);
-      expect(console.warn).toHaveBeenCalledWith(
-        'Failed to parse config1.json, using default ledgerId: 0'
-      );
-    });
-
-    it('returns the default config option when reading fails', async () => {
-      const error = new Error('Read failed');
-      mockReadFile.mockRejectedValue(error);
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
-      expect(res.status).toBe(200);
-      const body = await res.json();
-      expect(body.configOptions).toEqual([
-        { fileName: 'config1', displayName: 'Config1', ledgerId: 0 },
-      ]);
-      expect(console.warn).toHaveBeenCalledWith(
-        'Error reading config1.json, using default ledgerId: 0',
-        error
-      );
     });
 
     it('returns 200 with empty array on ENOENT', async () => {
