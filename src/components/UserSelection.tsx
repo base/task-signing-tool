@@ -6,7 +6,6 @@ import { SectionHeader } from './ui/SectionHeader';
 export interface ConfigOption {
   fileName: string;
   displayName: string;
-  ledgerId: number;
 }
 
 interface UserSelectionProps {
