@@ -178,58 +178,25 @@ async function runTaskOriginValidation(
 ): Promise<TaskOriginValidation> {
   const results: TaskOriginSignerResult[] = [];
 
-  // Validate task creator - uses commonName from config
-  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature...`);
-  try {
-    results.push(
-      await validateSigner(
-        taskOriginDir,
-        signatureDir,
-        'taskCreator',
-        config.taskCreator.commonName
-      )
-    );
-    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature verified`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.taskCreator} signature failed: ${message}`);
-    results.push({
-      role: 'taskCreator',
-      success: false,
-      error: message,
-    });
-  }
-
-  // Validate base facilitator
-  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature...`);
-  try {
-    results.push(await validateSigner(taskOriginDir, signatureDir, 'baseFacilitator'));
-    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature verified`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.log(`  ✗ ${TASK_ORIGIN_ROLE_LABELS.baseFacilitator} signature failed: ${message}`);
-    results.push({
-      role: 'baseFacilitator',
-      success: false,
-      error: message,
-    });
-  }
-
-  // Validate security council facilitator
-  console.log(`🔐 Validating ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature...`);
-  try {
-    results.push(await validateSigner(taskOriginDir, signatureDir, 'securityCouncilFacilitator'));
-    console.log(`  ✓ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature verified`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.log(
-      `  ✗ ${TASK_ORIGIN_ROLE_LABELS.securityCouncilFacilitator} signature failed: ${message}`
-    );
-    results.push({
-      role: 'securityCouncilFacilitator',
-      success: false,
-      error: message,
-    });
+  for (const [role, commonName] of [
+    ['taskCreator', config.taskCreator.commonName],
+    ['baseFacilitator'],
+    ['securityCouncilFacilitator'],
+  ] as const) {
+    const label = TASK_ORIGIN_ROLE_LABELS[role];
+    console.log(`🔐 Validating ${label} signature...`);
+    try {
+      results.push(await validateSigner(taskOriginDir, signatureDir, role, commonName));
+      console.log(`  ✓ ${label} signature verified`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.log(`  ✗ ${label} signature failed: ${message}`);
+      results.push({
+        role,
+        success: false,
+        error: message,
+      });
+    }
   }
 
   const passedCount = results.filter(r => r.success).length;
