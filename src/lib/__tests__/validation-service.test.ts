@@ -107,4 +107,50 @@ describe('validateUpgrade', () => {
     });
     expect(result).toMatchObject({ ledgerId: 7 });
   });
+
+  it('verifies all task origin signatures with their role identities', async () => {
+    const signedOpts = { ...opts, upgradeId: '2026-01-01-signed-upgrade' };
+    const taskPath = path.join(fixtureRoot, 'active/evm/tasks', signedOpts.upgradeId);
+    const networkConfigDir = path.join(taskPath, 'config', signedOpts.network);
+    const fixturesDir = path.join(originalCwd, '__tests__/fixtures');
+    await fs.cp(path.join(fixturesDir, 'valid-task/config/chain1'), networkConfigDir, {
+      recursive: true,
+    });
+    await fs.cp(
+      path.join(fixturesDir, 'signatures/valid'),
+      path.join(taskPath, 'signatures', signedOpts.network),
+      { recursive: true }
+    );
+    const profilePath = path.join(fixtureRoot, 'signed-profile.json');
+    await fs.writeFile(
+      profilePath,
+      JSON.stringify({
+        ...config,
+        skipTaskOriginValidation: false,
+        taskOriginConfig: { taskCreator: { commonName: 'alexis.williams.1@coinbase.com' } },
+      })
+    );
+    await fs.mkdir(path.join(networkConfigDir, 'validations'));
+    // Symlinks are excluded from the signed tarball; keep the profile inside the allowed root.
+    await fs.symlink(profilePath, path.join(networkConfigDir, 'validations/signer.json'));
+
+    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await validateUpgrade(signedOpts);
+
+      expect(result.taskOriginValidation).toEqual({
+        enabled: true,
+        results: [
+          { role: 'taskCreator', success: true },
+          { role: 'baseFacilitator', success: true },
+          { role: 'securityCouncilFacilitator', success: true },
+        ],
+      });
+      expect(log).toHaveBeenCalledWith('  ✓ Task Creator signature verified');
+      expect(log).toHaveBeenCalledWith('  ✓ Base Facilitator signature verified');
+      expect(log).toHaveBeenCalledWith('  ✓ Security Council Facilitator signature verified');
+    } finally {
+      log.mockRestore();
+    }
+  });
 });
