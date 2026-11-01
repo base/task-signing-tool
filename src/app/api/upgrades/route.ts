@@ -1,5 +1,5 @@
 import { availableNetworks } from '@/lib/constants';
-import { getUpgradeOptions } from '@/lib/deployments';
+import { defaultTaskCatalog } from '@/lib/task-catalog';
 import { TaskStatus } from '@/lib/types';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -11,7 +11,7 @@ export function GET(req: NextRequest) {
   }
 
   const allReadyToSignTasks = availableNetworks.flatMap(network => {
-    const upgrades = getUpgradeOptions(network);
+    const upgrades = defaultTaskCatalog().listTasks(network);
     return upgrades.filter(upgrade => upgrade.status === TaskStatus.ReadyToSign);
   });
 
