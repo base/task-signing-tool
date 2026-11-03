@@ -206,6 +206,139 @@ describe('state-diff comparison pairing', () => {
   });
 });
 
+describe('declared entry evaluation', () => {
+  const evaluate = (
+    kind: 'override' | 'change' | 'balance',
+    actualAfter: string | undefined,
+    allowDifference = false,
+    description = ''
+  ) => {
+    const expected = {
+      stateOverrides: [
+        stateOverride(ADDR_A, [{ ...override(KEY_A, '0x1'), allowDifference, description }]),
+      ],
+      stateChanges: [
+        stateChange(ADDR_A, [{ ...change(KEY_A, '0x0', '0x1'), allowDifference, description }]),
+      ],
+      balanceChanges: [{ ...balanceOf(ADDR_A, '0x0', '0x1'), allowDifference, description }],
+    };
+    const actual =
+      actualAfter === undefined
+        ? {}
+        : {
+            stateOverrides: [stateOverride(ADDR_A, [override(KEY_A, actualAfter)])],
+            stateChanges: [stateChange(ADDR_A, [change(KEY_A, '0x0', actualAfter)])],
+            balanceChanges: [balanceOf(ADDR_A, '0x0', actualAfter)],
+          };
+    return evaluateValidationEntry(
+      { kind, index: 0 },
+      buildValidationItems(validation(expected, actual))
+    );
+  };
+
+  describe.each([
+    [
+      'override',
+      'Match - This override is correct',
+      'Mismatch - Override values do not match expected',
+    ],
+    ['change', 'Match - This change is correct', 'Mismatch - Change values do not match expected'],
+    [
+      'balance',
+      'Match - Balance change matches expected',
+      'Mismatch - Balance change does not match expected',
+    ],
+  ] as const)('%s status', (kind, matchText, mismatchText) => {
+    it.each([
+      ['0x1', false, 'match', matchText, 'check'],
+      ['0x1', true, 'match', matchText, 'check'],
+      [
+        '0x2',
+        true,
+        'expected-difference',
+        'Expected Difference - This mismatch is acceptable and expected',
+        'check',
+      ],
+      [
+        undefined,
+        true,
+        'expected-difference',
+        'Expected Difference - This mismatch is acceptable and expected',
+        'check',
+      ],
+      ['0x2', false, 'mismatch', mismatchText, 'x'],
+      [undefined, false, 'missing', 'Missing - Not found in actual results', 'x'],
+    ] as const)(
+      'actual %s, allowDifference %s yields %s',
+      (actualAfter, allowDifference, status, text, icon) => {
+        expect(evaluate(kind, actualAfter, allowDifference).matchStatus).toEqual({
+          status,
+          text,
+          icon,
+        });
+      }
+    );
+  });
+
+  describe.each(['override', 'change'] as const)('%s description', kind => {
+    it.each([
+      [false, 'info', 'lightbulb', 'What this does'],
+      [true, 'expected-difference', 'check', 'Expected Difference - This is Fine'],
+    ] as const)(
+      'preserves non-empty text with allowDifference %s',
+      (allowDifference, variant, icon, title) => {
+        expect(evaluate(kind, '0x1', allowDifference, '  explanation  ').description).toEqual({
+          variant,
+          icon,
+          title,
+          text: '  explanation  ',
+        });
+      }
+    );
+
+    it.each([
+      [false, undefined],
+      [true, undefined],
+      [false, ''],
+      [true, ''],
+      [false, ' \t\n '],
+      [true, ' \t\n '],
+    ] as const)(
+      'omits empty text with allowDifference %s and description %j',
+      (allowDifference, description) => {
+        expect(evaluate(kind, '0x1', allowDifference, description).description).toBeUndefined();
+      }
+    );
+  });
+
+  const deltas =
+    'Expected delta: +0.000000000000000001 ETH (+1 wei)\n\nActual delta: +0.000000000000000001 ETH (+1 wei)';
+  it.each([
+    [false, undefined, deltas],
+    [false, 'explanation', `${deltas}\n\nexplanation`],
+    [false, '   ', `${deltas}\n\n   `],
+    [true, undefined, `${deltas}\n\nDifferences for this balance change are allowed.`],
+    [
+      true,
+      'explanation',
+      `${deltas}\n\nexplanation\n\nDifferences for this balance change are allowed.`,
+    ],
+    [true, '   ', `${deltas}\n\n   \n\nDifferences for this balance change are allowed.`],
+  ] as const)(
+    'describes balance deltas with allowDifference %s and description %j',
+    (allowDifference, description, text) => {
+      expect(evaluate('balance', '0x1', allowDifference, description).description).toEqual({
+        variant: allowDifference ? 'expected-difference' : 'info',
+        icon: allowDifference ? 'check' : 'coins',
+        title: allowDifference
+          ? 'Expected Difference - Balance Change OK'
+          : 'Balance Change Details',
+        text,
+      });
+    }
+  );
+});
+
 describe('task origin evaluation', () => {
   it('keeps disabled validation available for the skipped UI without blocking', () => {
     const items = buildValidationItems({
