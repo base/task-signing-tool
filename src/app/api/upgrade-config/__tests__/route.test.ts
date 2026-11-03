@@ -81,17 +81,6 @@ describe('GET /api/upgrade-config', () => {
   });
 
   describe('happy path', () => {
-    it('returns 200 with config options', async () => {
-      const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
-      expect(res.status).toBe(200);
-      const body = await res.json();
-      expect(body.configOptions).toHaveLength(1);
-      expect(body.configOptions[0]).toEqual({
-        fileName: 'config1',
-        displayName: 'Config1',
-      });
-    });
-
     it('returns only JSON config options in directory order with formatted names', async () => {
       mockReaddir.mockResolvedValue(['b-profile.json', 'README.md', 'a.json']);
       const res = await GET(createRequest({ network: 'mainnet', upgradeId: 'test' }));
