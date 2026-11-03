@@ -465,6 +465,38 @@ const createMatchStatus = (
   icon: STATUS_ICONS[status],
 });
 
+const statusFor = (
+  match: boolean,
+  allowDifference: boolean | undefined,
+  hasActual: boolean,
+  matchText: string,
+  mismatchText: string
+): ValidationMatchStatus => {
+  if (match) return createMatchStatus('match', matchText);
+  if (allowDifference) {
+    return createMatchStatus(
+      'expected-difference',
+      'Expected Difference - This mismatch is acceptable and expected'
+    );
+  }
+  return hasActual
+    ? createMatchStatus('mismatch', mismatchText)
+    : createMatchStatus('missing', 'Missing - Not found in actual results');
+};
+
+const describeDeclared = (expected: {
+  description?: string;
+  allowDifference?: boolean;
+}): ValidationDescription | undefined =>
+  expected.description && expected.description.trim().length > 0
+    ? {
+        variant: expected.allowDifference ? 'expected-difference' : 'info',
+        icon: expected.allowDifference ? 'check' : 'lightbulb',
+        title: expected.allowDifference ? 'Expected Difference - This is Fine' : 'What this does',
+        text: expected.description,
+      }
+    : undefined;
+
 const assertNever = (value: never): never => {
   throw new Error(`Unhandled entry kind: ${(value as ValidationNavEntry).kind}`);
 };
@@ -570,15 +602,7 @@ export const evaluateValidationEntry = (
           : createMatchStatus('mismatch', 'Mismatch - EIP-712 data does not match expected')
         : createMatchStatus('missing', 'Missing - Not found in actual results');
 
-      const description =
-        item.expected.description && item.expected.description.trim().length > 0
-          ? ({
-              variant: 'info',
-              icon: 'lightbulb',
-              title: 'What this does',
-              text: item.expected.description,
-            } satisfies ValidationDescription)
-          : undefined;
+      const description = describeDeclared(item.expected);
 
       return {
         matchStatus,
@@ -615,34 +639,14 @@ export const evaluateValidationEntry = (
       const actualKey = item.actual?.key ?? NOT_FOUND_TEXT;
       const actualValue = item.actual?.value ?? NOT_FOUND_TEXT;
       const match = matchesOverride(item);
-      const expectedDifference = item.expected.allowDifference;
-
-      let matchStatus: ValidationMatchStatus;
-      if (match) {
-        matchStatus = createMatchStatus('match', 'Match - This override is correct');
-      } else if (expectedDifference) {
-        matchStatus = createMatchStatus(
-          'expected-difference',
-          'Expected Difference - This mismatch is acceptable and expected'
-        );
-      } else if (item.actual) {
-        matchStatus = createMatchStatus(
-          'mismatch',
-          'Mismatch - Override values do not match expected'
-        );
-      } else {
-        matchStatus = createMatchStatus('missing', 'Missing - Not found in actual results');
-      }
-
-      const description =
-        item.expected.description && item.expected.description.trim().length > 0
-          ? ({
-              variant: expectedDifference ? 'expected-difference' : 'info',
-              icon: expectedDifference ? 'check' : 'lightbulb',
-              title: expectedDifference ? 'Expected Difference - This is Fine' : 'What this does',
-              text: item.expected.description,
-            } satisfies ValidationDescription)
-          : undefined;
+      const matchStatus = statusFor(
+        match,
+        item.expected.allowDifference,
+        Boolean(item.actual),
+        'Match - This override is correct',
+        'Mismatch - Override values do not match expected'
+      );
+      const description = describeDeclared(item.expected);
 
       return {
         matchStatus,
@@ -681,34 +685,14 @@ export const evaluateValidationEntry = (
       const actualBefore = item.actual?.before ?? NOT_FOUND_TEXT;
       const actualAfter = item.actual?.after ?? NOT_FOUND_TEXT;
       const match = matchesChange(item);
-      const expectedDifference = item.expected.allowDifference;
-
-      let matchStatus: ValidationMatchStatus;
-      if (match) {
-        matchStatus = createMatchStatus('match', 'Match - This change is correct');
-      } else if (expectedDifference) {
-        matchStatus = createMatchStatus(
-          'expected-difference',
-          'Expected Difference - This mismatch is acceptable and expected'
-        );
-      } else if (item.actual) {
-        matchStatus = createMatchStatus(
-          'mismatch',
-          'Mismatch - Change values do not match expected'
-        );
-      } else {
-        matchStatus = createMatchStatus('missing', 'Missing - Not found in actual results');
-      }
-
-      const description =
-        item.expected.description && item.expected.description.trim().length > 0
-          ? ({
-              variant: expectedDifference ? 'expected-difference' : 'info',
-              icon: expectedDifference ? 'check' : 'lightbulb',
-              title: expectedDifference ? 'Expected Difference - This is Fine' : 'What this does',
-              text: item.expected.description,
-            } satisfies ValidationDescription)
-          : undefined;
+      const matchStatus = statusFor(
+        match,
+        item.expected.allowDifference,
+        Boolean(item.actual),
+        'Match - This change is correct',
+        'Mismatch - Change values do not match expected'
+      );
+      const description = describeDeclared(item.expected);
 
       return {
         matchStatus,
@@ -755,22 +739,13 @@ export const evaluateValidationEntry = (
       const actualBefore = item.actual ? formatBalanceValue(item.actual.before) : NOT_FOUND_TEXT;
       const actualAfter = item.actual ? formatBalanceValue(item.actual.after) : NOT_FOUND_TEXT;
 
-      let matchStatus: ValidationMatchStatus;
-      if (match) {
-        matchStatus = createMatchStatus('match', 'Match - Balance change matches expected');
-      } else if (expectedDifference) {
-        matchStatus = createMatchStatus(
-          'expected-difference',
-          'Expected Difference - This mismatch is acceptable and expected'
-        );
-      } else if (item.actual) {
-        matchStatus = createMatchStatus(
-          'mismatch',
-          'Mismatch - Balance change does not match expected'
-        );
-      } else {
-        matchStatus = createMatchStatus('missing', 'Missing - Not found in actual results');
-      }
+      const matchStatus = statusFor(
+        match,
+        expectedDifference,
+        Boolean(item.actual),
+        'Match - Balance change matches expected',
+        'Mismatch - Balance change does not match expected'
+      );
 
       const expectedBefore = formatBalanceValue(item.expected.before);
       const expectedAfter = formatBalanceValue(item.expected.after);
@@ -788,16 +763,14 @@ export const evaluateValidationEntry = (
         descriptionParts.push('Differences for this balance change are allowed.');
       }
 
-      const description: ValidationDescription | undefined = descriptionParts.length
-        ? {
-            variant: expectedDifference ? 'expected-difference' : 'info',
-            icon: expectedDifference ? 'check' : 'coins',
-            title: expectedDifference
-              ? 'Expected Difference - Balance Change OK'
-              : 'Balance Change Details',
-            text: descriptionParts.join('\n\n'),
-          }
-        : undefined;
+      const description: ValidationDescription = {
+        variant: expectedDifference ? 'expected-difference' : 'info',
+        icon: expectedDifference ? 'check' : 'coins',
+        title: expectedDifference
+          ? 'Expected Difference - Balance Change OK'
+          : 'Balance Change Details',
+        text: descriptionParts.join('\n\n'),
+      };
 
       return {
         matchStatus,
