@@ -602,15 +602,7 @@ export const evaluateValidationEntry = (
           : createMatchStatus('mismatch', 'Mismatch - EIP-712 data does not match expected')
         : createMatchStatus('missing', 'Missing - Not found in actual results');
 
-      const description =
-        item.expected.description && item.expected.description.trim().length > 0
-          ? ({
-              variant: 'info',
-              icon: 'lightbulb',
-              title: 'What this does',
-              text: item.expected.description,
-            } satisfies ValidationDescription)
-          : undefined;
+      const description = describeDeclared(item.expected);
 
       return {
         matchStatus,
