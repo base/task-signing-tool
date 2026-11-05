@@ -1,32 +1,12 @@
 import { CheckCircle, Search } from 'lucide-react';
 import { StringDiff } from '@/lib/types/index';
 import { toChecksumAddressSafe, checksummizeAddressesInText } from '@/lib/format';
+import type { ComparisonCardContent } from '@/lib/validation-results-utils';
 import { HighlightedText } from './HighlightedText';
 import { Card } from './ui/Card';
 import { Badge } from './ui/Badge';
 
-interface ComparisonCardProps {
-  type: 'expected' | 'actual';
-  contractName: string;
-  contractAddress: string;
-  storageKey: string;
-  storageKeyDiffs?: StringDiff[];
-  beforeValue?: string;
-  beforeValueDiffs?: StringDiff[];
-  afterValue: string;
-  afterValueDiffs?: StringDiff[];
-  shouldWrap?: boolean;
-}
-
-const baseValueClasses =
-  'rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)]';
-
-const getValueClasses = (shouldWrap: boolean = false): string => {
-  return [
-    baseValueClasses,
-    shouldWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-nowrap overflow-hidden',
-  ].join(' ');
-};
+type ComparisonCardProps = ComparisonCardContent & { type: 'expected' | 'actual' };
 
 interface ValueSectionProps {
   label: string;
@@ -40,7 +20,9 @@ const ValueSection = ({ label, value, diffs, shouldWrap }: ValueSectionProps) =>
     <label className="text-[10px] font-bold uppercase text-[var(--cds-text-tertiary)] tracking-wider">
       {label}
     </label>
-    <div className={getValueClasses(shouldWrap)}>
+    <div
+      className={`rounded-lg p-3 mt-1 font-mono text-[11px] block max-w-full border border-[var(--cds-border)] bg-white text-[var(--cds-text-secondary)] ${shouldWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-nowrap overflow-hidden'}`}
+    >
       {diffs ? <HighlightedText diffs={diffs} /> : checksummizeAddressesInText(value)}
     </div>
   </div>
