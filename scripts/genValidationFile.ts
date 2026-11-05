@@ -126,7 +126,6 @@ async function main() {
   const sdc = new StateDiffClient(ledgerId, workdir);
   const { result, forgeOutput } = await sdc.simulate(rpcUrl, forgeCmdParts, workdir);
 
-  // Optionally estimate L2 gas for deposit transactions
   let resultWithL2Gas = result;
   if (estimateL2Gas && l2RpcUrl) {
     console.log('\n📊 L2 Gas Estimation enabled');
@@ -142,7 +141,6 @@ async function main() {
     try {
       const estimator = new L2GasEstimator();
 
-      // Extract deposit transaction from TransactionDeposited event in forge output
       const deposit = estimator.extractDepositFromForgeOutput(forgeOutput);
 
       if (!deposit) {
@@ -153,7 +151,6 @@ async function main() {
         console.log(`   L2 Value: ${deposit.value}`);
         console.log(`   L2 Data length: ${deposit.data.length} chars`);
 
-        // Estimate L2 gas using viem
         const gasUsed = await estimator.estimateL2Gas(l2RpcUrl, deposit);
 
         const recommendedGasLimit = (gasUsed * BigInt(100 + l2GasBuffer)) / BigInt(100);
@@ -163,7 +160,6 @@ async function main() {
         console.log(`   Buffer: ${l2GasBuffer}%`);
         console.log(`   Recommended L2_GAS_LIMIT: ${recommendedGasLimit}`);
 
-        // Add L2_GAS_LIMIT to the cmd
         const updatedCmd = `L2_GAS_LIMIT=${recommendedGasLimit} ${result.cmd}`;
 
         resultWithL2Gas = {

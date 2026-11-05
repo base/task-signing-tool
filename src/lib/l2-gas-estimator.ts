@@ -13,12 +13,9 @@ export class L2GasEstimator {
   /**
    * Extracts L2 transaction details from TransactionDeposited event in forge output
    * The -vvvv flag is automatically added by genValidationFile when --estimate-l2-gas is enabled
-   * Format: emit TransactionDeposited(from: 0x..., to: 0x..., version: 0, opaqueData: 0x...)
    */
   extractDepositFromForgeOutput(forgeOutput: string): DepositTransaction | null {
     try {
-      // Look for TransactionDeposited event in forge output with -vvvv verbosity
-      // Format: emit TransactionDeposited(from: 0x..., to: 0x..., version: 0, opaqueData: 0x...)
       const eventMatch = forgeOutput.match(/emit TransactionDeposited\([^)]+\)/);
       if (!eventMatch) {
         console.warn('Could not find TransactionDeposited event in forge output');
@@ -28,7 +25,7 @@ export class L2GasEstimator {
 
       const eventLine = eventMatch[0];
 
-      // Extract 'from' address (L2 sender, already aliased if needed)
+      // L2 sender, already aliased if needed
       const fromMatch = eventLine.match(/from:\s*(0x[0-9a-fA-F]{40})/);
       if (!fromMatch) {
         console.warn('Could not extract "from" address from TransactionDeposited event');
@@ -36,7 +33,6 @@ export class L2GasEstimator {
       }
       const from = fromMatch[1] as Address;
 
-      // Extract 'to' address (L2 target)
       const toMatch = eventLine.match(/to:\s*(0x[0-9a-fA-F]{40})/);
       if (!toMatch) {
         console.warn('Could not extract "to" address from TransactionDeposited event');
@@ -44,7 +40,6 @@ export class L2GasEstimator {
       }
       const to = toMatch[1] as Address;
 
-      // Extract opaqueData hex string
       const opaqueDataMatch = eventLine.match(/opaqueData:\s*(0x[0-9a-fA-F]+)/);
       if (!opaqueDataMatch) {
         console.warn('Could not extract opaqueData from TransactionDeposited event');
@@ -62,16 +57,12 @@ export class L2GasEstimator {
       // _isCreation: bool (1 byte)
       // _data: bytes (remaining)
 
-      // Skip msg.value (first 32 bytes), extract _value (next 32 bytes)
       const value = hexToBigInt(slice(opaqueData, 32, 64));
 
-      // Extract _gasLimit (8 bytes)
       const gasLimit = hexToBigInt(slice(opaqueData, 64, 72));
 
-      // Extract _isCreation (1 byte)
       const isCreation = hexToBool(slice(opaqueData, 72, 73));
 
-      // Extract _data (remaining bytes)
       const data = slice(opaqueData, 73) as Hex;
 
       return {
@@ -88,9 +79,6 @@ export class L2GasEstimator {
     }
   }
 
-  /**
-   * Estimates L2 gas using viem's estimateGas
-   */
   async estimateL2Gas(l2RpcUrl: string, deposit: DepositTransaction): Promise<bigint> {
     console.log('🔧 Estimating L2 gas with viem...');
     console.log(`   L2 RPC: ${l2RpcUrl}`);
