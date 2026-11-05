@@ -93,6 +93,14 @@ const messageHash = keccak256(
   )
 );
 
+const typed: SafeTxTypedData = buildSafeTxTypedData({
+  encodedSafeTx,
+  safe: SAFE,
+  chainId: '8453',
+  domainHash,
+  messageHash,
+});
+
 describe('buildSafeTxTypedData', () => {
   it('builds Safe >= 1.3.0 typed data matching the on-chain hashes', () => {
     const typed = buildSafeTxTypedData({
@@ -136,14 +144,6 @@ describe('buildSafeTxTypedData', () => {
 });
 
 describe('safeTxTypedDataMatches', () => {
-  const typed: SafeTxTypedData = buildSafeTxTypedData({
-    encodedSafeTx,
-    safe: SAFE,
-    chainId: '8453',
-    domainHash,
-    messageHash,
-  });
-
   it('accepts case-insensitive hash matches', () => {
     expect(
       safeTxTypedDataMatches(typed, {
@@ -161,13 +161,6 @@ describe('safeTxTypedDataMatches', () => {
 
 describe('toEip712Json', () => {
   it('emits the SafeTx primary type with chainId domain', () => {
-    const typed = buildSafeTxTypedData({
-      encodedSafeTx,
-      safe: SAFE,
-      chainId: '8453',
-      domainHash,
-      messageHash,
-    });
     const json = toEip712Json(typed);
     expect(json.primaryType).toBe('SafeTx');
     expect(json.types.EIP712Domain.map(f => f.name)).toEqual(['chainId', 'verifyingContract']);
@@ -177,13 +170,6 @@ describe('toEip712Json', () => {
   // base/usbwallet reads integer strings as hex (common.FromHex), so decimal strings would reach
   // the Trezor with the wrong values ("560048" -> 0x560048) and fail with "Message hash mismatch".
   it('encodes integers as 0x-hex strings that parse back to the validated values', () => {
-    const typed = buildSafeTxTypedData({
-      encodedSafeTx,
-      safe: SAFE,
-      chainId: '8453',
-      domainHash,
-      messageHash,
-    });
     const { domain, message } = toEip712Json(typed);
     expect(domain.chainId).toBe('0x2105');
     for (const field of ['value', 'safeTxGas', 'baseGas', 'gasPrice', 'nonce'] as const) {

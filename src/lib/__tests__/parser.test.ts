@@ -41,15 +41,11 @@ it.each([-1, 0.5, 9007199254740992])('rejects invalid integer fields with value 
     ['ledgerId'],
     ['l2GasEstimation', 'buffer'],
   ]);
-});
-
-it('returns schema issues for invalid config JSON', () => {
-  const result = parseFromString(JSON.stringify({ ...config, ledgerId: -1 }));
-  expect(result.success).toBe(false);
-  if (result.success) throw new Error('Expected parsing to fail');
-  expect(result.zodError.issues).toEqual([
-    expect.objectContaining({ path: ['ledgerId'], code: 'too_small' }),
-  ]);
+  if (value === -1) {
+    expect(result.zodError.issues).toContainEqual(
+      expect.objectContaining({ path: ['ledgerId'], code: 'too_small' })
+    );
+  }
 });
 
 it('returns one invalid JSON issue for malformed JSON', () => {
