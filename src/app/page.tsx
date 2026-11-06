@@ -147,8 +147,8 @@ export default function Home() {
 
         {currentStep === 'ledger' && validationData && (
           <HardwareSigning
-            domainHash={validationData.expected.domainAndMessageHashes?.domainHash || ''}
-            messageHash={validationData.expected.domainAndMessageHashes?.messageHash || ''}
+            domainHash={validationData.expected.domainAndMessageHashes.domainHash}
+            messageHash={validationData.expected.domainAndMessageHashes.messageHash}
             ledgerAccount={validationData.ledgerId}
             safeTxTypedData={validationData.actual.safeTxTypedData}
             onSigningComplete={handleSigningComplete}

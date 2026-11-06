@@ -223,7 +223,7 @@ const buildSigningComparisons = (
   const expectedHashes = validationResult.expected.domainAndMessageHashes;
   const actualHashes = validationResult.actual.domainAndMessageHashes;
 
-  if (!expectedHashes || !actualHashes) return [];
+  if (!actualHashes) return [];
 
   const expectedDataToSign = `0x1901${expectedHashes.domainHash.replace(
     '0x',
@@ -431,7 +431,7 @@ export const hasBlockingErrors = (items: ValidationItemsByStep): boolean => {
   if (taskOriginFailed) return true;
 
   const signingMismatch = items.signing.some(
-    signing => !signing.actual || signing.expected.dataToSign !== signing.actual.dataToSign
+    signing => signing.expected.dataToSign !== signing.actual.dataToSign
   );
   if (signingMismatch) return true;
 
@@ -594,13 +594,11 @@ export const evaluateValidationEntry = (
     case 'signing': {
       const item = items.signing[entry.index]!;
       const expectedData = item.expected.dataToSign;
-      const actualData = item.actual?.dataToSign ?? NOT_FOUND_TEXT;
-      const match = item.actual ? expectedData === item.actual.dataToSign : false;
-      const matchStatus: ValidationMatchStatus = item.actual
-        ? match
-          ? createMatchStatus('match', 'Match - EIP-712 data matches expected')
-          : createMatchStatus('mismatch', 'Mismatch - EIP-712 data does not match expected')
-        : createMatchStatus('missing', 'Missing - Not found in actual results');
+      const actualData = item.actual.dataToSign;
+      const match = expectedData === actualData;
+      const matchStatus: ValidationMatchStatus = match
+        ? createMatchStatus('match', 'Match - EIP-712 data matches expected')
+        : createMatchStatus('mismatch', 'Mismatch - EIP-712 data does not match expected');
 
       const description = describeDeclared(item.expected);
 

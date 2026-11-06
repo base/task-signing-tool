@@ -22,6 +22,7 @@ const VAL_A = hash('a');
 const VAL_B = hash('b');
 const VAL_C = hash('c');
 const FIELD = 'ETH Balance (wei)';
+const SIGNING_HASHES = { address: ADDR_A, domainHash: VAL_A, messageHash: VAL_B };
 
 const override = (key: string, value: string): Override => ({
   key,
@@ -65,11 +66,13 @@ const validation = (
 ): ValidationData => ({
   ledgerId: 0,
   expected: {
+    domainAndMessageHashes: SIGNING_HASHES,
     stateOverrides: expected.stateOverrides ?? [],
     stateChanges: expected.stateChanges ?? [],
     balanceChanges: expected.balanceChanges ?? [],
   },
   actual: {
+    domainAndMessageHashes: actual.domainAndMessageHashes,
     stateOverrides: actual.stateOverrides ?? [],
     stateChanges: actual.stateChanges ?? [],
     balanceChanges: actual.balanceChanges ?? [],
@@ -81,6 +84,35 @@ const matching = {
   stateChanges: [stateChange(ADDR_A, [change(KEY_A, VAL_A, VAL_B)])],
   balanceChanges: [balanceOf(ADDR_A, VAL_A, VAL_B)],
 };
+
+describe('signing comparison', () => {
+  it('matches EIP-712 signing data without blocking when hashes match', () => {
+    const items = buildValidationItems(validation({}, { domainAndMessageHashes: SIGNING_HASHES }));
+    const dataToSign = `0x1901${'a'.repeat(64)}${'b'.repeat(64)}`;
+
+    expect(items.signing).toHaveLength(1);
+    const evaluation = evaluateValidationEntry({ kind: 'signing', index: 0 }, items);
+    expect(evaluation.cards.expected.afterValue).toBe(dataToSign);
+    expect(evaluation.cards.actual.afterValue).toBe(dataToSign);
+    expect(evaluation.matchStatus.status).toBe('match');
+    expect(hasBlockingErrors(items)).toBe(false);
+  });
+
+  it('mismatches and blocks signing when hashes differ', () => {
+    const items = buildValidationItems(
+      validation({}, { domainAndMessageHashes: { ...SIGNING_HASHES, messageHash: VAL_C } })
+    );
+    const evaluation = evaluateValidationEntry({ kind: 'signing', index: 0 }, items);
+
+    expect(evaluation.cards.actual.afterValue).toBe(`0x1901${'a'.repeat(64)}${'c'.repeat(64)}`);
+    expect(evaluation.matchStatus.status).toBe('mismatch');
+    expect(hasBlockingErrors(items)).toBe(true);
+  });
+
+  it('omits signing items when actual hashes are absent', () => {
+    expect(buildValidationItems(validation({}, {})).signing).toEqual([]);
+  });
+});
 
 describe('state-diff comparison pairing', () => {
   it('does not block when actual matches expected', () => {
