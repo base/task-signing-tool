@@ -16,7 +16,6 @@ const offsetSlot = (base: Hex, i: number): Hex =>
   `0x${(BigInt(base) + BigInt(i)).toString(16).padStart(64, '0')}` as Hex;
 
 const cfg = (summary: string, extra: Partial<SlotCfg> = {}): SlotCfg => ({
-  type: 'uint256',
   summary,
   overrideMeaning: '',
   allowDifference: false,
@@ -38,21 +37,17 @@ const protocolVersions: ContractCfg = {
   name: 'ProtocolVersions - Zeronet',
   slots: {
     [slot(1)]: cfg('Updates the number of registered upgrades (_timestamps length).', {
-      type: 'uint64[]',
       elements: {
         label: '_timestamps',
         summary: 'L2 activation timestamps for these upgrade ids.',
-        type: 'uint64',
         perSlot: 4,
         maxSlots: 32,
       },
     }),
     [slot(2)]: cfg('Updates the length of the schedule commitment hash chain.', {
-      type: 'bytes32[]',
       elements: {
         label: '_upgradeScheduleId',
         summary: 'schedule commitment hash-chain link.',
-        type: 'bytes32',
         maxSlots: 128,
       },
     }),
@@ -117,7 +112,6 @@ describe('resolveSlot', () => {
     expect(resolveSlot(protocolVersions, last, new Map()).summary).toBe(
       '_upgradeScheduleId[13]: schedule commitment hash-chain link.'
     );
-    expect(resolveSlot(protocolVersions, first, new Map()).type).toBe('bytes32');
   });
 
   it('labels a packed array element with the index range it holds', () => {

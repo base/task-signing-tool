@@ -84,11 +84,9 @@ export type SlotElementsCfg = {
   maxSlots: number;
   // Elements packed into each 32-byte slot. Defaults to one element per slot.
   perSlot?: number;
-  type?: string;
   allowDifference?: boolean;
 };
 export type SlotCfg = {
-  type: string;
   summary: string;
   overrideMeaning: string;
   allowDifference: boolean;
@@ -787,7 +785,6 @@ function resolveArrayElement(
 
     const index = first === last ? `${first}` : `${first}..${last}`;
     return {
-      type: elements.type ?? cfg.type,
       summary: `${elements.label}[${index}]: ${elements.summary}`,
       overrideMeaning: '',
       allowDifference: elements.allowDifference ?? false,
@@ -822,7 +819,6 @@ export function resolveSlot(
 
   return (
     resolveArrayElement(contract, slot, ctx.slotValues) ?? {
-      type: '<<DecodedKind>>',
       summary: '<<Summary>>',
       overrideMeaning: '<<OverrideMeaning>>',
       allowDifference: false,
