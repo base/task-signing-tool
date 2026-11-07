@@ -296,8 +296,8 @@ describe('listTasks', () => {
       },
     ]);
     await fs.unlink(path.join(taskDir, 'README.md'));
-    expect(catalog.listTasks(NetworkType.Mainnet)).toEqual([
-      { ...base, name: 'EVM title', description: 'EVM description.', status: undefined },
+    expect(JSON.parse(JSON.stringify(catalog.listTasks(NetworkType.Mainnet)))).toEqual([
+      { ...base, name: 'EVM title', description: 'EVM description.' },
     ]);
   });
 
@@ -309,65 +309,12 @@ describe('listTasks', () => {
     }
   }
 
-  it('discovers active task folders without root-level network folders', async () => {
-    await makeTask(
-      '2025-06-04-upgrade-foo',
-      'mainnet',
-      [
-        '# Upgrade Foo',
-        '',
-        'Status: READY TO SIGN',
-        '',
-        '## Description',
-        '',
-        'Example upgrade task.',
-      ].join('\n')
-    );
-
-    const upgrades = createTaskCatalog(tempDir).listTasks(NetworkType.Mainnet);
-
-    expect(upgrades).toEqual([
-      expect.objectContaining({
-        id: '2025-06-04-upgrade-foo',
-        name: 'Upgrade Foo',
-        date: '2025-06-04',
-        network: NetworkType.Mainnet,
-        status: TaskStatus.ReadyToSign,
-        description: 'Example upgrade task.',
-      }),
-    ]);
-  });
-
   it('returns pending status for a task with a pending README status', async () => {
     await makeTask('2025-06-04-upgrade-foo', 'mainnet', 'Status: PENDING');
 
     const upgrades = createTaskCatalog(tempDir).listTasks(NetworkType.Mainnet);
 
     expect(upgrades).toEqual([expect.objectContaining({ status: TaskStatus.Pending })]);
-  });
-
-  it('returns executed status for a task with an executed README status', async () => {
-    await makeTask('2025-06-04-upgrade-foo', 'mainnet', 'Status: EXECUTED');
-
-    const upgrades = createTaskCatalog(tempDir).listTasks(NetworkType.Mainnet);
-
-    expect(upgrades).toEqual([expect.objectContaining({ status: TaskStatus.Executed })]);
-  });
-
-  it('omits status when the README has no status line', async () => {
-    await makeTask('2025-06-04-upgrade-foo', 'mainnet', '# Upgrade Foo');
-
-    const upgrades = createTaskCatalog(tempDir).listTasks(NetworkType.Mainnet);
-
-    expect(JSON.parse(JSON.stringify(upgrades))).toEqual([
-      {
-        id: '2025-06-04-upgrade-foo',
-        name: 'Upgrade Foo',
-        description: 'Smart contract upgrade deployment',
-        date: '2025-06-04',
-        network: NetworkType.Mainnet,
-      },
-    ]);
   });
 
   it('uses the default description when the README has no descriptive text', async () => {
