@@ -274,7 +274,7 @@ describe('listTasks', () => {
     await fs.writeFile(path.join(evmDir, 'README.md'), '# EVM title\n\nEVM description.');
     await fs.writeFile(
       networkReadme,
-      '# Network title\r\n\r\nStatus: READY TO SIGN\r\n\r\n## Description\r\nNetwork description.\r\n\r\n## Other\r\nIgnored.'
+      '# Network title\r\n\r\nStatus: READY TO SIGN\r\n\r\n## Description\r\n\r\nNetwork description.\r\n\r\n## Other\r\nIgnored.'
     );
     const catalog = createTaskCatalog(tempDir);
     const base = { id, date: '2025-06-04', network: NetworkType.Mainnet };
