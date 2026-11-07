@@ -245,8 +245,6 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
 
   const matchStatus = evaluation?.matchStatus;
   const descriptionContent = evaluation?.description;
-  const hashes = validationResult.expected.domainAndMessageHashes;
-  const canSign = Boolean(hashes?.domainHash && hashes?.messageHash);
   const showEntryDetails = !(taskOriginDisabled && currentEntry?.kind === 'taskOrigin');
 
   const handleNext = () => {
@@ -403,19 +401,7 @@ export const ValidationResults: React.FC<ValidationResultsProps> = ({
             </p>
           )}
 
-          {!blockingErrorsExist && !canSign && (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 max-w-lg w-full mb-6">
-              <p className="mb-1 text-sm font-bold text-yellow-800 flex items-center gap-1">
-                <AlertTriangle size={16} /> Signing Not Available
-              </p>
-              <p className="text-sm text-yellow-700 text-left">
-                Domain and message hashes are required for signing but were not generated during
-                validation.
-              </p>
-            </div>
-          )}
-
-          {!blockingErrorsExist && canSign && (
+          {!blockingErrorsExist && (
             <div className="w-full flex justify-center">
               <Button
                 onClick={() => onProceedToLedgerSigning(validationResult)}

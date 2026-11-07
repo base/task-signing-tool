@@ -17,7 +17,7 @@ export interface SigningDataComparison {
     messageHash: string;
     description?: string;
   };
-  actual?: {
+  actual: {
     dataToSign: string;
     address: string;
     domainHash: string;

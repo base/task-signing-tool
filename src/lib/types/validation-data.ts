@@ -27,7 +27,7 @@ export interface ValidationData {
     stateOverrides: StateOverride[];
     stateChanges: StateChange[];
     balanceChanges?: BalanceChange[];
-    domainAndMessageHashes?: ExpectedHashes;
+    domainAndMessageHashes: ExpectedHashes;
   };
   actual: {
     stateOverrides: StateOverride[];

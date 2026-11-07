@@ -91,7 +91,7 @@ function getExpectedData(parsedConfig: TaskConfig): {
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
   balanceChanges: BalanceChange[];
-  domainAndMessageHashes?: ExpectedHashes;
+  domainAndMessageHashes: ExpectedHashes;
 } {
   return {
     stateOverrides: parsedConfig.stateOverrides,
