@@ -1,22 +1,10 @@
 import { exec } from 'child_process';
-import { promises as fs } from 'fs';
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
 import { promisify } from 'util';
-import { findContractDeploymentsRoot } from '@/lib/deployments';
-import { assertWithinDir } from '@/lib/path-validation';
+import { defaultTaskCatalog, TaskCatalogError } from '@/lib/task-catalog';
 
 const execAsync = promisify(exec);
 const INSTALL_DEPS_TIMEOUT_MS = 20 * 60 * 1000;
-
-const pathExists = async (targetPath: string) => {
-  try {
-    await fs.access(targetPath);
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,49 +20,16 @@ export async function POST(req: NextRequest) {
 
     const actualNetwork = network.toLowerCase();
 
-    const safePathPattern = /^[a-zA-Z0-9_-]+$/;
-    if (!safePathPattern.test(actualNetwork) || !safePathPattern.test(upgradeId)) {
-      return NextResponse.json(
-        {
-          error:
-            'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed',
-        },
-        { status: 400 }
-      );
-    }
+    const { taskDir } = defaultTaskCatalog().taskDirs(upgradeId, actualNetwork);
 
-    const contractDeploymentsPath = findContractDeploymentsRoot();
-    const upgradePath = path.join(contractDeploymentsPath, 'active', 'evm');
-    const taskPath = path.join(upgradePath, 'tasks', upgradeId);
-
-    // Verify the resolved path is within the allowed directory
-    let resolvedUpgradePath: string;
-    try {
-      resolvedUpgradePath = assertWithinDir(upgradePath, contractDeploymentsPath);
-    } catch {
-      return NextResponse.json({ error: 'Invalid path: access denied' }, { status: 403 });
-    }
-
-    const resolvedTaskPath = assertWithinDir(taskPath, contractDeploymentsPath);
-
-    const taskPathExists = await pathExists(resolvedTaskPath);
-    if (!taskPathExists) {
-      return NextResponse.json(
-        { error: `Task folder not found: ${path.relative(contractDeploymentsPath, taskPath)}` },
-        { status: 404 }
-      );
-    }
-
-    console.log(
-      `Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${resolvedUpgradePath})`
-    );
+    console.log(`Installing dependencies for ${actualNetwork}/${upgradeId} (cwd: ${taskDir})`);
 
     // A task that holds several network configurations resolves its per-network
     // .env, and any network-specific dependency steps, from TASK_NETWORK, and
-    // refuses to run without it. actualNetwork is checked against
-    // safePathPattern above, so it is safe to interpolate into the command.
+    // refuses to run without it. The catalog validates actualNetwork against
+    // ^[a-zA-Z0-9_-]+$, so it is safe to interpolate into the command.
     await execAsync(`make TASK_NETWORK=${actualNetwork} deps`, {
-      cwd: resolvedTaskPath,
+      cwd: taskDir,
       timeout: INSTALL_DEPS_TIMEOUT_MS,
       env: process.env,
     });
@@ -83,6 +38,18 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
+    if (error instanceof TaskCatalogError) {
+      const statuses: Partial<Record<TaskCatalogError['kind'], number>> = {
+        'invalid-id': 400,
+        'outside-root': 403,
+        'not-found': 404,
+      };
+      const status = statuses[error.kind];
+      if (status) {
+        return NextResponse.json({ error: error.message }, { status });
+      }
+    }
+
     console.error(`❌ Error installing dependencies:`, error);
 
     let errorMessage = 'Failed to install dependencies';

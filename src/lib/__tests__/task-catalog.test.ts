@@ -37,6 +37,12 @@ it('discovers the default root from cwd and caches the catalog across cwd change
 });
 
 describe('taskDirs', () => {
+  it('rejects a missing Task folder with not-found', () => {
+    const call = () => createTaskCatalog(tempDir).taskDirs('missing-task', 'mainnet');
+    expect(call).toThrow(TaskCatalogError);
+    expect(call).toThrow(expect.objectContaining({ kind: 'not-found' }));
+  });
+
   it('rejects a dangling task symlink targeting a missing path outside the root', async () => {
     const root = path.join(tempDir, 'root');
     const tasks = path.join(root, 'active', 'evm', 'tasks');
@@ -102,7 +108,10 @@ describe('taskDirs', () => {
     });
   });
 
-  it('returns the Task layout without requiring directories to exist', () => {
+  it('returns the Task layout without requiring network directories to exist', async () => {
+    await fs.mkdir(path.join(tempDir, 'active', 'evm', 'tasks', '2025-06-04-upgrade_foo'), {
+      recursive: true,
+    });
     const catalog = createTaskCatalog(tempDir);
     expect(catalog.root).toBe(tempDir);
     expect(catalog.taskDirs('2025-06-04-upgrade_foo', 'mainnet')).toEqual({
