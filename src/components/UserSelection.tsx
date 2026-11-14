@@ -4,7 +4,7 @@ import { Button } from './ui/Button';
 import { SectionHeader } from './ui/SectionHeader';
 
 export interface ConfigOption {
-  fileName: string;
+  name: string;
   displayName: string;
 }
 
@@ -94,11 +94,11 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
             </div>
           ) : (
             availableUsers.map(option => {
-              const isSelected = selectedUser?.fileName === option.fileName;
+              const isSelected = selectedUser?.name === option.name;
 
               return (
                 <Card
-                  key={option.fileName}
+                  key={option.name}
                   interactive
                   selected={isSelected}
                   onClick={() => setSelectedUser(option)}
@@ -117,7 +117,7 @@ export function UserSelection({ network, upgradeId, onSelect }: UserSelectionPro
                         {option.displayName}
                       </h3>
                       <p className="text-xs text-[var(--cds-text-secondary)] font-mono mt-0.5">
-                        {option.fileName}
+                        {option.name}
                       </p>
                     </div>
                   </div>

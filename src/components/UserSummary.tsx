@@ -22,7 +22,7 @@ export function UserSummary({ selectedUser, onChange }: UserSummaryProps) {
               {selectedUser.displayName}
             </h3>
             <p className="text-xs text-[var(--cds-text-secondary)] font-mono mt-0.5">
-              {selectedUser.fileName}
+              {selectedUser.name}
             </p>
           </div>
         </div>

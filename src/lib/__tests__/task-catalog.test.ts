@@ -114,6 +114,93 @@ describe('taskDirs', () => {
   });
 });
 
+describe('listProfiles', () => {
+  it('propagates other filesystem errors unchanged', async () => {
+    const validations = path.join(
+      tempDir,
+      'active',
+      'evm',
+      'tasks',
+      'task',
+      'config',
+      'mainnet',
+      'validations'
+    );
+    await fs.mkdir(path.dirname(validations), { recursive: true });
+    await fs.writeFile(validations, 'not a directory');
+
+    const call = () => createTaskCatalog(tempDir).listProfiles('task', 'mainnet');
+    expect(call).not.toThrow(TaskCatalogError);
+    expect(call).toThrow(expect.objectContaining({ code: 'ENOTDIR' }));
+  });
+
+  it.each([false, true])(
+    'reports not-found for missing validations (Task exists: %s)',
+    async taskExists => {
+      if (taskExists) {
+        await fs.mkdir(path.join(tempDir, 'active', 'evm', 'tasks', 'task'), { recursive: true });
+      }
+      const call = () => createTaskCatalog(tempDir).listProfiles('task', 'mainnet');
+      expect(call).toThrow(TaskCatalogError);
+      expect(call).toThrow(expect.objectContaining({ kind: 'not-found' }));
+    }
+  );
+
+  it.each([
+    'active/evm',
+    'active/evm/tasks/task',
+    'active/evm/tasks/task/signatures/mainnet',
+    'active/evm/tasks/task/config/mainnet',
+    'active/evm/tasks/task/config/mainnet/validations',
+  ])('rejects an escaping profile listing path at %s', async relativePath => {
+    const root = path.join(tempDir, 'root');
+    const outside = path.join(tempDir, 'outside');
+    const link = path.join(root, relativePath);
+    await fs.mkdir(outside);
+    await fs.mkdir(path.dirname(link), { recursive: true });
+    await fs.symlink(outside, link);
+    const call = () => createTaskCatalog(root).listProfiles('task', 'mainnet');
+    expect(call).toThrow(TaskCatalogError);
+    expect(call).toThrow(expect.objectContaining({ kind: 'outside-root' }));
+  });
+
+  it.each([
+    ['../task', 'mainnet'],
+    ['task', '../network'],
+    ['', 'mainnet'],
+    ['task', ''],
+  ])('rejects invalid Task id or network (%j, %j)', (taskId, network) => {
+    const call = () => createTaskCatalog(tempDir).listProfiles(taskId, network);
+    expect(call).toThrow(TaskCatalogError);
+    expect(call).toThrow(expect.objectContaining({ kind: 'invalid-id' }));
+  });
+
+  it('lists only JSON files sorted by name with display names, including malformed profiles', async () => {
+    const validations = path.join(
+      tempDir,
+      'active',
+      'evm',
+      'tasks',
+      'task',
+      'config',
+      'mainnet',
+      'validations'
+    );
+    await fs.mkdir(validations, { recursive: true });
+    await fs.writeFile(path.join(validations, 'z-last.json'), '{"ledgerId": 99}');
+    await fs.writeFile(path.join(validations, 'a-first.json'), 'not valid JSON');
+    await fs.writeFile(path.join(validations, 'README.md'), 'ignore me');
+    await fs.writeFile(path.join(validations, 'other.JSON'), '{}');
+    await fs.mkdir(path.join(validations, 'directory.json'));
+
+    const catalog = createTaskCatalog(tempDir);
+    expect(catalog.listProfiles('task', 'mainnet')).toEqual([
+      { name: 'a-first', displayName: 'A First' },
+      { name: 'z-last', displayName: 'Z Last' },
+    ]);
+  });
+});
+
 describe('listTasks', () => {
   it('omits a Task with a regular-file network config without dropping a ready sibling', async () => {
     await makeTask('2025-06-04-safe', 'mainnet', '# Safe\n\nStatus: READY TO SIGN');
