@@ -36,6 +36,90 @@ it('discovers the default root from cwd and caches the catalog across cwd change
   expect(defaultTaskCatalog()).toBe(catalog);
 });
 
+describe('loadProfile', () => {
+  const profile = {
+    cmd: 'forge script Test',
+    ledgerId: 7,
+    rpcUrl: 'http://localhost:8545',
+    expectedDomainAndMessageHashes: {
+      address: '0x0000000000000000000000000000000000000001',
+      domainHash: '0x' + 'a'.repeat(64),
+      messageHash: '0x' + 'b'.repeat(64),
+    },
+    stateOverrides: [],
+    stateChanges: [],
+    skipTaskOriginValidation: true,
+  };
+  let profilePath: string;
+
+  beforeEach(async () => {
+    profilePath = path.join(
+      tempDir,
+      'active/evm/tasks/task/config/mainnet/validations/signer.json'
+    );
+    await fs.mkdir(path.dirname(profilePath), { recursive: true });
+  });
+
+  it('reports a missing Validation profile as not-found', () => {
+    const call = () => createTaskCatalog(tempDir).loadProfile('task', 'mainnet', 'missing');
+    expect(call).toThrow(TaskCatalogError);
+    expect(call).toThrow(expect.objectContaining({ kind: 'not-found' }));
+  });
+
+  it.each([
+    ['malformed JSON', '{', 'Invalid JSON:'],
+    ['schema-invalid JSON', '{}', 'ledgerId:'],
+  ])(
+    'reports %s as invalid-profile with the validation summary',
+    async (_label, content, detail) => {
+      await fs.writeFile(profilePath, content);
+      const call = () => createTaskCatalog(tempDir).loadProfile('task', 'mainnet', 'signer');
+      expect(call).toThrow(TaskCatalogError);
+      expect(call).toThrow(expect.objectContaining({ kind: 'invalid-profile' }));
+      expect(call).toThrow('Configuration has errors');
+      expect(call).toThrow('Errors (');
+      expect(call).toThrow(detail);
+    }
+  );
+
+  it.each(['taskId', 'network', 'name'])('rejects an invalid profile %s', field => {
+    const call = () =>
+      createTaskCatalog(tempDir).loadProfile(
+        field === 'taskId' ? '../task' : 'task',
+        field === 'network' ? '../mainnet' : 'mainnet',
+        field === 'name' ? '../signer' : 'signer'
+      );
+    expect(call).toThrow(TaskCatalogError);
+    expect(call).toThrow(expect.objectContaining({ kind: 'invalid-id' }));
+  });
+
+  it('rejects a Validation profile symlinked outside the root', async () => {
+    const root = path.join(tempDir, 'root');
+    const link = path.join(root, 'active/evm/tasks/task/config/mainnet/validations/signer.json');
+    await fs.mkdir(path.dirname(link), { recursive: true });
+    await fs.writeFile(path.join(tempDir, 'outside.json'), JSON.stringify(profile));
+    await fs.symlink(path.join(tempDir, 'outside.json'), link);
+    const call = () => createTaskCatalog(root).loadProfile('task', 'mainnet', 'signer');
+    expect(call).toThrow(TaskCatalogError);
+    expect(call).toThrow(expect.objectContaining({ kind: 'outside-root' }));
+  });
+
+  it('loads a Validation profile symlinked to a file inside the root', async () => {
+    await fs.writeFile(path.join(tempDir, 'shared.json'), JSON.stringify(profile));
+    await fs.symlink(
+      path.relative(path.dirname(profilePath), path.join(tempDir, 'shared.json')),
+      profilePath
+    );
+    expect(createTaskCatalog(tempDir).loadProfile('task', 'mainnet', 'signer')).toEqual(profile);
+  });
+
+  it('loads the parsed Validation profile from the Task layout', async () => {
+    await fs.writeFile(profilePath, JSON.stringify({ ...profile, ignored: true }));
+    const catalog = createTaskCatalog(tempDir);
+    expect(catalog.loadProfile('task', 'mainnet', 'signer')).toEqual(profile);
+  });
+});
+
 describe('taskDirs', () => {
   it('rejects a dangling task symlink targeting a missing path outside the root', async () => {
     const root = path.join(tempDir, 'root');
