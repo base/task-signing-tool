@@ -66,6 +66,13 @@ describe('loadProfile', () => {
     expect(call).toThrow(expect.objectContaining({ kind: 'not-found' }));
   });
 
+  it('rethrows non-ENOENT profile read errors without wrapping them in TaskCatalogError', async () => {
+    await fs.mkdir(profilePath);
+    const call = () => createTaskCatalog(tempDir).loadProfile('task', 'mainnet', 'signer');
+    expect(call).toThrow(expect.objectContaining({ code: 'EISDIR' }));
+    expect(call).not.toThrow(TaskCatalogError);
+  });
+
   it.each([
     ['malformed JSON', '{', 'Invalid JSON:'],
     ['schema-invalid JSON', '{}', 'ledgerId:'],
