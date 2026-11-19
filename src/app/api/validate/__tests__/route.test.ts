@@ -2,6 +2,7 @@ import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals
 import { NextRequest } from 'next/server';
 import type { ValidationServiceOpts } from '@/lib/validation-service';
 import { NetworkType, type ValidationData } from '@/lib/types';
+import { TaskCatalogError, type TaskCatalogErrorKind } from '@/lib/task-catalog';
 
 const mockValidateUpgrade = jest.fn<(opts: ValidationServiceOpts) => Promise<ValidationData>>();
 
@@ -28,6 +29,44 @@ describe('POST /api/validate', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it.each<[TaskCatalogErrorKind, number]>([
+    ['invalid-id', 400],
+    ['outside-root', 403],
+    ['not-found', 404],
+    ['invalid-profile', 422],
+  ])('maps catalog error %s to status %i with its exact message', async (kind, status) => {
+    mockValidateUpgrade.mockRejectedValue(new TaskCatalogError(kind, `Profile error: ${kind}`));
+
+    const res = await POST(
+      createRequest({
+        upgradeId: '2025-08-01-upgrade-qux',
+        network: 'mainnet',
+        userType: 'base-sc',
+      })
+    );
+
+    expect(res.status).toBe(status);
+    expect(await res.json()).toEqual({ error: `Profile error: ${kind}` });
+  });
+
+  it.each([
+    [new Error('Simulation failed'), 'Simulation failed'],
+    ['unexpected rejection', 'Validation failed'],
+  ])('keeps a non-catalog rejection %p at 500 with the exact body', async (error, message) => {
+    mockValidateUpgrade.mockRejectedValue(error);
+
+    const res = await POST(
+      createRequest({
+        upgradeId: '2025-08-01-upgrade-qux',
+        network: 'mainnet',
+        userType: 'base-sc',
+      })
+    );
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: message });
   });
 
   it('accepts zeronet as a supported network', async () => {

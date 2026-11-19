@@ -1,4 +1,5 @@
 import { validateUpgrade } from '@/lib/validation-service';
+import { TaskCatalogError, TASK_CATALOG_ERROR_STATUS } from '@/lib/task-catalog';
 import { NextRequest, NextResponse } from 'next/server';
 import { NetworkType } from '@/lib/types';
 
@@ -45,6 +46,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: validationResult }, { status: 200 });
   } catch (error) {
     console.error('Validation failed:', error);
+    if (error instanceof TaskCatalogError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: TASK_CATALOG_ERROR_STATUS[error.kind] }
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Validation failed' },
       { status: 500 }
