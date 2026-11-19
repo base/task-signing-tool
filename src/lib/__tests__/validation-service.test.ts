@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { promises as fs } from 'fs';
 import os from 'os';
 import path from 'path';
-import { resetContractDeploymentsRootCacheForTests } from '../deployments';
+import { resetContractDeploymentsRootCacheForTests, TaskCatalogError } from '../task-catalog';
 import { NetworkType } from '../types';
 
 const hashes = {
@@ -67,6 +67,17 @@ describe('validateUpgrade', () => {
     process.chdir(originalCwd);
     resetContractDeploymentsRootCacheForTests();
     await fs.rm(fixtureRoot, { recursive: true, force: true });
+  });
+
+  it.each([
+    ['missing', 'not-found'],
+    ['malformed', 'invalid-profile'],
+  ])('preserves the catalog error kind for a %s Validation profile', async (profile, kind) => {
+    await fs.rm(configPath, { force: true });
+    if (profile === 'malformed') await fs.writeFile(configPath, '{');
+
+    await expect(validateUpgrade(opts)).rejects.toBeInstanceOf(TaskCatalogError);
+    await expect(validateUpgrade(opts)).rejects.toMatchObject({ kind });
   });
 
   it('returns the loaded validation profile ledgerId after simulation', async () => {

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getValidationSummary, parseFromString } from './parser';
 import { NetworkType, TaskStatus, Upgrade } from './types';
 
 let cachedRoot: string | null = null;
@@ -46,6 +47,13 @@ const DEFAULT_DESCRIPTION = 'Smart contract upgrade deployment';
 const MAX_STATUS_SEARCH_LINES = 20;
 
 export type TaskCatalogErrorKind = 'invalid-id' | 'outside-root' | 'not-found' | 'invalid-profile';
+
+export const TASK_CATALOG_ERROR_STATUS: Record<TaskCatalogErrorKind, number> = {
+  'invalid-id': 400,
+  'outside-root': 403,
+  'not-found': 404,
+  'invalid-profile': 422,
+};
 
 export class TaskCatalogError extends Error {
   constructor(
@@ -118,6 +126,28 @@ export function createTaskCatalog(root: string) {
   return {
     root,
     listTasks: (network: NetworkType) => listTasks(root, network),
+    loadProfile: (taskId: string, network: string, name: string) => {
+      assertValidId(taskId);
+      assertValidId(network);
+      assertValidId(name);
+      const { taskOriginDir } = taskDirs(root, taskId, network);
+      const profilePath = path.join(taskOriginDir, 'validations', `${name}.json`);
+      assertContainedPath(root, resolveExistingAncestor(root), profilePath);
+      let content: string;
+      try {
+        content = fs.readFileSync(profilePath, 'utf-8');
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          throw new TaskCatalogError('not-found', `Validation profile not found: ${profilePath}`);
+        }
+        throw error;
+      }
+      const parsed = parseFromString(content);
+      if (!parsed.success) {
+        throw new TaskCatalogError('invalid-profile', getValidationSummary(parsed));
+      }
+      return parsed.config;
+    },
     taskDirs: (taskId: string, network: string) => {
       assertValidId(taskId);
       assertValidId(network);

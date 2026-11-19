@@ -1,9 +1,6 @@
-import { promises as fs } from 'fs';
 import path from 'path';
 import { TASK_ORIGIN_COMMON_NAMES, TASK_ORIGIN_SIGNATURE_FILE_NAMES } from './constants';
-import { findContractDeploymentsRoot } from './deployments';
-import { getValidationSummary, parseFromString } from './parser';
-import { assertWithinDir } from './path-validation';
+import { defaultTaskCatalog } from './task-catalog';
 import type { SafeTxTypedData } from './safe-typed-data';
 import { StateDiffClient } from './state-diff';
 import { verifyTaskOrigin } from './task-origin-validate';
@@ -28,65 +25,6 @@ export type ValidationServiceOpts = {
   taskConfigFileName: string;
 };
 
-const CONTRACT_DEPLOYMENTS_ROOT = findContractDeploymentsRoot();
-const stateDiffClient = new StateDiffClient(0, CONTRACT_DEPLOYMENTS_ROOT);
-
-async function getConfigData(opts: ValidationServiceOpts): Promise<{
-  cfg: TaskConfig;
-  scriptPath: string;
-  networkConfigDir: string;
-  signatureDir: string;
-}> {
-  const scriptPath = assertWithinDir(
-    path.join(CONTRACT_DEPLOYMENTS_ROOT, 'active', 'evm'),
-    CONTRACT_DEPLOYMENTS_ROOT
-  );
-  const taskPath = assertWithinDir(
-    path.join(scriptPath, 'tasks', opts.upgradeId),
-    CONTRACT_DEPLOYMENTS_ROOT
-  );
-  const networkConfigDir = assertWithinDir(
-    path.join(taskPath, 'config', opts.network),
-    CONTRACT_DEPLOYMENTS_ROOT
-  );
-  const configDir = assertWithinDir(
-    path.join(networkConfigDir, 'validations'),
-    CONTRACT_DEPLOYMENTS_ROOT
-  );
-  const configFileName = `${opts.taskConfigFileName}.json`;
-  const configPath = path.join(configDir, configFileName);
-  assertWithinDir(configPath, configDir);
-
-  let configContent: string;
-  try {
-    configContent = await fs.readFile(configPath, 'utf-8');
-  } catch (error: unknown) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      throw new Error(`ValidationService::getConfigData: Config file not found: ${configPath}`);
-    }
-    console.error(`❌ Error reading config file: ${error}`);
-    throw error;
-  }
-
-  const parsedConfig = parseFromString(configContent);
-
-  if (!parsedConfig.success) {
-    console.error('❌ Failed to parse config:', getValidationSummary(parsedConfig));
-    throw new Error('ValidationService::getConfigData: Failed to parse config file');
-  }
-
-  console.log(`✅ Loaded config data from ${configFileName}`);
-  return {
-    cfg: parsedConfig.config,
-    scriptPath,
-    networkConfigDir,
-    signatureDir: assertWithinDir(
-      path.join(taskPath, 'signatures', opts.network),
-      CONTRACT_DEPLOYMENTS_ROOT
-    ),
-  };
-}
-
 function getExpectedData(parsedConfig: TaskConfig): {
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
@@ -103,7 +41,8 @@ function getExpectedData(parsedConfig: TaskConfig): {
 
 async function runStateDiffSimulation(
   scriptPath: string,
-  cfg: TaskConfig
+  cfg: TaskConfig,
+  stateDiffClient: StateDiffClient
 ): Promise<{
   stateOverrides: StateOverride[];
   stateChanges: StateChange[];
@@ -141,14 +80,12 @@ async function validateSigner(
   taskOriginDir: string,
   signatureDir: string,
   role: TaskOriginRole,
+  allowedDir: string,
   commonNameOverride?: string // Only used for taskCreator
 ): Promise<TaskOriginSignerResult> {
-  assertWithinDir(taskOriginDir, CONTRACT_DEPLOYMENTS_ROOT);
-
   // Get signatureFileName from constants (hardcoded for all roles)
   const signatureFileName = TASK_ORIGIN_SIGNATURE_FILE_NAMES[role];
   const signatureFile = path.join(signatureDir, signatureFileName);
-  assertWithinDir(signatureFile, CONTRACT_DEPLOYMENTS_ROOT);
 
   // Get commonName: from config for taskCreator, from constants for facilitators
   const commonName =
@@ -159,7 +96,7 @@ async function validateSigner(
     signatureFile,
     commonName,
     role,
-    allowedDir: CONTRACT_DEPLOYMENTS_ROOT,
+    allowedDir,
   });
 
   return {
@@ -174,7 +111,8 @@ async function validateSigner(
 async function runTaskOriginValidation(
   taskOriginDir: string,
   signatureDir: string,
-  config: TaskOriginValidationConfig
+  config: TaskOriginValidationConfig,
+  allowedDir: string
 ): Promise<TaskOriginValidation> {
   const results: TaskOriginSignerResult[] = [];
 
@@ -186,7 +124,7 @@ async function runTaskOriginValidation(
     const label = TASK_ORIGIN_ROLE_LABELS[role];
     console.log(`🔐 Validating ${label} signature...`);
     try {
-      results.push(await validateSigner(taskOriginDir, signatureDir, role, commonName));
+      results.push(await validateSigner(taskOriginDir, signatureDir, role, allowedDir, commonName));
       console.log(`  ✓ ${label} signature verified`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -221,7 +159,10 @@ async function runTaskOriginValidation(
 export async function validateUpgrade(opts: ValidationServiceOpts): Promise<ValidationData> {
   console.log(`🚀 Starting validation for ${opts.upgradeId} on ${opts.network}`);
 
-  const { cfg, scriptPath, networkConfigDir, signatureDir } = await getConfigData(opts);
+  const catalog = defaultTaskCatalog();
+  const cfg = catalog.loadProfile(opts.upgradeId, opts.network, opts.taskConfigFileName);
+  const { evmDir, taskOriginDir, signaturesDir } = catalog.taskDirs(opts.upgradeId, opts.network);
+  const stateDiffClient = new StateDiffClient(0, catalog.root);
 
   // Determine task origin validation state
   let taskOriginValidation: TaskOriginValidation;
@@ -242,9 +183,10 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
   } else {
     console.log('🔐 Running task origin validation (must pass before simulation)...');
     taskOriginValidation = await runTaskOriginValidation(
-      networkConfigDir,
-      signatureDir,
-      cfg.taskOriginConfig
+      taskOriginDir,
+      signaturesDir,
+      cfg.taskOriginConfig,
+      catalog.root
     );
   }
 
@@ -269,7 +211,7 @@ export async function validateUpgrade(opts: ValidationServiceOpts): Promise<Vali
 
   // Run the task simulation
   const expected = getExpectedData(cfg);
-  const actual = await runStateDiffSimulation(scriptPath, cfg);
+  const actual = await runStateDiffSimulation(evmDir, cfg, stateDiffClient);
 
   return {
     ledgerId: cfg.ledgerId,
