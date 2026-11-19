@@ -1,7 +1,11 @@
 import { exec } from 'child_process';
 import { NextRequest, NextResponse } from 'next/server';
 import { promisify } from 'util';
-import { defaultTaskCatalog, TaskCatalogError } from '@/lib/task-catalog';
+import {
+  defaultTaskCatalog,
+  TaskCatalogError,
+  TASK_CATALOG_ERROR_STATUS,
+} from '@/lib/task-catalog';
 
 const execAsync = promisify(exec);
 const INSTALL_DEPS_TIMEOUT_MS = 20 * 60 * 1000;
@@ -39,15 +43,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     if (error instanceof TaskCatalogError) {
-      const statuses: Partial<Record<TaskCatalogError['kind'], number>> = {
-        'invalid-id': 400,
-        'outside-root': 403,
-        'not-found': 404,
-      };
-      const status = statuses[error.kind];
-      if (status) {
-        return NextResponse.json({ error: error.message }, { status });
-      }
+      return NextResponse.json(
+        { error: error.message },
+        { status: TASK_CATALOG_ERROR_STATUS[error.kind] }
+      );
     }
 
     console.error(`❌ Error installing dependencies:`, error);

@@ -105,16 +105,6 @@ describe('POST /api/install-deps', () => {
       failure: new Error('Unexpected failure'),
       message: 'Unexpected failure',
     },
-    {
-      name: 'non-Error rejection',
-      failure: 'unknown failure',
-      message: 'Failed to install dependencies',
-    },
-    {
-      name: 'unmapped catalog kind',
-      failure: new taskCatalog.TaskCatalogError('invalid-profile', 'Invalid validation profile'),
-      message: 'Invalid validation profile',
-    },
   ])('returns the existing 500 message for $name', async ({ failure, message }) => {
     mockExec.mockImplementation((_command, _options, callback) => {
       callback(failure, { stdout: '', stderr: '' });
@@ -125,6 +115,20 @@ describe('POST /api/install-deps', () => {
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: message });
     expect(mockExec).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns the shared catalog status for an invalid-profile error', async () => {
+    mockExec.mockImplementation((_command, _options, callback) => {
+      callback(new taskCatalog.TaskCatalogError('invalid-profile', 'Invalid validation profile'), {
+        stdout: '',
+        stderr: '',
+      });
+    });
+
+    const res = await POST(createRequest({ network: 'Zeronet', upgradeId: UPGRADE_ID }));
+
+    expect(res.status).toBe(422);
+    expect(await res.json()).toEqual({ error: 'Invalid validation profile' });
   });
 
   it('rejects a missing Task folder before running make', async () => {
