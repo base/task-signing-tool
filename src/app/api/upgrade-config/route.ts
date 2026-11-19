@@ -1,14 +1,21 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
-import { findContractDeploymentsRoot } from '@/lib/deployments';
-import { assertWithinDir } from '@/lib/path-validation';
+import { defaultTaskCatalog, TaskCatalogError } from '@/lib/task-catalog';
 
-const toDisplayName = (name: string) =>
-  name
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+function errorResponse(error: unknown) {
+  if (error instanceof TaskCatalogError) {
+    const status = {
+      'invalid-id': 400,
+      'outside-root': 403,
+      'not-found': 404,
+      'invalid-profile': 500,
+    }[error.kind];
+    if (status !== 500) {
+      return NextResponse.json({ error: error.message }, { status });
+    }
+  }
+  console.error('Error fetching upgrade config:', error);
+  return NextResponse.json({ error: 'Failed to fetch upgrade configuration' }, { status: 500 });
+}
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -22,63 +29,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const safePathPattern = /^[a-zA-Z0-9_-]+$/;
-  if (!safePathPattern.test(network) || !safePathPattern.test(upgradeId)) {
-    return NextResponse.json(
-      {
-        error:
-          'Invalid network or upgradeId: only alphanumeric characters, hyphens, and underscores are allowed',
-      },
-      { status: 400 }
-    );
-  }
-
-  const contractDeploymentsRoot = findContractDeploymentsRoot();
-  const validationsJoinedPath = path.join(
-    contractDeploymentsRoot,
-    'active',
-    'evm',
-    'tasks',
-    upgradeId,
-    'config',
-    network,
-    'validations'
-  );
-
-  // Verify the resolved path is within the allowed directory
-  let validationsPath: string;
   try {
-    validationsPath = assertWithinDir(validationsJoinedPath, contractDeploymentsRoot);
-  } catch {
-    return NextResponse.json({ error: 'Invalid path: access denied' }, { status: 403 });
-  }
-
-  try {
-    const entries = await fs.readdir(validationsPath);
-    const jsonFiles = entries.filter(file => file.endsWith('.json'));
-
-    const configOptions = jsonFiles.map(configFile => {
-      const baseName = configFile.replace(/\.json$/, '');
-      return { fileName: baseName, displayName: toDisplayName(baseName) };
-    });
-
-    console.log(
-      'Found %d config options for %s:',
-      configOptions.length,
-      `${network}/${upgradeId}`,
-      configOptions.map(c => c.displayName)
-    );
-
+    const configOptions = defaultTaskCatalog().listProfiles(upgradeId, network);
     return NextResponse.json({ configOptions }, { status: 200 });
   } catch (error) {
-    const err = error as NodeJS.ErrnoException;
-
-    if (err?.code === 'ENOENT') {
-      console.warn(`Validations path does not exist: ${validationsPath}`);
-      return NextResponse.json({ configOptions: [] }, { status: 200 });
-    }
-
-    console.error('Error fetching upgrade config:', error);
-    return NextResponse.json({ error: 'Failed to fetch upgrade configuration' }, { status: 500 });
+    return errorResponse(error);
   }
 }

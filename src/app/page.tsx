@@ -138,7 +138,7 @@ export default function Home() {
 
         {currentStep === 'validation' && selectedUpgrade && (
           <ValidationResults
-            userType={selectedUser?.fileName || ''}
+            userType={selectedUser?.name || ''}
             network={selectedNetwork || ''}
             upgradeId={selectedUpgrade.id}
             onProceedToLedgerSigning={handleProceedToLedgerSigning}
