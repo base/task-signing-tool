@@ -20,5 +20,10 @@ export default {
   roots: ['<rootDir>'],
   modulePaths: ['<rootDir>'],
   moduleDirectories: ['node_modules', '<rootDir>'],
-  collectCoverageFrom: ['utils/**/*.{ts,js}', '!utils/**/*.d.ts', '!utils/examples/**'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    'scripts/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/__tests__/**',
+  ],
 };
