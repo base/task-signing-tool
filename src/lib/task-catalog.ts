@@ -123,9 +123,47 @@ function isListingPathInsideRoot(root: string, realRoot: string, filePath: strin
 
 export function createTaskCatalog(root: string) {
   root = path.resolve(root);
+  const checkedTaskDirs = (taskId: string, network: string) => {
+    assertValidId(taskId);
+    assertValidId(network);
+    const dirs = taskDirs(root, taskId, network);
+    const realRoot = resolveExistingAncestor(root);
+    for (const dir of Object.values(dirs)) {
+      assertContainedPath(root, realRoot, dir);
+    }
+    return dirs;
+  };
   return {
     root,
     listTasks: (network: NetworkType) => listTasks(root, network),
+    listProfiles: (taskId: string, network: string) => {
+      const { taskOriginDir } = checkedTaskDirs(taskId, network);
+      const validationsDir = path.join(taskOriginDir, 'validations');
+      assertContainedPath(root, resolveExistingAncestor(root), validationsDir);
+      let entries: fs.Dirent[];
+      try {
+        entries = fs.readdirSync(validationsDir, { withFileTypes: true });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          throw new TaskCatalogError(
+            'not-found',
+            `Validations directory does not exist: ${validationsDir}`
+          );
+        }
+        throw error;
+      }
+      return entries
+        .filter(entry => entry.isFile() && entry.name.endsWith('.json'))
+        .map(entry => entry.name.slice(0, -5))
+        .sort()
+        .map(name => ({
+          name,
+          displayName: name
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' '),
+        }));
+    },
     loadProfile: (taskId: string, network: string, name: string) => {
       assertValidId(taskId);
       assertValidId(network);
@@ -149,13 +187,7 @@ export function createTaskCatalog(root: string) {
       return parsed.config;
     },
     taskDirs: (taskId: string, network: string) => {
-      assertValidId(taskId);
-      assertValidId(network);
-      const dirs = taskDirs(root, taskId, network);
-      const realRoot = resolveExistingAncestor(root);
-      for (const dir of Object.values(dirs)) {
-        assertContainedPath(root, realRoot, dir);
-      }
+      const dirs = checkedTaskDirs(taskId, network);
       if (!isDirectory(dirs.taskDir)) {
         throw new TaskCatalogError(
           'not-found',
