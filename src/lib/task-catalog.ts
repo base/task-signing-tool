@@ -156,6 +156,12 @@ export function createTaskCatalog(root: string) {
       for (const dir of Object.values(dirs)) {
         assertContainedPath(root, realRoot, dir);
       }
+      if (!isDirectory(dirs.taskDir)) {
+        throw new TaskCatalogError(
+          'not-found',
+          `Task folder not found: ${path.relative(root, dirs.taskDir)}`
+        );
+      }
       return dirs;
     },
   };
