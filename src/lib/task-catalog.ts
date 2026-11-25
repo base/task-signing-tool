@@ -186,7 +186,16 @@ export function createTaskCatalog(root: string) {
       }
       return parsed.config;
     },
-    taskDirs: checkedTaskDirs,
+    taskDirs: (taskId: string, network: string) => {
+      const dirs = checkedTaskDirs(taskId, network);
+      if (!isDirectory(dirs.taskDir)) {
+        throw new TaskCatalogError(
+          'not-found',
+          `Task folder not found: ${path.relative(root, dirs.taskDir)}`
+        );
+      }
+      return dirs;
+    },
   };
 }
 
